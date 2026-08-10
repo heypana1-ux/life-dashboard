@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* Enable class-based dark mode (toggle by adding `.dark` to <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+  Design system tokens.
+  Light theme is the base; the `.dark` block overrides.
+  Inspired by a blend of Apple Health / Whoop / Notion / finance dashboards.
+*/
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #f1f3f5;
+  --surface-3: #e9ecef;
+  --border: #e2e5ea;
+  --text: #14161a;
+  --text-muted: #5b6470;
+  --text-faint: #8a929e;
+
+  --accent: #4f46e5;      /* indigo */
+  --accent-soft: #eef0fe;
+  --good: #16a34a;
+  --good-soft: #e7f6ec;
+  --warn: #d97706;
+  --bad: #dc2626;
+  --bad-soft: #fdeaea;
+  --info: #0ea5e9;
+
+  --ring-track: #e6e8ec;
+
+  --shadow: 0 1px 2px rgba(16, 18, 22, 0.04), 0 4px 16px rgba(16, 18, 22, 0.06);
+  --radius: 16px;
+}
+
+.dark {
+  --bg: #0a0b0e;
+  --surface: #14161b;
+  --surface-2: #1b1e25;
+  --surface-3: #23272f;
+  --border: #262a32;
+  --text: #eef1f5;
+  --text-muted: #9aa3b0;
+  --text-faint: #6b7482;
+
+  --accent: #7c7bff;
+  --accent-soft: #1e1e42;
+  --good: #34d399;
+  --good-soft: #10281f;
+  --warn: #fbbf24;
+  --bad: #f87171;
+  --bad-soft: #2a1414;
+  --info: #38bdf8;
+
+  --ring-track: #262a32;
+
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-text-muted: var(--text-muted);
+  --color-text-faint: var(--text-faint);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-good: var(--good);
+  --color-good-soft: var(--good-soft);
+  --color-warn: var(--warn);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --radius-card: var(--radius);
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, unobtrusive scrollbars */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-3);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Utility: subtle card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-in {
+  animation: fadeIn 0.35s ease both;
+}

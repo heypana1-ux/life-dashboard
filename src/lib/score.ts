@@ -1,0 +1,240 @@
+import {
+  AppData,
+  AreaKey,
+  DailyReview,
+  DayScore,
+  Habit,
+  HabitLog,
+  Priority,
+  SleepLog,
+} from "./types";
+import { addDays, isoRange, parseISO, sleepDurationMinutes, weekdayOf } from "./date";
+
+/*
+  Scoring model (transparent by design):
+
+  - Each enabled AREA gets a 0..100 score for a day, computed from that area's data.
+      * Habit-driven areas (productivity, sport, habits, learning, creativity):
+        weighted adherence to that area's habits due that day.
+          - "build" habits contribute done?1:0, weighted by priority.
+          - "reduce" habits contribute avoided?1:0, weighted by severity.
+        Weekly-target build habits are scored over a rolling 7-day window, so rest days
+        are never punished as "missed training".
+      * sleep: from the manual sleep log (duration vs. personal target + quality).
+      * reflection: from the daily check-in (average of the 1..10 metrics).
+  - The Life Score is the weight-normalized average of the areas that HAVE data that day
+    (an area with nothing logged is excluded and its weight redistributed).
+  - Because a reduce-habit slip only lowers its own area's average (bounded by that area's
+    weight), a single bad day dents the score without wrecking it; long-term movement is
+    captured by ELO, not by the daily number.
+*/
+
+const PRIORITY_WEIGHT: Record<Priority, number> = { low: 1, medium: 2, high: 3 };
+
+export function clamp(n: number, lo = 0, hi = 100): number {
+  return Math.max(lo, Math.min(hi, n));
+}
+
+/**
+ * Whether a habit is "due" on a given calendar day.
+ * Weekly BUILD habits return false here (they are evaluated over a rolling window instead);
+ * weekly REDUCE habits are monitored daily.
+ */
+export function isDueOn(habit: Habit, dateISO: string): boolean {
+  if (habit.archived) return false;
+  if (parseISO(habit.createdAt) > parseISO(dateISO)) return false;
+  switch (habit.schedule.type) {
+    case "daily":
+      return true;
+    case "weekdays":
+      return (habit.schedule.days ?? []).includes(weekdayOf(dateISO));
+    case "weekly":
+      return habit.kind === "reduce"; // reduce habits are watched every day
+    default:
+      return false;
+  }
+}
+
+function logFor(logs: HabitLog[], habitId: string, dateISO: string): HabitLog | undefined {
+  return logs.find((l) => l.habitId === habitId && l.date === dateISO);
+}
+
+/** Rolling completion fraction for a weekly-target habit (0..1). */
+function weeklyFraction(habit: Habit, dateISO: string, logs: HabitLog[]): number {
+  const target = habit.schedule.timesPerWeek ?? 1;
+  const window = isoRange(dateISO, 7);
+  const done = window.filter((d) => logFor(logs, habit.id, d)?.done).length;
+  return Math.min(1, done / target);
+}
+
+/** Score (0..100) for one habit-driven area on a day, or null if the area has no habits in scope. */
+function habitAreaScore(
+  area: AreaKey,
+  dateISO: string,
+  habits: Habit[],
+  logs: HabitLog[],
+): number | null {
+  const active = habits.filter(
+    (h) => h.area === area && !h.archived && parseISO(h.createdAt) <= parseISO(dateISO),
+  );
+  if (active.length === 0) return null;
+
+  let wSum = 0;
+  let fSum = 0;
+  let counted = 0;
+  for (const h of active) {
+    if (h.kind === "build") {
+      const w = PRIORITY_WEIGHT[h.priority];
+      if (h.schedule.type === "weekly") {
+        fSum += w * weeklyFraction(h, dateISO, logs);
+        wSum += w;
+        counted++;
+      } else if (isDueOn(h, dateISO)) {
+        fSum += w * (logFor(logs, h.id, dateISO)?.done ? 1 : 0);
+        wSum += w;
+        counted++;
+      }
+    } else if (isDueOn(h, dateISO)) {
+      // reduce habit: avoided (no occurrence) is full credit; weighted by severity
+      const w = h.severity ?? 2;
+      fSum += w * (logFor(logs, h.id, dateISO)?.done ? 0 : 1);
+      wSum += w;
+      counted++;
+    }
+  }
+  if (counted === 0 || wSum === 0) return null;
+  return clamp((fSum / wSum) * 100);
+}
+
+/** Duration-vs-target sleep sub-score, penalizing shortfall more than surplus. */
+function sleepDurationScore(minutes: number, targetMinutes: number): number {
+  if (minutes >= targetMinutes) {
+    const over = minutes - targetMinutes;
+    return clamp(100 - (over / 60) * 6); // mild penalty for large oversleep
+  }
+  const deficit = targetMinutes - minutes;
+  return clamp(100 - (deficit / 60) * 14); // steeper penalty for deficit
+}
+
+export function sleepScore(log: SleepLog, targetMinutes: number): number {
+  const dur = sleepDurationMinutes(log.bedTime, log.wakeTime, log.fallAsleepMinutes ?? 0);
+  const durScore = sleepDurationScore(dur, targetMinutes);
+  return clamp(0.6 * durScore + 0.4 * log.quality * 10);
+}
+
+export function reviewScore(r: DailyReview): number {
+  return clamp(((r.productivity + r.mood + r.energy + r.satisfaction + r.discipline) / 5) * 10);
+}
+
+/** Count of reduce-habit occurrences ("slips") logged on a day — for informational display. */
+export function reduceSlips(dateISO: string, habits: Habit[], logs: HabitLog[]): number {
+  const reduce = habits.filter((h) => h.kind === "reduce" && !h.archived);
+  return reduce.filter((h) => logFor(logs, h.id, dateISO)?.done).length;
+}
+
+export interface DayComputation {
+  lifeScore: number | null;
+  categories: Partial<Record<AreaKey, number>>;
+  slips: number;
+  hasData: boolean;
+}
+
+/** Compute a single day's categories and Life Score from the raw data. */
+export function computeDay(data: AppData, dateISO: string): DayComputation {
+  const { habits, habitLogs, reviews, sleep, settings } = data;
+  const enabled = settings.areas.filter((a) => a.enabled);
+  const categories: Partial<Record<AreaKey, number>> = {};
+
+  let weightSum = 0;
+  let weighted = 0;
+  let hasData = false;
+
+  for (const area of enabled) {
+    let score: number | null = null;
+    if (area.key === "sleep") {
+      const log = sleep.find((s) => s.date === dateISO);
+      if (log) score = sleepScore(log, settings.sleepTargetMinutes);
+    } else if (area.key === "reflection") {
+      const r = reviews.find((x) => x.date === dateISO);
+      if (r) score = reviewScore(r);
+    } else if (area.key === "finances") {
+      score = null; // manual net-worth tracking exists, but no daily-scoring engine yet
+    } else {
+      score = habitAreaScore(area.key, dateISO, habits, habitLogs);
+    }
+
+    if (score !== null) {
+      categories[area.key] = Math.round(score);
+      weighted += area.weight * score;
+      weightSum += area.weight;
+      hasData = true;
+    }
+  }
+
+  const slips = reduceSlips(dateISO, habits, habitLogs);
+
+  let lifeScore: number | null = null;
+  if (weightSum > 0) {
+    lifeScore = Math.round(clamp(weighted / weightSum));
+  }
+
+  return { lifeScore, categories, slips, hasData };
+}
+
+/* ---------------- ELO ---------------- */
+
+const ELO_K = 0.9;
+const ELO_CLAMP = 25;
+const ELO_TRAILING = 14;
+
+/**
+ * Compute the full day-by-day history (Life Score + ELO) over an inclusive date range.
+ * ELO rises/falls relative to the user's own trailing average, so it gets harder to
+ * keep climbing as the baseline improves.
+ */
+export function computeHistory(data: AppData, fromISO: string, toISO: string): DayScore[] {
+  const out: DayScore[] = [];
+  let elo = data.settings.eloStart;
+  const recent: number[] = [];
+
+  let cur = fromISO;
+  // walk day by day
+  // guard against infinite loop
+  for (let i = 0; i < 4000; i++) {
+    const day = computeDay(data, cur);
+    if (day.lifeScore !== null) {
+      const avg =
+        recent.length > 0 ? recent.reduce((a, b) => a + b, 0) / recent.length : 60;
+      let delta = ELO_K * (day.lifeScore - avg);
+      delta = Math.max(-ELO_CLAMP, Math.min(ELO_CLAMP, delta));
+      delta = Math.round(delta);
+      elo += delta;
+      recent.push(day.lifeScore);
+      if (recent.length > ELO_TRAILING) recent.shift();
+      out.push({
+        date: cur,
+        lifeScore: day.lifeScore,
+        categories: day.categories,
+        elo,
+        eloDelta: delta,
+      });
+    } else {
+      out.push({
+        date: cur,
+        lifeScore: 0,
+        categories: day.categories,
+        elo,
+        eloDelta: 0,
+      });
+    }
+    if (cur === toISO) break;
+    cur = addDays(cur, 1);
+  }
+  return out;
+}
+
+export const scoreLabel = (s: number): string =>
+  s >= 85 ? "Excellent" : s >= 70 ? "Strong" : s >= 55 ? "Solid" : s >= 40 ? "Mixed" : "Rough";
+
+export const scoreColor = (s: number): string =>
+  s >= 70 ? "var(--good)" : s >= 45 ? "var(--warn)" : "var(--bad)";

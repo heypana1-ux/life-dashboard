@@ -1,0 +1,204 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useStore } from "@/lib/store";
+import { useDerived } from "@/lib/useDerived";
+import { AREA_LABELS } from "@/lib/defaults";
+import { weekdayLabel } from "@/lib/date";
+import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
+import { TrendLine, MultiLine, Bars } from "@/components/charts";
+
+const RANGES: { key: string; days: number; label: string }[] = [
+  { key: "7", days: 7, label: "7D" },
+  { key: "30", days: 30, label: "30D" },
+  { key: "90", days: 90, label: "3M" },
+  { key: "180", days: 180, label: "6M" },
+  { key: "365", days: 365, label: "1Y" },
+  { key: "all", days: 100000, label: "All" },
+];
+
+const CAT_COLORS: Record<string, string> = {
+  productivity: "#4f46e5",
+  sport: "#16a34a",
+  sleep: "#0ea5e9",
+  habits: "#d97706",
+  learning: "#9333ea",
+  creativity: "#db2777",
+  reflection: "#0891b2",
+};
+
+export default function StatisticsPage() {
+  const { data } = useStore();
+  const d = useDerived();
+  const [range, setRange] = useState("30");
+  const [metric, setMetric] = useState<"life" | "elo" | "categories">("life");
+
+  const days = RANGES.find((r) => r.key === range)!.days;
+  const scoped = useMemo(() => {
+    const withData = d.history.filter((h) => h.lifeScore > 0);
+    return withData.slice(Math.max(0, withData.length - days));
+  }, [d.history, days]);
+
+  const enabledCats = data.settings.areas
+    .filter((a) => a.enabled && a.key !== "finances")
+    .map((a) => a.key);
+
+  const lifeSeries = scoped.map((h) => ({ date: h.date, value: h.lifeScore }));
+  const eloSeries = scoped.map((h) => ({ date: h.date, value: h.elo }));
+  const catSeries = scoped.map((h) => {
+    const row: Record<string, number | string> = { date: h.date };
+    enabledCats.forEach((c) => (row[c] = h.categories[c] ?? 0));
+    return row;
+  });
+
+  // ELO summary
+  const elo = d.history.length ? d.history[d.history.length - 1].elo : data.settings.eloStart;
+  const eloBest = d.history.reduce((m, h) => Math.max(m, h.elo), data.settings.eloStart);
+  const eloAt = (backDays: number) => {
+    const withData = d.history.filter((h) => h.lifeScore > 0);
+    if (withData.length === 0) return data.settings.eloStart;
+    const idx = Math.max(0, withData.length - 1 - backDays);
+    return withData[idx].elo;
+  };
+
+  // weekday averages (life score)
+  const byWd = Array.from({ length: 7 }, () => [] as number[]);
+  d.history.filter((h) => h.lifeScore > 0).forEach((h) => byWd[new Date(h.date).getDay()].push(h.lifeScore));
+  const wdData = [1, 2, 3, 4, 5, 6, 0].map((wd) => ({
+    label: weekdayLabel(wd),
+    value: byWd[wd].length ? Math.round(byWd[wd].reduce((a, b) => a + b, 0) / byWd[wd].length) : 0,
+  }));
+
+  const lifeMean = scoped.length
+    ? Math.round(scoped.reduce((a, b) => a + b.lifeScore, 0) / scoped.length)
+    : 0;
+
+  return (
+    <div className="space-y-6">
+      <PageHeader title="Statistics" subtitle="Trends, ratings and correlations from your data." />
+
+      {/* Range selector */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex gap-1.5">
+          {RANGES.map((r) => (
+            <Chip key={r.key} active={range === r.key} onClick={() => setRange(r.key)}>
+              {r.label}
+            </Chip>
+          ))}
+        </div>
+        <div className="flex gap-1.5">
+          <Chip active={metric === "life"} onClick={() => setMetric("life")}>
+            Life Score
+          </Chip>
+          <Chip active={metric === "elo"} onClick={() => setMetric("elo")}>
+            ELO
+          </Chip>
+          <Chip active={metric === "categories"} onClick={() => setMetric("categories")}>
+            Categories
+          </Chip>
+        </div>
+      </div>
+
+      {/* Main chart */}
+      <Card>
+        <SectionTitle
+          right={
+            metric === "life" ? (
+              <span className="text-xs text-[var(--text-muted)]">avg {lifeMean}</span>
+            ) : undefined
+          }
+        >
+          {metric === "life" ? "Life Score" : metric === "elo" ? "Life Rating (ELO)" : "Categories"}
+        </SectionTitle>
+        {scoped.length < 2 ? (
+          <p className="py-16 text-center text-sm text-[var(--text-muted)]">
+            Not enough data in this range yet.
+          </p>
+        ) : metric === "life" ? (
+          <TrendLine data={lifeSeries} color="var(--accent)" domain={[0, 100]} name="Life Score" height={280} />
+        ) : metric === "elo" ? (
+          <TrendLine data={eloSeries} color="#d97706" name="ELO" height={280} />
+        ) : (
+          <>
+            <MultiLine
+              data={catSeries}
+              domain={[0, 100]}
+              height={280}
+              series={enabledCats.map((c) => ({
+                key: c,
+                name: AREA_LABELS[c],
+                color: CAT_COLORS[c] ?? "var(--accent)",
+              }))}
+            />
+            <div className="mt-3 flex flex-wrap gap-3">
+              {enabledCats.map((c) => (
+                <span key={c} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
+                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: CAT_COLORS[c] }} />
+                  {AREA_LABELS[c]}
+                </span>
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* ELO summary */}
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <EloStat label="Current" value={elo.toLocaleString()} />
+        <EloStat label="Personal best" value={eloBest.toLocaleString()} />
+        <EloStat label="30-day" delta={elo - eloAt(30)} />
+        <EloStat label="90-day" delta={elo - eloAt(90)} />
+        <EloStat label="All-time" delta={elo - data.settings.eloStart} />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Weekday pattern */}
+        <Card>
+          <SectionTitle>Life Score by weekday</SectionTitle>
+          <Bars data={wdData} color="var(--accent)" />
+        </Card>
+
+        {/* Correlations / insights */}
+        <Card>
+          <SectionTitle right={<Badge tone="accent">Correlations</Badge>}>What your data suggests</SectionTitle>
+          <div className="space-y-2.5">
+            {d.insights.map((ins) => (
+              <div key={ins.id} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
+                <span
+                  className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                  style={{
+                    background:
+                      ins.tone === "good"
+                        ? "var(--good)"
+                        : ins.tone === "warn"
+                          ? "var(--warn)"
+                          : "var(--info)",
+                  }}
+                />
+                <p className="text-sm">{ins.text}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-[var(--text-faint)]">
+            Associations observed in your logs — correlation, not causation.
+          </p>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function EloStat({ label, value, delta }: { label: string; value?: string; delta?: number }) {
+  return (
+    <Card className="!p-4">
+      <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{label}</div>
+      {value !== undefined ? (
+        <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
+      ) : (
+        <div className="mt-1">
+          <Delta value={delta ?? 0} className="text-base" />
+        </div>
+      )}
+    </Card>
+  );
+}
