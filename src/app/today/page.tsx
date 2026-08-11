@@ -8,6 +8,7 @@ import { habitsForToday } from "@/lib/habitView";
 import { todayISO, fmtLong } from "@/lib/date";
 import { DailyReview } from "@/lib/types";
 import { useTodayComputation } from "@/lib/useDerived";
+import { useT } from "@/lib/i18n";
 import {
   Card,
   PageHeader,
@@ -31,6 +32,7 @@ const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
 
 export default function TodayPage() {
   const { data, saveReview } = useStore();
+  const t = useT();
   const date = todayISO();
   const comp = useTodayComputation();
   const goals = habitsForToday(data, date);
@@ -58,7 +60,7 @@ export default function TodayPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Today" subtitle={fmtLong(date)} />
+      <PageHeader title={t("Today")} subtitle={fmtLong(date)} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="space-y-4 lg:col-span-2">
@@ -67,17 +69,17 @@ export default function TodayPage() {
             <SectionTitle
               right={
                 <span className="text-xs text-[var(--text-faint)]">
-                  {build.filter((g) => g.log?.done).length}/{build.length} done
+                  {build.filter((g) => g.log?.done).length}/{build.length} {t("Done").toLowerCase()}
                 </span>
               }
             >
-              Goals
+              {t("Goals")}
             </SectionTitle>
             {build.length === 0 ? (
               <p className="py-6 text-center text-sm text-[var(--text-muted)]">
-                No goals scheduled today.{" "}
+                {t("No habits scheduled today")}.{" "}
                 <Link href="/habits" className="text-[var(--accent)]">
-                  Manage habits
+                  {t("Habits")}
                 </Link>
               </p>
             ) : (
@@ -92,9 +94,9 @@ export default function TodayPage() {
           {/* Reduce habits */}
           {reduce.length > 0 && (
             <Card>
-              <SectionTitle right={<Badge tone="bad">Reduce</Badge>}>Watch-list</SectionTitle>
+              <SectionTitle right={<Badge tone="bad">{t("Reduce")}</Badge>}>{t("Watch-list")}</SectionTitle>
               <p className="mb-1 text-xs text-[var(--text-muted)]">
-                Tap only if the behavior happened today. Avoided by default.
+                {t("Tap only if the behavior happened today. Avoided by default.")}
               </p>
               <div className="divide-y divide-[var(--border)]">
                 {reduce.map((g) => (
@@ -108,16 +110,16 @@ export default function TodayPage() {
           <Card>
             <SectionTitle
               right={
-                existing ? <Badge tone="good">Saved</Badge> : <Badge>Optional</Badge>
+                existing ? <Badge tone="good">{t("Saved")}</Badge> : <Badge>{t("Optional")}</Badge>
               }
             >
-              Daily check-in
+              {t("Daily check-in")}
             </SectionTitle>
             <div className="space-y-4">
               {REVIEW_FIELDS.map((f) => (
                 <div key={f.key}>
                   <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-sm font-medium">{f.label}</span>
+                    <span className="text-sm font-medium">{t(f.label)}</span>
                     <span className="text-sm font-semibold text-[var(--accent)]">
                       {review[f.key] as number}
                     </span>
@@ -129,7 +131,7 @@ export default function TodayPage() {
                 </div>
               ))}
               <div className="grid gap-3 sm:grid-cols-3">
-                <Field label="Went well">
+                <Field label={t("Went well")}>
                   <textarea
                     className={inputCls}
                     rows={2}
@@ -137,7 +139,7 @@ export default function TodayPage() {
                     onChange={(e) => setReview((r) => ({ ...r, wentWell: e.target.value }))}
                   />
                 </Field>
-                <Field label="Went badly">
+                <Field label={t("Went badly")}>
                   <textarea
                     className={inputCls}
                     rows={2}
@@ -145,7 +147,7 @@ export default function TodayPage() {
                     onChange={(e) => setReview((r) => ({ ...r, wentBad: e.target.value }))}
                   />
                 </Field>
-                <Field label="Better tomorrow">
+                <Field label={t("Better tomorrow")}>
                   <textarea
                     className={inputCls}
                     rows={2}
@@ -158,10 +160,10 @@ export default function TodayPage() {
               </div>
               <div className="flex items-center gap-3">
                 <Button onClick={save}>
-                  <Save size={16} /> Save check-in
+                  <Save size={16} /> {t("Save check-in")}
                 </Button>
                 {savedFlash && (
-                  <span className="text-sm text-[var(--good)]">Saved ✓</span>
+                  <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>
                 )}
               </div>
             </div>
@@ -171,22 +173,22 @@ export default function TodayPage() {
         {/* Sidebar: live score + sleep */}
         <div className="space-y-4">
           <Card className="flex flex-col items-center">
-            <SectionTitle>Projected score</SectionTitle>
+            <SectionTitle>{t("Projected score")}</SectionTitle>
             <ScoreRing value={comp.lifeScore ?? 0} size={150} />
             <p className="mt-2 text-center text-xs text-[var(--text-muted)]">
-              Updates live as you log. Categories with no data yet are excluded.
+              {t("Updates live as you log. Categories with no data yet are excluded.")}
             </p>
           </Card>
           <Card>
-            <SectionTitle>Sleep</SectionTitle>
+            <SectionTitle>{t("Sleep")}</SectionTitle>
             <p className="mb-3 text-sm text-[var(--text-muted)]">
               {data.sleep.find((s) => s.date === date)
-                ? "Logged for last night."
-                : "Not logged for last night."}
+                ? t("Logged for last night.")
+                : t("Not logged for last night.")}
             </p>
             <Link href="/sleep">
               <Button variant="soft" size="sm">
-                <Moon size={16} /> Log sleep
+                <Moon size={16} /> {t("Log sleep")}
               </Button>
             </Link>
           </Card>

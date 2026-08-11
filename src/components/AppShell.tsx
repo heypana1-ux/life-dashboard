@@ -8,7 +8,10 @@ import {
   BarChart3,
   BookOpen,
   CalendarCheck,
+  Dumbbell,
+  FileText,
   Gauge,
+  KanbanSquare,
   ListChecks,
   type LucideIcon,
   Menu,
@@ -16,8 +19,11 @@ import {
   Target,
   Settings as SettingsIcon,
   Sparkles,
+  Trophy,
+  Wallet,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { Onboarding } from "@/components/Onboarding";
 
 interface NavItem {
@@ -30,19 +36,25 @@ const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: Gauge },
   { href: "/today", label: "Today", icon: CalendarCheck },
   { href: "/habits", label: "Habits", icon: ListChecks },
+  { href: "/training", label: "Training", icon: Dumbbell },
   { href: "/sleep", label: "Sleep", icon: Moon },
+  { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
+  { href: "/reports", label: "Reports", icon: FileText },
   { href: "/journal", label: "Journal", icon: BookOpen },
+  { href: "/projects", label: "Projects", icon: KanbanSquare },
   { href: "/goals", label: "Goals", icon: Target },
+  { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 // Shown in the mobile bottom bar; the rest live under "More".
-const BOTTOM = NAV.slice(0, 4);
+const BOTTOM = [NAV[0], NAV[1], NAV[2], NAV[6]];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready } = useStore();
   const pathname = usePathname();
+  const t = useT();
   const [moreOpen, setMoreOpen] = useState(false);
 
   if (!ready) {
@@ -65,15 +77,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-white">
             <Sparkles size={18} />
           </div>
-          <span className="font-semibold tracking-tight">Life Dashboard</span>
+          <span className="font-semibold tracking-tight">{t("Life Dashboard")}</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1">
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto hide-scrollbar">
           {NAV.map((item) => (
-            <NavLink key={item.href} item={item} active={isActive(pathname, item.href)} />
+            <NavLink
+              key={item.href}
+              item={item}
+              label={t(item.label)}
+              active={isActive(pathname, item.href)}
+            />
           ))}
         </nav>
-        <p className="px-3 text-[11px] text-[var(--text-faint)]">
-          Data stays on this device.
+        <p className="px-3 pt-2 text-[11px] text-[var(--text-faint)]">
+          {t("Data stays on this device.")}
         </p>
       </aside>
 
@@ -85,7 +102,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur md:hidden">
         {BOTTOM.map((item) => (
-          <BottomLink key={item.href} item={item} active={isActive(pathname, item.href)} />
+          <BottomLink
+            key={item.href}
+            item={item}
+            label={t(item.label)}
+            active={isActive(pathname, item.href)}
+          />
         ))}
         <button
           onClick={() => setMoreOpen((o) => !o)}
@@ -95,7 +117,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           )}
         >
           <Menu size={20} />
-          More
+          {t("More")}
         </button>
       </nav>
 
@@ -106,10 +128,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           onClick={() => setMoreOpen(false)}
         >
           <div
-            className="absolute bottom-16 left-3 right-3 grid grid-cols-3 gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
+            className="absolute bottom-16 left-3 right-3 grid max-h-[70vh] grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {NAV.slice(4).map((item) => {
+            {NAV.filter((n) => !BOTTOM.includes(n)).map((item) => {
               const Icon = item.icon;
               return (
                 <Link
@@ -124,7 +146,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   )}
                 >
                   <Icon size={20} />
-                  {item.label}
+                  {t(item.label)}
                 </Link>
               );
             })}
@@ -140,7 +162,7 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-function NavLink({ item, active }: { item: NavItem; active: boolean }) {
+function NavLink({ item, label, active }: { item: NavItem; label: string; active: boolean }) {
   const Icon = item.icon;
   return (
     <Link
@@ -153,12 +175,12 @@ function NavLink({ item, active }: { item: NavItem; active: boolean }) {
       )}
     >
       <Icon size={18} />
-      {item.label}
+      {label}
     </Link>
   );
 }
 
-function BottomLink({ item, active }: { item: NavItem; active: boolean }) {
+function BottomLink({ item, label, active }: { item: NavItem; label: string; active: boolean }) {
   const Icon = item.icon;
   return (
     <Link
@@ -169,7 +191,7 @@ function BottomLink({ item, active }: { item: NavItem; active: boolean }) {
       )}
     >
       <Icon size={20} />
-      {item.label}
+      {label}
     </Link>
   );
 }

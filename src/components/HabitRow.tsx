@@ -5,8 +5,13 @@ import { Check, Minus, X } from "lucide-react";
 import { Habit } from "@/lib/types";
 import { HabitToday } from "@/lib/habitView";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { fmtDuration } from "@/lib/date";
+import { AREA_LABELS } from "@/lib/defaults";
+import { AreaKey } from "@/lib/types";
 import { Badge } from "@/components/ui";
+
+const areaLabel = (a: AreaKey): string => AREA_LABELS[a];
 
 /**
  * A single actionable habit row.
@@ -15,6 +20,7 @@ import { Badge } from "@/components/ui";
  */
 export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
   const { toggleHabit } = useStore();
+  const t = useT();
   const { habit, log } = item;
   const isReduce = habit.kind === "reduce";
   const marked = !!log?.done;
@@ -51,11 +57,11 @@ export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
           >
             {habit.name}
           </span>
-          {habit.priority === "high" && <Badge tone="accent">High</Badge>}
-          {isReduce && <Badge tone="bad">Reduce</Badge>}
+          {habit.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
+          {isReduce && <Badge tone="bad">{t("Reduce")}</Badge>}
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-faint)]">
-          <span className="capitalize">{habit.area}</span>
+          <span>{t(areaLabel(habit.area))}</span>
           {habit.targetMinutes && <span>· {fmtDuration(habit.targetMinutes)}</span>}
           {habit.targetValue && (
             <span>
@@ -64,7 +70,7 @@ export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
           )}
           {item.weekTarget !== undefined && (
             <span>
-              · {item.weekDone}/{item.weekTarget} this week
+              · {item.weekDone}/{item.weekTarget} {t("this week")}
             </span>
           )}
         </div>
@@ -72,10 +78,10 @@ export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
 
       {isReduce ? (
         <span className={clsx("text-xs font-medium", marked ? "text-[var(--bad)]" : "text-[var(--good)]")}>
-          {marked ? "Occurred" : "Avoided"}
+          {marked ? t("Occurred") : t("Avoided")}
         </span>
       ) : (
-        marked && <span className="text-xs font-medium text-[var(--good)]">Done</span>
+        marked && <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
       )}
     </div>
   );

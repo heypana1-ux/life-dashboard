@@ -5,6 +5,7 @@ import { Moon, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { SleepLog } from "@/lib/types";
 import { fmtDuration, sleepDurationMinutes, todayISO } from "@/lib/date";
+import { useT } from "@/lib/i18n";
 import {
   Card,
   PageHeader,
@@ -19,6 +20,7 @@ import { TrendLine } from "@/components/charts";
 
 export default function SleepPage() {
   const { data, saveSleep } = useStore();
+  const t = useT();
   const date = todayISO();
   const existing = data.sleep.find((s) => s.date === date);
 
@@ -99,17 +101,17 @@ export default function SleepPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Sleep" subtitle="Manual sleep tracking, scores and your personal pattern." />
+      <PageHeader title={t("Sleep")} subtitle={t("Manual sleep tracking, scores and your personal pattern.")} />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Log form */}
         <Card className="lg:col-span-1">
-          <SectionTitle right={existing ? <Badge tone="good">Logged</Badge> : <Badge>New</Badge>}>
-            Last night
+          <SectionTitle right={existing ? <Badge tone="good">{t("Logged")}</Badge> : <Badge>{t("New")}</Badge>}>
+            {t("Last night")}
           </SectionTitle>
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Bedtime">
+              <Field label={t("Bedtime")}>
                 <input
                   type="time"
                   className={inputCls}
@@ -117,7 +119,7 @@ export default function SleepPage() {
                   onChange={(e) => setLog((l) => ({ ...l, bedTime: e.target.value }))}
                 />
               </Field>
-              <Field label="Wake time">
+              <Field label={t("Wake time")}>
                 <input
                   type="time"
                   className={inputCls}
@@ -127,7 +129,7 @@ export default function SleepPage() {
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Fall-asleep (min)">
+              <Field label={t("Fall-asleep (min)")}>
                 <input
                   type="number"
                   min={0}
@@ -138,7 +140,7 @@ export default function SleepPage() {
                   }
                 />
               </Field>
-              <Field label="Awakenings">
+              <Field label={t("Awakenings")}>
                 <input
                   type="number"
                   min={0}
@@ -150,14 +152,14 @@ export default function SleepPage() {
             </div>
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-sm font-medium">Quality</span>
+                <span className="text-sm font-medium">{t("Quality")}</span>
                 <span className="text-sm font-semibold text-[var(--accent)]">{log.quality}</span>
               </div>
               <ScaleInput value={log.quality} onChange={(v) => setLog((l) => ({ ...l, quality: v }))} />
             </div>
             <div>
               <div className="mb-1.5 flex items-center justify-between">
-                <span className="text-sm font-medium">Morning energy</span>
+                <span className="text-sm font-medium">{t("Morning energy")}</span>
                 <span className="text-sm font-semibold text-[var(--accent)]">{log.morningEnergy}</span>
               </div>
               <ScaleInput
@@ -166,16 +168,16 @@ export default function SleepPage() {
               />
             </div>
             <div className="rounded-xl bg-[var(--surface-2)] p-3 text-sm">
-              Duration:{" "}
+              {t("Duration")}:{" "}
               <span className="font-semibold">
                 {fmtDuration(sleepDurationMinutes(log.bedTime, log.wakeTime, log.fallAsleepMinutes ?? 0))}
               </span>
             </div>
             <div className="flex items-center gap-3">
               <Button onClick={save}>
-                <Save size={16} /> Save
+                <Save size={16} /> {t("Save")}
               </Button>
-              {flash && <span className="text-sm text-[var(--good)]">Saved ✓</span>}
+              {flash && <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>}
             </div>
           </div>
         </Card>
@@ -183,54 +185,54 @@ export default function SleepPage() {
         {/* Stats + chart */}
         <div className="space-y-4 lg:col-span-2">
           <div className="grid grid-cols-3 gap-3">
-            <MiniStat label="Avg duration" value={avgDur ? fmtDuration(avgDur) : "—"} />
-            <MiniStat label="Target" value={`${targetH}h`} />
+            <MiniStat label={t("Avg duration")} value={avgDur ? fmtDuration(avgDur) : "—"} />
+            <MiniStat label={t("Target")} value={`${targetH}h`} />
             <MiniStat
-              label="Bedtime var."
+              label={t("Bedtime var.")}
               value={regularity !== null ? `±${regularity}m` : "—"}
-              hint={regularity !== null ? (regularity < 45 ? "regular" : "variable") : undefined}
+              hint={regularity !== null ? (regularity < 45 ? t("regular") : t("variable")) : undefined}
             />
           </div>
 
           <Card>
-            <SectionTitle>Duration · last 30 nights</SectionTitle>
+            <SectionTitle>{t("Duration · last 30 nights")}</SectionTitle>
             {chartData.length >= 2 ? (
               <TrendLine
                 data={chartData}
                 color="var(--info)"
                 unit="h"
                 domain={[4, 10]}
-                name="Hours"
+                name={t("hours")}
               />
             ) : (
               <p className="py-10 text-center text-sm text-[var(--text-muted)]">
-                Log a few nights to see your trend.
+                {t("Log a few nights to see your trend.")}
               </p>
             )}
           </Card>
 
           <Card>
-            <SectionTitle right={<Badge tone="accent">From your data</Badge>}>
-              Personal pattern
+            <SectionTitle right={<Badge tone="accent">{t("From your data")}</Badge>}>
+              {t("Personal pattern")}
             </SectionTitle>
             {recommendation ? (
               <div className="flex items-start gap-3">
                 <Moon className="mt-0.5 text-[var(--accent)]" size={20} />
                 <div>
                   <p className="text-sm">
-                    Your best-rated mornings follow around{" "}
-                    <span className="font-semibold">{fmtDuration(recommendation.minutes)}</span> of
-                    sleep (avg morning energy {recommendation.energy.toFixed(1)}/10 in that range).
+                    {t("Your best-rated mornings follow around {dur} of sleep (avg morning energy {energy}/10 in that range).", {
+                      dur: fmtDuration(recommendation.minutes),
+                      energy: recommendation.energy.toFixed(1),
+                    })}
                   </p>
                   <p className="mt-1 text-xs text-[var(--text-faint)]">
-                    A data-based estimate from your own logs — not a medical recommendation.
+                    {t("A data-based estimate from your own logs — not a medical recommendation.")}
                   </p>
                 </div>
               </div>
             ) : (
               <p className="text-sm text-[var(--text-muted)]">
-                Not enough data yet for a reliable pattern. Keep logging — an estimate appears after
-                ~10 nights.
+                {t("Not enough data yet for a reliable pattern. Keep logging — an estimate appears after ~10 nights.")}
               </p>
             )}
           </Card>

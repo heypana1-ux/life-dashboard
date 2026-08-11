@@ -55,10 +55,23 @@ export function defaultSettings(): Settings {
   return {
     onboardingComplete: false,
     theme: "system",
+    language: "en",
     areas: DEFAULT_AREAS.map((a) => ({ ...a })),
     sleepTargetMinutes: 8 * 60,
     eloStart: 1000,
     demoDataLoaded: false,
+    profile: {},
+  };
+}
+
+export function emptyFinances(): AppData["finances"] {
+  return {
+    currency: "EUR",
+    accounts: [],
+    liabilities: [],
+    holdings: [],
+    transactions: [],
+    history: [],
   };
 }
 
@@ -72,6 +85,10 @@ export function emptyData(): AppData {
     sleep: [],
     journal: [],
     goals: [],
+    weight: [],
+    finances: emptyFinances(),
+    workouts: [],
+    projects: [],
   };
 }
 

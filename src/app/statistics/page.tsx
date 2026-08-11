@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
 import { weekdayLabel } from "@/lib/date";
+import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
 import { TrendLine, MultiLine, Bars } from "@/components/charts";
 
@@ -30,6 +31,7 @@ const CAT_COLORS: Record<string, string> = {
 export default function StatisticsPage() {
   const { data } = useStore();
   const d = useDerived();
+  const t = useT();
   const [range, setRange] = useState("30");
   const [metric, setMetric] = useState<"life" | "elo" | "categories">("life");
 
@@ -65,7 +67,7 @@ export default function StatisticsPage() {
   const byWd = Array.from({ length: 7 }, () => [] as number[]);
   d.history.filter((h) => h.lifeScore > 0).forEach((h) => byWd[new Date(h.date).getDay()].push(h.lifeScore));
   const wdData = [1, 2, 3, 4, 5, 6, 0].map((wd) => ({
-    label: weekdayLabel(wd),
+    label: t(weekdayLabel(wd)),
     value: byWd[wd].length ? Math.round(byWd[wd].reduce((a, b) => a + b, 0) / byWd[wd].length) : 0,
   }));
 
@@ -75,26 +77,26 @@ export default function StatisticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Statistics" subtitle="Trends, ratings and correlations from your data." />
+      <PageHeader title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
 
       {/* Range selector */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
           {RANGES.map((r) => (
             <Chip key={r.key} active={range === r.key} onClick={() => setRange(r.key)}>
-              {r.label}
+              {r.key === "all" ? t("All") : r.label}
             </Chip>
           ))}
         </div>
         <div className="flex gap-1.5">
           <Chip active={metric === "life"} onClick={() => setMetric("life")}>
-            Life Score
+            {t("Life Score")}
           </Chip>
           <Chip active={metric === "elo"} onClick={() => setMetric("elo")}>
             ELO
           </Chip>
           <Chip active={metric === "categories"} onClick={() => setMetric("categories")}>
-            Categories
+            {t("Categories")}
           </Chip>
         </div>
       </div>
@@ -104,18 +106,18 @@ export default function StatisticsPage() {
         <SectionTitle
           right={
             metric === "life" ? (
-              <span className="text-xs text-[var(--text-muted)]">avg {lifeMean}</span>
+              <span className="text-xs text-[var(--text-muted)]">{t("avg")} {lifeMean}</span>
             ) : undefined
           }
         >
-          {metric === "life" ? "Life Score" : metric === "elo" ? "Life Rating (ELO)" : "Categories"}
+          {metric === "life" ? t("Life Score") : metric === "elo" ? t("Life Rating (ELO)") : t("Categories")}
         </SectionTitle>
         {scoped.length < 2 ? (
           <p className="py-16 text-center text-sm text-[var(--text-muted)]">
-            Not enough data in this range yet.
+            {t("Not enough data in this range yet.")}
           </p>
         ) : metric === "life" ? (
-          <TrendLine data={lifeSeries} color="var(--accent)" domain={[0, 100]} name="Life Score" height={280} />
+          <TrendLine data={lifeSeries} color="var(--accent)" domain={[0, 100]} name={t("Life Score")} height={280} />
         ) : metric === "elo" ? (
           <TrendLine data={eloSeries} color="#d97706" name="ELO" height={280} />
         ) : (
@@ -126,7 +128,7 @@ export default function StatisticsPage() {
               height={280}
               series={enabledCats.map((c) => ({
                 key: c,
-                name: AREA_LABELS[c],
+                name: t(AREA_LABELS[c]),
                 color: CAT_COLORS[c] ?? "var(--accent)",
               }))}
             />
@@ -134,7 +136,7 @@ export default function StatisticsPage() {
               {enabledCats.map((c) => (
                 <span key={c} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
                   <span className="h-2.5 w-2.5 rounded-full" style={{ background: CAT_COLORS[c] }} />
-                  {AREA_LABELS[c]}
+                  {t(AREA_LABELS[c])}
                 </span>
               ))}
             </div>
@@ -144,23 +146,23 @@ export default function StatisticsPage() {
 
       {/* ELO summary */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <EloStat label="Current" value={elo.toLocaleString()} />
-        <EloStat label="Personal best" value={eloBest.toLocaleString()} />
-        <EloStat label="30-day" delta={elo - eloAt(30)} />
-        <EloStat label="90-day" delta={elo - eloAt(90)} />
-        <EloStat label="All-time" delta={elo - data.settings.eloStart} />
+        <EloStat label={t("Current")} value={elo.toLocaleString()} />
+        <EloStat label={t("Personal best")} value={eloBest.toLocaleString()} />
+        <EloStat label={t("30-day")} delta={elo - eloAt(30)} />
+        <EloStat label={t("90-day")} delta={elo - eloAt(90)} />
+        <EloStat label={t("All-time")} delta={elo - data.settings.eloStart} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Weekday pattern */}
         <Card>
-          <SectionTitle>Life Score by weekday</SectionTitle>
+          <SectionTitle>{t("Life Score by weekday")}</SectionTitle>
           <Bars data={wdData} color="var(--accent)" />
         </Card>
 
         {/* Correlations / insights */}
         <Card>
-          <SectionTitle right={<Badge tone="accent">Correlations</Badge>}>What your data suggests</SectionTitle>
+          <SectionTitle right={<Badge tone="accent">{t("Correlations")}</Badge>}>{t("What your data suggests")}</SectionTitle>
           <div className="space-y-2.5">
             {d.insights.map((ins) => (
               <div key={ins.id} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
@@ -180,7 +182,7 @@ export default function StatisticsPage() {
             ))}
           </div>
           <p className="mt-3 text-[11px] text-[var(--text-faint)]">
-            Associations observed in your logs — correlation, not causation.
+            {t("Associations observed in your logs — correlation, not causation.")}
           </p>
         </Card>
       </div>

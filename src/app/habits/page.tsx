@@ -7,12 +7,14 @@ import { Habit } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
 import { fmtDuration, isoRange, todayISO } from "@/lib/date";
 import { logOf } from "@/lib/habitView";
+import { useT } from "@/lib/i18n";
 import { Card, PageHeader, Button, Badge, EmptyState, Chip } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
 import clsx from "clsx";
 
 export default function HabitsPage() {
   const { data, removeHabit } = useStore();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Habit | undefined>();
   const [filter, setFilter] = useState<"all" | "build" | "reduce">("all");
@@ -25,9 +27,9 @@ export default function HabitsPage() {
   const reduce = habits.filter((h) => h.kind === "reduce");
 
   function scheduleLabel(h: Habit): string {
-    if (h.schedule.type === "daily") return "Daily";
-    if (h.schedule.type === "weekly") return `${h.schedule.timesPerWeek}× / week`;
-    return `${(h.schedule.days ?? []).length} days / week`;
+    if (h.schedule.type === "daily") return t("Daily");
+    if (h.schedule.type === "weekly") return `${h.schedule.timesPerWeek}× / ${t("week")}`;
+    return `${(h.schedule.days ?? []).length} ${t("days / week")}`;
   }
 
   /** 30-day completion rate for a build habit / avoidance rate for a reduce habit. */
@@ -51,8 +53,8 @@ export default function HabitsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Habits"
-        subtitle="Build good routines, reduce the ones you don't want."
+        title={t("Habits")}
+        subtitle={t("Build good routines, reduce the ones you don't want.")}
         action={
           <Button
             onClick={() => {
@@ -60,37 +62,37 @@ export default function HabitsPage() {
               setOpen(true);
             }}
           >
-            <Plus size={16} /> New habit
+            <Plus size={16} /> {t("New habit")}
           </Button>
         }
       />
 
       <div className="flex gap-2">
         <Chip active={filter === "all"} onClick={() => setFilter("all")}>
-          All
+          {t("All")}
         </Chip>
         <Chip active={filter === "build"} onClick={() => setFilter("build")}>
-          Build ({data.habits.filter((h) => h.kind === "build" && !h.archived).length})
+          {t("Build")} ({data.habits.filter((h) => h.kind === "build" && !h.archived).length})
         </Chip>
         <Chip active={filter === "reduce"} onClick={() => setFilter("reduce")}>
-          Reduce ({data.habits.filter((h) => h.kind === "reduce" && !h.archived).length})
+          {t("Reduce")} ({data.habits.filter((h) => h.kind === "reduce" && !h.archived).length})
         </Chip>
       </div>
 
       {habits.length === 0 ? (
         <EmptyState
-          title="No habits yet"
-          hint="Create your first habit to start tracking. Habits can be daily, a number of times per week, or on specific weekdays."
+          title={t("No habits yet")}
+          hint={t("Create your first habit to start tracking. Habits can be daily, a number of times per week, or on specific weekdays.")}
           action={
             <Button onClick={() => setOpen(true)}>
-              <Plus size={16} /> New habit
+              <Plus size={16} /> {t("New habit")}
             </Button>
           }
         />
       ) : (
         <div className="space-y-6">
           {(filter === "all" || filter === "build") && build.length > 0 && (
-            <Section title="Build">
+            <Section title={t("Build")}>
               {build.map((h) => (
                 <HabitCard
                   key={h.id}
@@ -107,7 +109,7 @@ export default function HabitsPage() {
             </Section>
           )}
           {(filter === "all" || filter === "reduce") && reduce.length > 0 && (
-            <Section title="Reduce">
+            <Section title={t("Reduce")}>
               {reduce.map((h) => (
                 <HabitCard
                   key={h.id}
@@ -156,6 +158,7 @@ function HabitCard({
   onDelete: () => void;
 }) {
   const isReduce = h.kind === "reduce";
+  const t = useT();
   return (
     <Card className="!p-4">
       <div className="flex items-start justify-between gap-3">
@@ -167,11 +170,11 @@ function HabitCard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{h.name}</span>
-              {isReduce ? <Badge tone="bad">Reduce</Badge> : null}
-              {h.priority === "high" && <Badge tone="accent">High</Badge>}
+              {isReduce ? <Badge tone="bad">{t("Reduce")}</Badge> : null}
+              {h.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
-              <span>{AREA_LABELS[h.area]}</span>
+              <span>{t(AREA_LABELS[h.area])}</span>
               <span>·</span>
               <span>{scheduleLabel}</span>
               {h.targetMinutes ? (
@@ -224,7 +227,7 @@ function HabitCard({
         </span>
       </div>
       <p className="mt-1 text-[11px] text-[var(--text-faint)]">
-        {isReduce ? "avoided" : "completed"} · last 30 days
+        {isReduce ? t("avoided") : t("completed")} · {t("last 30 days")}
       </p>
     </Card>
   );

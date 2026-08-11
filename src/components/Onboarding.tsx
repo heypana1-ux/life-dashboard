@@ -5,9 +5,21 @@ import { Moon, Sparkles, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AREA_LABELS, DEFAULT_AREAS, starterHabits } from "@/lib/defaults";
 import { generateDemo } from "@/lib/demo";
-import { AreaKey } from "@/lib/types";
+import { AreaKey, Language } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 import { Button, Card, Field } from "@/components/ui";
 import clsx from "clsx";
+
+const AREA_DESC_KEYS: Record<AreaKey, string> = {
+  productivity: "Focus & deep work",
+  sport: "Training & movement",
+  sleep: "Rest & recovery",
+  habits: "Build & reduce behaviors",
+  learning: "Study & skills",
+  creativity: "Projects & making",
+  reflection: "Daily check-ins & mood",
+  finances: "Net worth & spending",
+};
 
 const SELECTABLE: AreaKey[] = [
   "sport",
@@ -20,19 +32,10 @@ const SELECTABLE: AreaKey[] = [
   "finances",
 ];
 
-const AREA_DESC: Record<AreaKey, string> = {
-  productivity: "Focus & deep work",
-  sport: "Training & movement",
-  sleep: "Rest & recovery",
-  habits: "Build & reduce behaviors",
-  learning: "Study & skills",
-  creativity: "Projects & making",
-  reflection: "Daily check-ins & mood",
-  finances: "Net worth & spending (roadmap)",
-};
-
 export function Onboarding() {
-  const { data, replaceAll } = useStore();
+  const { data, replaceAll, updateSettings } = useStore();
+  const t = useT();
+  const lang = data.settings.language;
   const [step, setStep] = useState(0);
   const [selected, setSelected] = useState<Set<AreaKey>>(
     new Set(["sport", "sleep", "habits", "reflection", "productivity"]),
@@ -80,19 +83,34 @@ export function Onboarding() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4 py-10">
-      <div className="mb-6 flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
-          <Sparkles size={20} />
+      <div className="mb-6 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+            <Sparkles size={20} />
+          </div>
+          <span className="text-lg font-semibold">Life Dashboard</span>
         </div>
-        <span className="text-lg font-semibold">Life Dashboard</span>
+        <div className="flex gap-1">
+          {(["en", "de"] as Language[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => updateSettings({ language: l })}
+              className={clsx(
+                "rounded-lg px-2.5 py-1 text-xs font-medium transition",
+                lang === l ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)]",
+              )}
+            >
+              {l === "en" ? "EN" : "DE"}
+            </button>
+          ))}
+        </div>
       </div>
 
       {step === 0 && (
         <Card className="animate-in">
-          <h1 className="text-2xl font-semibold tracking-tight">Which areas matter to you?</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("Which areas matter to you?")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Pick what you want to track. You can change any of this later — turning an area
-            off keeps your dashboard focused.
+            {t("Pick what you want to track. You can change any of this later — turning an area off keeps your dashboard focused.")}
           </p>
           <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {SELECTABLE.map((k) => {
@@ -117,8 +135,8 @@ export function Onboarding() {
                     {on && <Check size={13} strokeWidth={3} />}
                   </span>
                   <span>
-                    <span className="block text-sm font-medium">{AREA_LABELS[k]}</span>
-                    <span className="block text-xs text-[var(--text-muted)]">{AREA_DESC[k]}</span>
+                    <span className="block text-sm font-medium">{t(AREA_LABELS[k])}</span>
+                    <span className="block text-xs text-[var(--text-muted)]">{t(AREA_DESC_KEYS[k])}</span>
                   </span>
                 </button>
               );
@@ -126,7 +144,7 @@ export function Onboarding() {
           </div>
           <div className="mt-5 flex justify-end">
             <Button onClick={() => setStep(1)} disabled={selected.size === 0}>
-              Continue
+              {t("Continue")}
             </Button>
           </div>
         </Card>
@@ -134,13 +152,12 @@ export function Onboarding() {
 
       {step === 1 && (
         <Card className="animate-in">
-          <h1 className="text-2xl font-semibold tracking-tight">A few targets</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("A few targets")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            These seed your goals. Nothing here is a medical recommendation — just your own
-            targets to measure against.
+            {t("These seed your goals. Nothing here is a medical recommendation — just your own targets to measure against.")}
           </p>
           <div className="mt-5 space-y-5">
-            <Field label={`Sleep target: ${sleepH}h`} hint="Used as your personal baseline for sleep scoring.">
+            <Field label={`${t("Sleep target")}: ${sleepH}h`}>
               <input
                 type="range"
                 min={5}
@@ -152,7 +169,7 @@ export function Onboarding() {
               />
             </Field>
             {selected.has("sport") && (
-              <Field label={`Training: ${trainPerWeek}× / week`}>
+              <Field label={`${t("Training")}: ${trainPerWeek}× / ${t("week")}`}>
                 <input
                   type="range"
                   min={1}
@@ -167,20 +184,18 @@ export function Onboarding() {
           </div>
           <div className="mt-6 flex justify-between">
             <Button variant="ghost" onClick={() => setStep(0)}>
-              Back
+              {t("Back")}
             </Button>
-            <Button onClick={() => setStep(2)}>Continue</Button>
+            <Button onClick={() => setStep(2)}>{t("Continue")}</Button>
           </div>
         </Card>
       )}
 
       {step === 2 && (
         <Card className="animate-in">
-          <h1 className="text-2xl font-semibold tracking-tight">Start with data?</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("Start with data?")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Load 45 days of realistic demo data to explore charts, ELO and insights right
-            away — or start clean with a few starter habits. Demo data can be cleared any
-            time in Settings.
+            {t("Load 45 days of realistic demo data to explore charts, ELO and insights right away — or start clean with a few starter habits. Demo data can be cleared any time in Settings.")}
           </p>
           <div className="mt-5 grid gap-3">
             <button
@@ -189,9 +204,9 @@ export function Onboarding() {
             >
               <Moon className="text-[var(--accent)]" size={20} />
               <span>
-                <span className="block font-medium">Explore with demo data</span>
+                <span className="block font-medium">{t("Explore with demo data")}</span>
                 <span className="block text-xs text-[var(--text-muted)]">
-                  Recommended for a first look
+                  {t("Recommended for a first look")}
                 </span>
               </span>
             </button>
@@ -201,23 +216,23 @@ export function Onboarding() {
             >
               <Check className="text-[var(--text-muted)]" size={20} />
               <span>
-                <span className="block font-medium">Start clean</span>
+                <span className="block font-medium">{t("Start clean")}</span>
                 <span className="block text-xs text-[var(--text-muted)]">
-                  A handful of starter habits, no history
+                  {t("A handful of starter habits, no history")}
                 </span>
               </span>
             </button>
           </div>
           <div className="mt-6">
             <Button variant="ghost" onClick={() => setStep(1)}>
-              Back
+              {t("Back")}
             </Button>
           </div>
         </Card>
       )}
 
       <p className="mt-6 text-center text-xs text-[var(--text-faint)]">
-        Everything is stored locally in your browser. Nothing is sent anywhere.
+        {t("Everything is stored locally in your browser. Nothing is sent anywhere.")}
       </p>
     </div>
   );

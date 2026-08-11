@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Habit, AreaKey, Priority, Schedule, HabitKind } from "@/lib/types";
 import { AREA_LABELS, HABIT_COLORS } from "@/lib/defaults";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { weekdayLabel } from "@/lib/date";
 import { Modal, Field, inputCls, Button, Chip } from "@/components/ui";
 import clsx from "clsx";
@@ -41,6 +42,7 @@ export function HabitForm({
   editing?: Habit;
 }) {
   const { addHabit, updateHabit } = useStore();
+  const t = useT();
   const [draft, setDraft] = useState<Draft>(editing ? { ...editing } : blank());
 
   // reset when opening for a different target
@@ -63,9 +65,9 @@ export function HabitForm({
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editing ? "Edit habit" : "New habit"} wide>
+    <Modal open={open} onClose={onClose} title={editing ? t("Edit habit") : t("New habit")} wide>
       <div className="space-y-4">
-        <Field label="Name">
+        <Field label={t("Name")}>
           <input
             className={inputCls}
             placeholder="e.g. Strength Training"
@@ -76,25 +78,25 @@ export function HabitForm({
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Type">
+          <Field label={t("Type")}>
             <div className="flex gap-2">
               {(["build", "reduce"] as HabitKind[]).map((k) => (
                 <button
                   key={k}
                   onClick={() => set({ kind: k })}
                   className={clsx(
-                    "flex-1 rounded-xl border px-3 py-2 text-sm font-medium capitalize transition",
+                    "flex-1 rounded-xl border px-3 py-2 text-sm font-medium transition",
                     draft.kind === k
                       ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
                       : "border-[var(--border)] bg-[var(--surface-2)]",
                   )}
                 >
-                  {k === "build" ? "Build" : "Reduce"}
+                  {k === "build" ? t("Build") : t("Reduce")}
                 </button>
               ))}
             </div>
           </Field>
-          <Field label="Area">
+          <Field label={t("Area")}>
             <select
               className={inputCls}
               value={draft.area}
@@ -102,7 +104,7 @@ export function HabitForm({
             >
               {AREAS.map((a) => (
                 <option key={a} value={a}>
-                  {AREA_LABELS[a]}
+                  {t(AREA_LABELS[a])}
                 </option>
               ))}
             </select>
@@ -110,22 +112,22 @@ export function HabitForm({
         </div>
 
         {/* Schedule */}
-        <Field label="Schedule">
+        <Field label={t("Schedule")}>
           <div className="mb-2 flex flex-wrap gap-2">
             <Chip active={draft.schedule.type === "daily"} onClick={() => setSchedule({ type: "daily" })}>
-              Daily
+              {t("Daily")}
             </Chip>
             <Chip
               active={draft.schedule.type === "weekly"}
               onClick={() => setSchedule({ type: "weekly", timesPerWeek: draft.schedule.timesPerWeek ?? 3 })}
             >
-              Times / week
+              {t("Times / week")}
             </Chip>
             <Chip
               active={draft.schedule.type === "weekdays"}
               onClick={() => setSchedule({ type: "weekdays", days: draft.schedule.days ?? [1, 3, 5] })}
             >
-              Specific days
+              {t("Specific days")}
             </Chip>
           </div>
           {draft.schedule.type === "weekly" && (
@@ -156,7 +158,7 @@ export function HabitForm({
                       on ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)]",
                     )}
                   >
-                    {weekdayLabel(wd)}
+                    {t(weekdayLabel(wd))}
                   </button>
                 );
               })}
@@ -165,7 +167,7 @@ export function HabitForm({
         </Field>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Target minutes (optional)">
+          <Field label={t("Target minutes (optional)")}>
             <input
               type="number"
               min={0}
@@ -177,7 +179,7 @@ export function HabitForm({
             />
           </Field>
           <div className="grid grid-cols-2 gap-2">
-            <Field label="Target value">
+            <Field label={t("Target value")}>
               <input
                 type="number"
                 className={inputCls}
@@ -187,7 +189,7 @@ export function HabitForm({
                 }
               />
             </Field>
-            <Field label="Unit">
+            <Field label={t("Unit")}>
               <input
                 className={inputCls}
                 placeholder="steps"
@@ -199,18 +201,18 @@ export function HabitForm({
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Priority">
+          <Field label={t("Priority")}>
             <select
               className={inputCls}
               value={draft.priority}
               onChange={(e) => set({ priority: e.target.value as Priority })}
             >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
+              <option value="low">{t("Low")}</option>
+              <option value="medium">{t("Medium")}</option>
+              <option value="high">{t("High")}</option>
             </select>
           </Field>
-          <Field label={`Difficulty: ${draft.difficulty}/5`}>
+          <Field label={`${t("Difficulty")}: ${draft.difficulty}/5`}>
             <input
               type="range"
               min={1}
@@ -223,7 +225,7 @@ export function HabitForm({
         </div>
 
         {draft.kind === "reduce" && (
-          <Field label={`Severity: ${draft.severity}/5`} hint="How much an occurrence lowers your daily score.">
+          <Field label={`${t("Severity")}: ${draft.severity}/5`}>
             <input
               type="range"
               min={1}
@@ -235,7 +237,7 @@ export function HabitForm({
           </Field>
         )}
 
-        <Field label="Color">
+        <Field label={t("Color")}>
           <div className="flex flex-wrap gap-2">
             {HABIT_COLORS.map((c) => (
               <button
@@ -253,10 +255,10 @@ export function HabitForm({
 
         <div className="flex justify-end gap-2 pt-2">
           <Button variant="ghost" onClick={onClose}>
-            Cancel
+            {t("Cancel")}
           </Button>
           <Button onClick={submit} disabled={!draft.name.trim()}>
-            {editing ? "Save changes" : "Create habit"}
+            {editing ? t("Save changes") : t("Create habit")}
           </Button>
         </div>
       </div>

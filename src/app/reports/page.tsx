@@ -1,0 +1,263 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { useStore } from "@/lib/store";
+import { useDerived } from "@/lib/useDerived";
+import { useT, useLang } from "@/lib/i18n";
+import { addDays, fmtShort, isoRange, monthLabel, parseISO, sleepDurationMinutes, todayISO } from "@/lib/date";
+import { fmtDuration } from "@/lib/date";
+import { fmtMoney } from "@/lib/finance";
+import { buildInsights } from "@/lib/insights";
+import { translate } from "@/lib/i18n";
+import { Language } from "@/lib/types";
+import { Card, PageHeader, SectionTitle, Chip, Delta, Badge } from "@/components/ui";
+
+type Period = "week" | "month";
+
+export default function ReportsPage() {
+  const { data } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const lang = useLang();
+  const [period, setPeriod] = useState<Period>("week");
+
+  const report = useMemo(() => {
+    const today = todayISO();
+    let cur: string[];
+    let prev: string[];
+    let label: string;
+    if (period === "week") {
+      cur = isoRange(today, 7);
+      prev = isoRange(addDays(today, -7), 7);
+      label = `${fmtShort(cur[0])} – ${fmtShort(cur[cur.length - 1])}`;
+    } else {
+      const y = parseISO(today).getFullYear();
+      const m = parseISO(today).getMonth();
+      cur = daysOfMonth(y, m);
+      const pm = m === 0 ? 11 : m - 1;
+      const py = m === 0 ? y - 1 : y;
+      prev = daysOfMonth(py, pm);
+      label = `${monthLabel(m)} ${y}`;
+    }
+    return buildReport(data, d, cur, prev, label, lang);
+  }, [data, d, period, lang]);
+
+  const insights = useMemo(
+    () => buildInsights(data, d.history, lang).slice(0, 3),
+    [data, d.history, lang],
+  );
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t("Reports")}
+        subtitle={t("Automatic summaries of your week and month.")}
+      />
+
+      <div className="flex gap-1.5">
+        <Chip active={period === "week"} onClick={() => setPeriod("week")}>
+          {t("Weekly")}
+        </Chip>
+        <Chip active={period === "month"} onClick={() => setPeriod("month")}>
+          {t("Monthly")}
+        </Chip>
+      </div>
+
+      {!report.hasData ? (
+        <Card>
+          <p className="py-12 text-center text-sm text-[var(--text-muted)]">
+            {t("Not enough data for this period yet.")}
+          </p>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold">{t("Life Report")}</h2>
+                <p className="text-sm text-[var(--text-muted)]">{report.label}</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold tabular-nums">{report.avgScore}</div>
+                <Delta value={report.scoreDelta} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+              <Metric label={t("Life Rating")} value={report.elo.toLocaleString()} sub={report.eloDelta} />
+              <Metric label={t("Training sessions")} value={String(report.workouts)} />
+              <Metric label={t("Sleep")} value={report.avgSleep ? fmtDuration(report.avgSleep) : "—"} suffix={t("avg")} />
+              <Metric label={t("Journal entries")} value={String(report.journal)} />
+              <Metric label={t("Best day")} value={report.bestDay ? String(report.bestScore) : "—"} suffix={report.bestDay ? fmtShort(report.bestDay) : ""} />
+              <Metric label={t("Toughest day")} value={report.worstDay ? String(report.worstScore) : "—"} suffix={report.worstDay ? fmtShort(report.worstDay) : ""} />
+              {report.netWorthDelta !== null && (
+                <Metric label={t("Net worth")} value={report.netWorthDelta >= 0 ? "+" : "−"} money={report.netWorthDelta} currency={data.finances.currency} />
+              )}
+            </div>
+          </Card>
+
+          <Card>
+            <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Highlights")}</SectionTitle>
+            <div className="space-y-2.5">
+              {report.highlights.map((h, i) => (
+                <div key={i} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[var(--good)]" />
+                  <p className="text-sm">{h}</p>
+                </div>
+              ))}
+              {insights.map((ins) => (
+                <div key={ins.id} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
+                  <span
+                    className="mt-1 h-2 w-2 shrink-0 rounded-full"
+                    style={{ background: ins.tone === "good" ? "var(--good)" : ins.tone === "warn" ? "var(--warn)" : "var(--info)" }}
+                  />
+                  <p className="text-sm">{ins.text}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </>
+      )}
+    </div>
+  );
+}
+
+function Metric({
+  label,
+  value,
+  sub,
+  suffix,
+  money,
+  currency,
+}: {
+  label: string;
+  value: string;
+  sub?: number;
+  suffix?: string;
+  money?: number;
+  currency?: string;
+}) {
+  return (
+    <div className="rounded-xl bg-[var(--surface-2)] p-3">
+      <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{label}</div>
+      {money !== undefined ? (
+        <div className={`mt-1 text-lg font-bold tabular-nums ${money >= 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
+          {money >= 0 ? "+" : "−"}
+          {fmtMoney(Math.abs(money), currency)}
+        </div>
+      ) : (
+        <div className="mt-1 text-lg font-bold tabular-nums">{value}</div>
+      )}
+      {sub !== undefined && <Delta value={sub} />}
+      {suffix && <div className="text-xs text-[var(--text-faint)]">{suffix}</div>}
+    </div>
+  );
+}
+
+function daysOfMonth(year: number, month: number): string[] {
+  const days: string[] = [];
+  const last = new Date(year, month + 1, 0).getDate();
+  for (let i = 1; i <= last; i++) {
+    days.push(`${year}-${String(month + 1).padStart(2, "0")}-${String(i).padStart(2, "0")}`);
+  }
+  return days;
+}
+
+interface ReportData {
+  label: string;
+  hasData: boolean;
+  avgScore: number;
+  scoreDelta: number;
+  elo: number;
+  eloDelta: number;
+  workouts: number;
+  avgSleep: number;
+  journal: number;
+  bestDay: string | null;
+  bestScore: number;
+  worstDay: string | null;
+  worstScore: number;
+  netWorthDelta: number | null;
+  highlights: string[];
+}
+
+function buildReport(
+  data: AppDataLike,
+  d: ReturnType<typeof useDerived>,
+  cur: string[],
+  prev: string[],
+  label: string,
+  lang: Language,
+): ReportData {
+  const tr = (k: string, v?: Record<string, string | number>) => translate(lang, k, v);
+  const curScores = cur.map((x) => d.byDate.get(x)).filter((h) => h && h.lifeScore > 0) as { date: string; lifeScore: number; elo: number }[];
+  const prevScores = prev.map((x) => d.byDate.get(x)).filter((h) => h && h.lifeScore > 0) as { lifeScore: number }[];
+
+  const avg = (xs: number[]) => (xs.length ? Math.round(xs.reduce((a, b) => a + b, 0) / xs.length) : 0);
+  const avgScore = avg(curScores.map((h) => h.lifeScore));
+  const prevAvg = avg(prevScores.map((h) => h.lifeScore));
+
+  const curSet = new Set(cur);
+  const workouts = data.workouts.filter((w) => curSet.has(w.date)).length;
+  const sleepDurs = data.sleep.filter((s) => curSet.has(s.date)).map((s) => sleepDurationMinutes(s.bedTime, s.wakeTime, s.fallAsleepMinutes ?? 0));
+  const avgSleep = sleepDurs.length ? Math.round(sleepDurs.reduce((a, b) => a + b, 0) / sleepDurs.length) : 0;
+  const journal = data.journal.filter((j) => curSet.has(j.date)).length;
+
+  let bestDay: string | null = null;
+  let bestScore = 0;
+  let worstDay: string | null = null;
+  let worstScore = 101;
+  for (const h of curScores) {
+    if (h.lifeScore > bestScore) { bestScore = h.lifeScore; bestDay = h.date; }
+    if (h.lifeScore < worstScore) { worstScore = h.lifeScore; worstDay = h.date; }
+  }
+  if (worstScore === 101) worstScore = 0;
+
+  const eloEnd = curScores.length ? curScores[curScores.length - 1].elo : d.history.length ? d.history[d.history.length - 1].elo : 1000;
+  const eloStart = curScores.length ? curScores[0].elo : eloEnd;
+  const eloDelta = eloEnd - eloStart;
+
+  // net worth change over the period
+  const nwPoints = data.finances.history.filter((p) => curSet.has(p.date));
+  let netWorthDelta: number | null = null;
+  if (nwPoints.length >= 1) {
+    const before = [...data.finances.history].filter((p) => p.date < cur[0]).pop();
+    const first = before ? before.value : nwPoints[0].value;
+    const last = nwPoints[nwPoints.length - 1].value;
+    netWorthDelta = last - first;
+  }
+
+  const highlights: string[] = [];
+  if (curScores.length >= 2 && avgScore > prevAvg && prevAvg > 0) {
+    highlights.push(tr("Your average Life Score improved {n} points versus the period before.", { n: avgScore - prevAvg }));
+  }
+  if (workouts >= 3) highlights.push(tr("You trained {n} times — strong consistency.", { n: workouts }));
+  if (avgSleep >= 7 * 60 + 30) highlights.push(tr("Your sleep averaged {dur} this period.", { dur: fmtDuration(avgSleep) }));
+  if (bestDay) highlights.push(tr("Your best day scored {n}.", { n: bestScore }));
+  if (highlights.length === 0 && curScores.length) highlights.push(tr("Logged {n} days this period. Keep the momentum going.", { n: curScores.length }));
+
+  return {
+    label,
+    hasData: curScores.length > 0,
+    avgScore,
+    scoreDelta: prevAvg > 0 ? avgScore - prevAvg : 0,
+    elo: eloEnd,
+    eloDelta,
+    workouts,
+    avgSleep,
+    journal,
+    bestDay,
+    bestScore,
+    worstDay,
+    worstScore,
+    netWorthDelta,
+    highlights,
+  };
+}
+
+// minimal structural typing to avoid importing the full AppData shape here
+type AppDataLike = {
+  workouts: { date: string }[];
+  sleep: { date: string; bedTime: string; wakeTime: string; fallAsleepMinutes?: number }[];
+  journal: { date: string }[];
+  finances: { history: { date: string; value: number }[]; currency: string };
+};

@@ -10,6 +10,7 @@ import { habitsForToday } from "@/lib/habitView";
 import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AreaKey } from "@/lib/types";
+import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState } from "@/components/ui";
 import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
@@ -18,7 +19,9 @@ import { HabitRow } from "@/components/HabitRow";
 export default function DashboardPage() {
   const { data } = useStore();
   const d = useDerived();
+  const t = useT();
   const todayComp = useTodayComputation();
+  const name = data.settings.profile.name?.trim();
 
   // Only surface areas that actually have data (live today or anywhere in history),
   // so an enabled-but-empty area never shows a misleading "0".
@@ -58,11 +61,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Dashboard"
+        title={name ? `${t("Dashboard")} · ${name}` : t("Dashboard")}
         subtitle={fmtLong(d.today)}
         action={
           <Link href="/today" className="hidden sm:block">
-            <Button variant="soft">Log today</Button>
+            <Button variant="soft">{t("Log today")}</Button>
           </Link>
         }
       />
@@ -70,16 +73,16 @@ export default function DashboardPage() {
       {/* Hero: score + categories */}
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="flex flex-col items-center justify-center lg:col-span-1">
-          <SectionTitle>Life Score today</SectionTitle>
-          <ScoreRing value={liveScore} sublabel={liveScore > 0 ? scoreLabel(liveScore) : "No data yet"} />
+          <SectionTitle>{t("Life Score today")}</SectionTitle>
+          <ScoreRing value={liveScore} sublabel={liveScore > 0 ? t(scoreLabel(liveScore)) : t("No data yet")} />
           <div className="mt-4 flex items-center gap-4 text-sm">
             <div className="flex flex-col items-center">
-              <span className="text-[var(--text-faint)]">vs yesterday</span>
+              <span className="text-[var(--text-faint)]">{t("vs yesterday")}</span>
               <Delta value={vsYesterday} />
             </div>
             <div className="h-8 w-px bg-[var(--border)]" />
             <div className="flex flex-col items-center">
-              <span className="text-[var(--text-faint)]">vs 7-day avg</span>
+              <span className="text-[var(--text-faint)]">{t("vs 7-day avg")}</span>
               <Delta value={vsAvg} />
             </div>
           </div>
@@ -91,8 +94,8 @@ export default function DashboardPage() {
         </Card>
 
         <Card className="lg:col-span-2">
-          <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">All stats →</Link>}>
-            Categories
+          <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
+            {t("Categories")}
           </SectionTitle>
           <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
             {enabledAreas.map((a) => (
@@ -106,44 +109,44 @@ export default function DashboardPage() {
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard
           icon={<Trophy size={18} />}
-          label="Life Rating"
+          label={t("Life Rating")}
           value={elo.toLocaleString()}
-          sub={`Best ${eloBest.toLocaleString()}`}
+          sub={`${t("Best")} ${eloBest.toLocaleString()}`}
         />
         <StatCard
           icon={<Flame size={18} />}
-          label="Streak"
+          label={t("Streak")}
           value={`${streak}d`}
-          sub="days with activity"
+          sub={t("days with activity")}
         />
         <StatCard
           icon={<ArrowUpRight size={18} />}
-          label="7-day avg"
+          label={t("7-day avg")}
           value={String(d.avg7)}
-          sub="Life Score"
+          sub={t("Life Score")}
         />
         <StatCard
           icon={<Sparkles size={18} />}
-          label="Today"
+          label={t("Today")}
           value={`${doneCount}/${buildGoals.length}`}
-          sub="goals done"
+          sub={t("goals done")}
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Today's goals */}
         <Card>
-          <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">Open →</Link>}>
-            Today&apos;s goals
+          <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
+            {t("Today's goals")}
           </SectionTitle>
           {todayGoals.length === 0 ? (
             <EmptyState
-              title="No habits scheduled today"
-              hint="Add habits to start building your daily plan."
+              title={t("No habits scheduled today")}
+              hint={t("Add habits to start building your daily plan.")}
               action={
                 <Link href="/habits">
                   <Button variant="soft" size="sm">
-                    Add habits
+                    {t("Add habits")}
                   </Button>
                 </Link>
               }
@@ -159,7 +162,7 @@ export default function DashboardPage() {
 
         {/* Insights */}
         <Card>
-          <SectionTitle right={<Badge tone="accent">Data-driven</Badge>}>Insights</SectionTitle>
+          <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
           <div className="space-y-2.5">
             {d.insights.slice(0, 4).map((ins) => (
               <div key={ins.id} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
@@ -179,7 +182,7 @@ export default function DashboardPage() {
             ))}
           </div>
           <p className="mt-3 text-[11px] text-[var(--text-faint)]">
-            Observations from your own logs. These are associations, not medical or causal claims.
+            {t("Observations from your own logs. These are associations, not medical or causal claims.")}
           </p>
         </Card>
       </div>
@@ -196,6 +199,7 @@ function CategoryRow({
   derived: ReturnType<typeof useDerived>;
   live?: number;
 }) {
+  const t = useT();
   const spark = derived.history
     .slice(-14)
     .map((h) => ({ date: h.date, value: h.categories[area] ?? 0 }));
@@ -206,7 +210,7 @@ function CategoryRow({
     <div className="flex items-center gap-3 border-b border-[var(--border)] py-3 last:border-0 sm:border-0 sm:py-2.5">
       <div className="min-w-0 flex-1">
         <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-sm font-medium">{AREA_LABELS[area]}</span>
+          <span className="text-sm font-medium">{t(AREA_LABELS[area])}</span>
           <div className="flex items-center gap-2">
             <span className="text-sm font-semibold tabular-nums">{cur}</span>
             {yest !== undefined && <Delta value={cur - yest} />}

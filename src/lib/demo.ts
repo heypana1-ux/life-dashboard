@@ -1,4 +1,14 @@
-import { AppData, DailyReview, Habit, HabitLog, JournalEntry, SleepLog } from "./types";
+import {
+  AppData,
+  DailyReview,
+  Finances,
+  Habit,
+  HabitLog,
+  JournalEntry,
+  Project,
+  SleepLog,
+  Workout,
+} from "./types";
 import { addDays, todayISO, weekdayOf } from "./date";
 import { starterHabits, uid } from "./defaults";
 
@@ -36,6 +46,7 @@ export function generateDemo(base: AppData): AppData {
   const reviews: DailyReview[] = [];
   const sleep: SleepLog[] = [];
   const journal: JournalEntry[] = [];
+  const workouts: Workout[] = [];
 
   // consistency drifts upward over time (simulate improvement) with noise
   for (let i = 0; i < DAYS; i++) {
@@ -86,14 +97,21 @@ export function generateDemo(base: AppData): AppData {
         const p = clampf(0.55 + progress * 0.3 + (h.priority === "high" ? 0.1 : 0) - (isWeekend ? 0.08 : 0));
         const done = rnd() < p * dueChance || (dueChance < 1 && rnd() < p * dueChance);
         if (done) {
-          if (h.area === "sport") trainedToday = true;
+          const minutes = h.targetMinutes
+            ? Math.round(h.targetMinutes * (0.7 + rnd() * 0.6))
+            : undefined;
+          if (h.area === "sport") {
+            trainedToday = true;
+            // create a detailed workout for strength-style sessions
+            if (h.name === "Strength Training") {
+              workouts.push(makeStrengthWorkout(date, minutes ?? 60, progress, morningEnergy, rnd));
+            }
+          }
           habitLogs.push({
             habitId: h.id,
             date,
             done: true,
-            minutes: h.targetMinutes
-              ? Math.round(h.targetMinutes * (0.7 + rnd() * 0.6))
-              : undefined,
+            minutes,
             value: h.targetValue
               ? Math.round(h.targetValue * (0.6 + rnd() * 0.7))
               : undefined,
@@ -135,6 +153,9 @@ export function generateDemo(base: AppData): AppData {
     habitLogs,
     reviews,
     sleep,
+    workouts,
+    projects: demoProjects(),
+    finances: demoFinances(start, end, rnd),
     journal: [...base.journal, ...journal],
     settings: { ...base.settings, demoDataLoaded: true, onboardingComplete: true },
   };
@@ -152,8 +173,121 @@ export function clearDemo(data: AppData): AppData {
     sleep: [],
     journal: [],
     goals: [],
+    workouts: [],
+    projects: [],
+    finances: {
+      currency: data.finances.currency,
+      accounts: [],
+      liabilities: [],
+      holdings: [],
+      transactions: [],
+      history: [],
+    },
     settings: { ...data.settings, demoDataLoaded: false },
   };
+}
+
+const STRENGTH_EXERCISES = ["Squat", "Bench Press", "Deadlift", "Overhead Press", "Row"];
+
+function makeStrengthWorkout(
+  date: string,
+  minutes: number,
+  progress: number,
+  energy: number,
+  rnd: () => number,
+): Workout {
+  const pick = STRENGTH_EXERCISES.slice(0, 3 + Math.floor(rnd() * 2));
+  return {
+    id: uid("wk"),
+    date,
+    sport: "Strength Training",
+    durationMin: minutes,
+    intensity: clampi(6 + progress * 2 + (rnd() - 0.5) * 2, 1, 10),
+    performance: clampi(6 + progress * 2 + (rnd() - 0.5) * 2, 1, 10),
+    fun: clampi(6 + (rnd() - 0.5) * 3, 1, 10),
+    energyBefore: energy,
+    energyAfter: clampi(energy + 1 + (rnd() - 0.5) * 2, 1, 10),
+    notes: "",
+    exercises: pick.map((name) => ({
+      id: uid("ex"),
+      name,
+      sets: Array.from({ length: 3 }, () => ({
+        reps: 8 + Math.floor(rnd() * 5),
+        weight: Math.round((40 + progress * 20 + rnd() * 30) / 2.5) * 2.5,
+      })),
+    })),
+  };
+}
+
+function demoProjects(): Project[] {
+  const now = new Date().toISOString();
+  const mk = (board: Project["board"], title: string, column: number, description?: string): Project => ({
+    id: uid("proj"),
+    board,
+    title,
+    description,
+    column,
+    createdAt: now,
+    updatedAt: now,
+  });
+  return [
+    mk("creative", "Song: Skyline", 2, "Verse written, tracking vocals"),
+    mk("creative", "Song: Momentum", 0, "Just an idea + hook"),
+    mk("creative", "Beat pack vol.1", 4, "Finished"),
+    mk("learning", "TMS · Muster zuordnen", 1),
+    mk("learning", "TMS · Diagramme", 0),
+    mk("learning", "Anatomy basics", 3, "Reviewing"),
+  ];
+}
+
+function demoFinances(startISO: string, endISO: string, rnd: () => number): Finances {
+  const accounts = [
+    { id: uid("acc"), name: "Checking", category: "bank" as const, value: 3200 },
+    { id: uid("acc"), name: "Savings", category: "bank" as const, value: 8600 },
+    { id: uid("acc"), name: "Cash", category: "cash" as const, value: 250 },
+  ];
+  const holdings = [
+    { id: uid("hold"), name: "Apple", ticker: "AAPL", kind: "stock" as const, quantity: 12, buyPrice: 165, currentPrice: 214, monthlyPlan: 0 },
+    { id: uid("hold"), name: "MSCI World", ticker: "IWDA", kind: "etf" as const, quantity: 40, buyPrice: 78, currentPrice: 92, monthlyPlan: 100 },
+    { id: uid("hold"), name: "Bitcoin", ticker: "BTC", kind: "crypto" as const, quantity: 0.15, buyPrice: 41000, currentPrice: 58000, monthlyPlan: 0 },
+  ];
+  const liabilities = [
+    { id: uid("lia"), name: "Student loan", balance: 5400, monthlyPayment: 150 },
+  ];
+
+  const assets = accounts.reduce((s, a) => s + a.value, 0);
+  const invest = holdings.reduce((s, h) => s + h.quantity * h.currentPrice, 0);
+  const debt = liabilities.reduce((s, l) => s + l.balance, 0);
+  const netWorth = Math.round(assets + invest - debt);
+
+  // rising net-worth history: weekly points from start to end
+  const history: { date: string; value: number }[] = [];
+  const weeks = 12;
+  for (let w = weeks; w >= 0; w--) {
+    const date = addDays(endISO, -w * 7);
+    if (date < startISO && w !== weeks) continue;
+    const factor = 1 - w * 0.018 - (rnd() - 0.5) * 0.01;
+    history.push({ date, value: Math.round(netWorth * factor) });
+  }
+
+  // a couple of months of transactions
+  const transactions = [];
+  const expenseCats = ["Groceries", "Restaurants", "Leisure", "Transport", "Subscriptions"];
+  for (let m = 0; m < 2; m++) {
+    const monthAnchor = addDays(endISO, -m * 30);
+    transactions.push({ id: uid("tx"), date: addDays(monthAnchor, -1), type: "income" as const, category: "Salary", amount: 2600 });
+    for (let k = 0; k < 8; k++) {
+      transactions.push({
+        id: uid("tx"),
+        date: addDays(monthAnchor, -Math.floor(rnd() * 25)),
+        type: "expense" as const,
+        category: expenseCats[Math.floor(rnd() * expenseCats.length)],
+        amount: Math.round(15 + rnd() * 120),
+      });
+    }
+  }
+
+  return { currency: "EUR", accounts, liabilities, holdings, transactions, history };
 }
 
 function isDue(h: Habit, wd: number): boolean {

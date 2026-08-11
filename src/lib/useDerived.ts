@@ -50,7 +50,7 @@ export function useDerived(): Derived {
       ? Math.round(last7.reduce((a, b) => a + b.lifeScore, 0) / last7.length)
       : 0;
 
-    const insights = buildInsights(data, history);
+    const insights = buildInsights(data, history, data.settings.language);
 
     return {
       today,

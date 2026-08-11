@@ -10,7 +10,9 @@
  * intentionally serialization-friendly so the same model can later back a real database.
  */
 
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
+
+export type Language = "en" | "de";
 
 /** The major life areas. Each can be toggled on/off by the user. */
 export type AreaKey =
@@ -133,15 +135,146 @@ export interface DayScore {
   eloDelta: number;
 }
 
+/* ---------------- Profile ---------------- */
+
+export interface Profile {
+  name?: string;
+  birthDate?: string; // YYYY-MM-DD
+  sex?: "male" | "female" | "other" | "prefer_not";
+  heightCm?: number;
+  activityLevel?: "sedentary" | "light" | "moderate" | "active" | "athlete";
+}
+
+/** A single body-weight measurement (kept as a time series). */
+export interface WeightLog {
+  date: string; // YYYY-MM-DD
+  kg: number;
+}
+
+/* ---------------- Finances ---------------- */
+
+export type AssetCategory =
+  | "bank"
+  | "cash"
+  | "investment"
+  | "realestate"
+  | "vehicle"
+  | "other";
+
+/** A manually-valued asset or (via negative meaning) tracked separately as a liability. */
+export interface FinanceAccount {
+  id: string;
+  name: string;
+  category: AssetCategory;
+  value: number; // current value in the user's currency
+  note?: string;
+}
+
+export interface Liability {
+  id: string;
+  name: string;
+  balance: number; // outstanding debt (positive number)
+  monthlyPayment?: number;
+  note?: string;
+}
+
+export type HoldingKind = "stock" | "etf" | "fund" | "crypto" | "bond" | "other";
+
+export interface Holding {
+  id: string;
+  name: string;
+  ticker?: string;
+  kind: HoldingKind;
+  quantity: number;
+  buyPrice: number; // avg cost per unit
+  currentPrice: number; // manually maintained (or via market-data layer)
+  /** Optional recurring savings-plan amount per month. */
+  monthlyPlan?: number;
+}
+
+export interface Transaction {
+  id: string;
+  date: string; // YYYY-MM-DD
+  type: "income" | "expense";
+  category: string;
+  amount: number; // positive
+  note?: string;
+}
+
+/** Auto-recorded net-worth point (one per day it changes) for the history chart. */
+export interface NetWorthPoint {
+  date: string;
+  value: number;
+}
+
+export interface Finances {
+  currency: string; // e.g. "EUR"
+  accounts: FinanceAccount[];
+  liabilities: Liability[];
+  holdings: Holding[];
+  transactions: Transaction[];
+  history: NetWorthPoint[];
+}
+
+/* ---------------- Training ---------------- */
+
+export interface ExerciseSet {
+  reps?: number;
+  weight?: number; // kg
+}
+
+export interface Exercise {
+  id: string;
+  name: string;
+  sets: ExerciseSet[];
+}
+
+export interface Workout {
+  id: string;
+  date: string; // YYYY-MM-DD
+  sport: string;
+  habitId?: string; // optional link to a sport habit
+  durationMin: number;
+  intensity?: number; // 1..10
+  performance?: number; // 1..10
+  fun?: number; // 1..10
+  energyBefore?: number; // 1..10
+  energyAfter?: number; // 1..10
+  distanceKm?: number;
+  avgPulse?: number;
+  notes?: string;
+  exercises: Exercise[];
+}
+
+/* ---------------- Project boards ---------------- */
+
+export type BoardKind = "learning" | "creative";
+
+export interface Project {
+  id: string;
+  board: BoardKind;
+  title: string;
+  description?: string;
+  /** Index into the board's column list. */
+  column: number;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/* ---------------- Settings ---------------- */
+
 export interface Settings {
   onboardingComplete: boolean;
   theme: "light" | "dark" | "system";
+  language: Language;
   areas: AreaConfig[];
   /** Personal sleep target in minutes (the user's chosen goal). */
   sleepTargetMinutes: number;
   /** ELO starting/current tracking is derived, but we persist the seed. */
   eloStart: number;
   demoDataLoaded: boolean;
+  profile: Profile;
 }
 
 export interface AppData {
@@ -153,4 +286,8 @@ export interface AppData {
   sleep: SleepLog[];
   journal: JournalEntry[];
   goals: Goal[];
+  weight: WeightLog[];
+  finances: Finances;
+  workouts: Workout[];
+  projects: Project[];
 }

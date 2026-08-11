@@ -12,15 +12,42 @@ import React, {
 import {
   AppData,
   DailyReview,
+  FinanceAccount,
   Goal,
   Habit,
   HabitLog,
+  Holding,
   JournalEntry,
+  Liability,
+  Profile,
+  Project,
   SleepLog,
   Settings,
+  Transaction,
+  WeightLog,
+  Workout,
   SCHEMA_VERSION,
 } from "./types";
 import { emptyData, uid } from "./defaults";
+import { todayISO } from "./date";
+
+/** Net worth = assets + investment value − liabilities. */
+export function computeNetWorth(f: AppData["finances"]): number {
+  const assets = f.accounts.reduce((s, a) => s + a.value, 0);
+  const invest = f.holdings.reduce((s, h) => s + h.quantity * h.currentPrice, 0);
+  const debt = f.liabilities.reduce((s, l) => s + l.balance, 0);
+  return Math.round(assets + invest - debt);
+}
+
+/** Upsert today's net-worth snapshot after any finance change. */
+function withNetWorthSnapshot(f: AppData["finances"]): AppData["finances"] {
+  const today = todayISO();
+  const value = computeNetWorth(f);
+  const history = f.history.filter((p) => p.date !== today);
+  history.push({ date: today, value });
+  history.sort((a, b) => (a.date < b.date ? -1 : 1));
+  return { ...f, history };
+}
 
 const STORAGE_KEY = "life-dashboard:v1";
 
@@ -42,13 +69,22 @@ function loadData(): AppData {
     return {
       ...base,
       ...parsed,
-      settings: { ...base.settings, ...parsed.settings },
+      schemaVersion: SCHEMA_VERSION,
+      settings: {
+        ...base.settings,
+        ...parsed.settings,
+        profile: { ...base.settings.profile, ...parsed.settings?.profile },
+      },
       habits: parsed.habits ?? [],
       habitLogs: parsed.habitLogs ?? [],
       reviews: parsed.reviews ?? [],
       sleep: parsed.sleep ?? [],
       journal: parsed.journal ?? [],
       goals: parsed.goals ?? [],
+      weight: parsed.weight ?? [],
+      finances: { ...base.finances, ...parsed.finances },
+      workouts: parsed.workouts ?? [],
+      projects: parsed.projects ?? [],
     };
   } catch {
     return emptyData();
@@ -77,6 +113,27 @@ interface StoreCtx {
   /* goals */
   saveGoal: (g: Goal) => Goal;
   removeGoal: (id: string) => void;
+  /* profile & weight */
+  updateProfile: (patch: Partial<Profile>) => void;
+  saveWeight: (w: WeightLog) => void;
+  removeWeight: (date: string) => void;
+  /* finances */
+  setCurrency: (c: string) => void;
+  saveAccount: (a: FinanceAccount) => void;
+  removeAccount: (id: string) => void;
+  saveLiability: (l: Liability) => void;
+  removeLiability: (id: string) => void;
+  saveHolding: (h: Holding) => void;
+  removeHolding: (id: string) => void;
+  saveTransaction: (t: Transaction) => void;
+  removeTransaction: (id: string) => void;
+  /* workouts */
+  saveWorkout: (w: Workout) => Workout;
+  removeWorkout: (id: string) => void;
+  /* projects */
+  saveProject: (p: Project) => Project;
+  moveProject: (id: string, column: number) => void;
+  removeProject: (id: string) => void;
   /* bulk */
   replaceAll: (d: AppData) => void;
   resetAll: () => void;
@@ -197,6 +254,123 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       removeGoal: (id) =>
         mutate((d) => ({ ...d, goals: d.goals.filter((x) => x.id !== id) })),
+
+      /* profile & weight */
+      updateProfile: (patch) =>
+        mutate((d) => ({
+          ...d,
+          settings: { ...d.settings, profile: { ...d.settings.profile, ...patch } },
+        })),
+      saveWeight: (w) =>
+        mutate((d) => {
+          const others = d.weight.filter((x) => x.date !== w.date);
+          return { ...d, weight: [...others, w].sort((a, b) => (a.date < b.date ? -1 : 1)) };
+        }),
+      removeWeight: (date) =>
+        mutate((d) => ({ ...d, weight: d.weight.filter((x) => x.date !== date) })),
+
+      /* finances */
+      setCurrency: (c) =>
+        mutate((d) => ({ ...d, finances: { ...d.finances, currency: c } })),
+      saveAccount: (a) =>
+        mutate((d) => {
+          const account: FinanceAccount = a.id ? a : { ...a, id: uid("acc") };
+          const accounts = d.finances.accounts.some((x) => x.id === account.id)
+            ? d.finances.accounts.map((x) => (x.id === account.id ? account : x))
+            : [...d.finances.accounts, account];
+          return { ...d, finances: withNetWorthSnapshot({ ...d.finances, accounts }) };
+        }),
+      removeAccount: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: withNetWorthSnapshot({
+            ...d.finances,
+            accounts: d.finances.accounts.filter((x) => x.id !== id),
+          }),
+        })),
+      saveLiability: (l) =>
+        mutate((d) => {
+          const lia: Liability = l.id ? l : { ...l, id: uid("lia") };
+          const liabilities = d.finances.liabilities.some((x) => x.id === lia.id)
+            ? d.finances.liabilities.map((x) => (x.id === lia.id ? lia : x))
+            : [...d.finances.liabilities, lia];
+          return { ...d, finances: withNetWorthSnapshot({ ...d.finances, liabilities }) };
+        }),
+      removeLiability: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: withNetWorthSnapshot({
+            ...d.finances,
+            liabilities: d.finances.liabilities.filter((x) => x.id !== id),
+          }),
+        })),
+      saveHolding: (h) =>
+        mutate((d) => {
+          const hold: Holding = h.id ? h : { ...h, id: uid("hold") };
+          const holdings = d.finances.holdings.some((x) => x.id === hold.id)
+            ? d.finances.holdings.map((x) => (x.id === hold.id ? hold : x))
+            : [...d.finances.holdings, hold];
+          return { ...d, finances: withNetWorthSnapshot({ ...d.finances, holdings }) };
+        }),
+      removeHolding: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: withNetWorthSnapshot({
+            ...d.finances,
+            holdings: d.finances.holdings.filter((x) => x.id !== id),
+          }),
+        })),
+      saveTransaction: (t) =>
+        mutate((d) => {
+          const tx: Transaction = t.id ? t : { ...t, id: uid("tx") };
+          const transactions = d.finances.transactions.some((x) => x.id === tx.id)
+            ? d.finances.transactions.map((x) => (x.id === tx.id ? tx : x))
+            : [...d.finances.transactions, tx];
+          return { ...d, finances: { ...d.finances, transactions } };
+        }),
+      removeTransaction: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: {
+            ...d.finances,
+            transactions: d.finances.transactions.filter((x) => x.id !== id),
+          },
+        })),
+
+      /* workouts */
+      saveWorkout: (w) => {
+        const workout: Workout = w.id ? w : { ...w, id: uid("wk") };
+        mutate((d) => {
+          const others = d.workouts.filter((x) => x.id !== workout.id);
+          return { ...d, workouts: [...others, workout] };
+        });
+        return workout;
+      },
+      removeWorkout: (id) =>
+        mutate((d) => ({ ...d, workouts: d.workouts.filter((x) => x.id !== id) })),
+
+      /* projects */
+      saveProject: (p) => {
+        const now = new Date().toISOString();
+        const project: Project = p.id
+          ? { ...p, updatedAt: now }
+          : { ...p, id: uid("proj"), createdAt: now, updatedAt: now };
+        mutate((d) => {
+          const others = d.projects.filter((x) => x.id !== project.id);
+          return { ...d, projects: [...others, project] };
+        });
+        return project;
+      },
+      moveProject: (id, column) =>
+        mutate((d) => ({
+          ...d,
+          projects: d.projects.map((x) =>
+            x.id === id ? { ...x, column, updatedAt: new Date().toISOString() } : x,
+          ),
+        })),
+      removeProject: (id) =>
+        mutate((d) => ({ ...d, projects: d.projects.filter((x) => x.id !== id) })),
+
       replaceAll: (d) => setData(d),
       resetAll: () => setData(emptyData()),
     }),

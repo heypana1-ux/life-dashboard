@@ -5,10 +5,12 @@ import { BookOpen, ChevronLeft, ChevronRight, Plus, Save, Search, Trash2 } from 
 import { useStore } from "@/lib/store";
 import { JournalEntry } from "@/lib/types";
 import { fmtLong, todayISO } from "@/lib/date";
+import { useT } from "@/lib/i18n";
 import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
 export default function JournalPage() {
   const { data, saveJournal, removeJournal } = useStore();
+  const t = useT();
   const [query, setQuery] = useState("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [draft, setDraft] = useState<JournalEntry | null>(null);
@@ -79,11 +81,11 @@ export default function JournalPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Journal"
-        subtitle="Private by default. Stored only on this device."
+        title={t("Journal")}
+        subtitle={t("Private by default. Stored only on this device.")}
         action={
           <Button onClick={newEntry}>
-            <Plus size={16} /> New entry
+            <Plus size={16} /> {t("New entry")}
           </Button>
         }
       />
@@ -95,14 +97,14 @@ export default function JournalPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" size={16} />
             <input
               className={inputCls + " pl-9"}
-              placeholder="Search entries…"
+              placeholder={t("Search entries…")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
           <div className="max-h-[60vh] space-y-1 overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[var(--text-muted)]">No entries found.</p>
+              <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("No entries found.")}</p>
             ) : (
               filtered.map((e) => (
                 <button
@@ -116,7 +118,7 @@ export default function JournalPage() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="truncate text-sm font-medium">
-                      {e.title || "Untitled"}
+                      {e.title || t("Untitled")}
                     </span>
                     {e.mood && <Badge>{e.mood}/10</Badge>}
                   </div>
@@ -134,11 +136,11 @@ export default function JournalPage() {
           {!active ? (
             <EmptyState
               icon={<BookOpen size={28} />}
-              title="Open or start an entry"
-              hint="Your journal reads like a book — one page per day. Pick an entry on the left or start a new one."
+              title={t("Open or start an entry")}
+              hint={t("Your journal reads like a book — one page per day. Pick an entry on the left or start a new one.")}
               action={
                 <Button onClick={newEntry}>
-                  <Plus size={16} /> New entry
+                  <Plus size={16} /> {t("New entry")}
                 </Button>
               }
             />
@@ -179,7 +181,7 @@ export default function JournalPage() {
               <div className="px-6 py-5">
                 <textarea
                   className="min-h-[45vh] w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-[var(--text-faint)]"
-                  placeholder="Write freely…"
+                  placeholder={t("Write freely…")}
                   value={active.body}
                   onChange={(e) => setDraft({ ...active, body: e.target.value })}
                   style={{
@@ -190,14 +192,14 @@ export default function JournalPage() {
                   }}
                 />
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <Field label="Highlight of the day">
+                  <Field label={t("Highlight of the day")}>
                     <input
                       className={inputCls}
                       value={active.highlight ?? ""}
                       onChange={(e) => setDraft({ ...active, highlight: e.target.value })}
                     />
                   </Field>
-                  <Field label="Mood (1–10)">
+                  <Field label={t("Mood (1–10)")}>
                     <input
                       type="number"
                       min={1}
@@ -214,9 +216,9 @@ export default function JournalPage() {
               <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-3">
                 <div className="flex items-center gap-3">
                   <Button onClick={save} disabled={!active.title && !active.body}>
-                    <Save size={16} /> Save
+                    <Save size={16} /> {t("Save")}
                   </Button>
-                  {flash && <span className="text-sm text-[var(--good)]">Saved ✓</span>}
+                  {flash && <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>}
                 </div>
                 {active.id && (
                   <button

@@ -81,6 +81,16 @@ export function fmtDuration(min: number): string {
   return `${h}h ${String(m).padStart(2, "0")}min`;
 }
 
+/** Whole years from a birth date (YYYY-MM-DD) to today. */
+export function ageFrom(birthISO: string): number {
+  const b = parseISO(birthISO);
+  const now = new Date();
+  let age = now.getFullYear() - b.getFullYear();
+  const m = now.getMonth() - b.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+  return age;
+}
+
 /** Parse "HH:MM" to minutes since midnight. */
 export function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);

@@ -4,26 +4,30 @@ A personal operating system for your habits, focus, sleep, reflection and goals 
 inspired by a blend of Apple Health, Whoop, Notion and modern finance dashboards, with a
 long-term RPG-style progression (Life Score + ELO rating).
 
-This repository is **Phase 1: a solid, working core** with real, persistent data — not a
-gallery of half-finished screens. Every button does something; features that are designed
-into the data model but not yet built are listed honestly on the **Settings → Roadmap**
-screen rather than faked.
+This is a **working application** with real, persistent data — not a gallery of
+half-finished screens. Every button does something; the few things not yet built are called
+out honestly in the Roadmap below rather than faked.
 
 ## What works today
 
 | Area | Status |
 | --- | --- |
-| **Onboarding** | Pick your areas, set targets, choose demo or clean start |
-| **Dashboard** | Live Life Score ring, per-category scores with trends, ELO rating, streak, today's goals, data-driven insights |
+| **Onboarding** | Pick your areas, set targets, choose demo or clean start, EN/DE language |
+| **Dashboard** | Live Life Score ring, per-category scores with trends, ELO rating, streak, today's goals, data-driven insights, personalized greeting |
 | **Today** | Check off habits, log reduce-habit slips, full daily check-in (productivity/mood/energy/satisfaction/discipline + notes), live projected score |
 | **Habits** | Full CRUD — build & reduce habits, daily / X-per-week / specific-weekday schedules, priority, difficulty, severity, 30-day adherence |
+| **Training** | Detailed workout logging — exercises, sets, reps, weight, distance, pulse, intensity/performance/fun/energy, weekly volume chart |
 | **Sleep** | Manual logging, duration & regularity stats, 30-night trend, a data-based personal sleep-duration estimate |
+| **Finances** | Net worth (assets/liabilities), portfolio/depot (holdings, P/L, allocation, concentration), budget (income/expenses, savings rate), net-worth history; modular market-data layer (manual prices, live provider pluggable later) |
 | **Statistics** | Interactive Life Score / ELO / category charts over 7D–All-time, weekday breakdown, correlation insights |
+| **Reports** | Automatic weekly & monthly Life Reports with metrics + narrative highlights |
 | **Journal** | Book-style entries (one page per day), search, prev/next navigation, mood & highlights — private, local-only |
+| **Projects** | Kanban boards for learning topics and creative projects (idea → done) |
 | **Goals** | Long-term goals with deadlines, milestones and auto-computed progress |
-| **Settings** | Enable/disable areas, adjust score weights (auto-normalized), sleep target, theme, demo data, JSON export/import, full reset |
+| **Achievements** | Auto-computed achievements (streaks, totals, milestones) and personal records |
+| **Settings** | Profile (name, age, height, weight + trend, BMI), enable/disable areas, adjust score weights (auto-normalized), sleep target, theme, **language (English / German)**, demo data, JSON export/import, full reset |
 
-Dark and light themes are fully supported (system-aware).
+Dark and light themes are fully supported (system-aware), and the entire UI is available in **English and German**.
 
 ## How the score works (transparent by design)
 
@@ -87,10 +91,13 @@ npm run lint
 
 ## Roadmap (designed into the model, not yet built)
 
-Finances (net worth, portfolio, budget) · live market data (modular API, mock until
-configured) · detailed workout/exercise logging · learning & creative project boards ·
-weekly & monthly reports · achievements & records · Life Experiments (self A/B tests) ·
-AI insights over the structured data · health integrations (Apple Health, Whoop, Oura…).
+- **Live market data** — the market-data layer is modular; a real quote provider can be
+  dropped in behind the same interface. Prices are entered manually until then (no API key
+  required to use the app).
+- **AI insights** — the insight engine is rule-based today; an LLM pass over the same
+  structured data can be added once an API key/backend is available.
+- **Life Experiments** (self A/B tests) and **health integrations** (Apple Health, Whoop,
+  Oura…) remain future work.
 
 The data model was built to grow across years of daily use, so new life areas can be added
 without breaking existing history.
