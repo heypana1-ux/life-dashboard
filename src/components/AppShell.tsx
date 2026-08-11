@@ -8,14 +8,17 @@ import {
   BarChart3,
   BookOpen,
   CalendarCheck,
+  CalendarDays,
   Dumbbell,
   FileText,
+  FlaskConical,
   Gauge,
   KanbanSquare,
   ListChecks,
   type LucideIcon,
   Menu,
   Moon,
+  Sunrise,
   Target,
   Settings as SettingsIcon,
   Sparkles,
@@ -25,6 +28,8 @@ import {
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Onboarding } from "@/components/Onboarding";
+import { BackupReminder } from "@/components/BackupReminder";
+import { Reminders } from "@/components/Reminders";
 
 interface NavItem {
   href: string;
@@ -34,22 +39,27 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: Gauge },
+  { href: "/morning", label: "Morning", icon: Sunrise },
   { href: "/today", label: "Today", icon: CalendarCheck },
   { href: "/habits", label: "Habits", icon: ListChecks },
   { href: "/training", label: "Training", icon: Dumbbell },
   { href: "/sleep", label: "Sleep", icon: Moon },
   { href: "/finances", label: "Finances", icon: Wallet },
+  { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/projects", label: "Projects", icon: KanbanSquare },
   { href: "/goals", label: "Goals", icon: Target },
+  { href: "/experiments", label: "Experiments", icon: FlaskConical },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
 // Shown in the mobile bottom bar; the rest live under "More".
-const BOTTOM = [NAV[0], NAV[1], NAV[2], NAV[6]];
+const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
+  (href) => NAV.find((n) => n.href === href)!,
+);
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready } = useStore();
@@ -96,6 +106,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <main className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-10 md:pt-8">
+        <BackupReminder />
+        <Reminders />
         <div className="animate-in">{children}</div>
       </main>
 

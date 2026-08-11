@@ -1,15 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Plus, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import { Flame, Pencil, Plus, Trash2, TrendingDown, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Habit } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
-import { fmtDuration, isoRange, todayISO } from "@/lib/date";
-import { logOf } from "@/lib/habitView";
+import { fmtDuration } from "@/lib/date";
+import { habitCurrentStreak, habitLongestStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, Button, Badge, EmptyState, Chip } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
+import { Heatmap } from "@/components/Heatmap";
 import clsx from "clsx";
 
 export default function HabitsPage() {
@@ -34,20 +35,7 @@ export default function HabitsPage() {
 
   /** 30-day completion rate for a build habit / avoidance rate for a reduce habit. */
   function rate(h: Habit): number {
-    const window = isoRange(todayISO(), 30);
-    let n = 0;
-    let hit = 0;
-    for (const d of window) {
-      const l = logOf(data, h.id, d);
-      if (h.kind === "reduce") {
-        n++;
-        if (!l?.done) hit++;
-      } else if (l) {
-        n++;
-        if (l.done) hit++;
-      }
-    }
-    return n ? Math.round((hit / n) * 100) : 0;
+    return habit30dRate(data, h);
   }
 
   return (
@@ -159,6 +147,9 @@ function HabitCard({
 }) {
   const isReduce = h.kind === "reduce";
   const t = useT();
+  const { data } = useStore();
+  const [open, setOpen] = useState(false);
+  const streak = habitCurrentStreak(data, h);
   return (
     <Card className="!p-4">
       <div className="flex items-start justify-between gap-3">
@@ -170,6 +161,11 @@ function HabitCard({
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-medium">{h.name}</span>
+              {streak > 0 && (
+                <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[var(--warn)]">
+                  <Flame size={13} /> {streak}
+                </span>
+              )}
               {isReduce ? <Badge tone="bad">{t("Reduce")}</Badge> : null}
               {h.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
             </div>
@@ -226,9 +222,22 @@ function HabitCard({
           {rate}%
         </span>
       </div>
-      <p className="mt-1 text-[11px] text-[var(--text-faint)]">
-        {isReduce ? t("avoided") : t("completed")} · {t("last 30 days")}
-      </p>
+      <div className="mt-1 flex items-center justify-between">
+        <p className="text-[11px] text-[var(--text-faint)]">
+          {isReduce ? t("avoided") : t("completed")} · {t("last 30 days")}
+        </p>
+        <button onClick={() => setOpen((o) => !o)} className="text-[11px] font-medium text-[var(--accent)]">
+          {open ? t("Hide heatmap") : t("Show heatmap")}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-3 border-t border-[var(--border)] pt-3">
+          <Heatmap cells={habitHeatmap(data, h)} />
+          <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+            {t("Current streak")}: {streak} · {t("Longest streak")}: {habitLongestStreak(data, h)}
+          </p>
+        </div>
+      )}
     </Card>
   );
 }

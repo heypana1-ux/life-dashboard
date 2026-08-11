@@ -12,6 +12,7 @@ import React, {
 import {
   AppData,
   DailyReview,
+  Experiment,
   FinanceAccount,
   Goal,
   Habit,
@@ -50,6 +51,7 @@ function withNetWorthSnapshot(f: AppData["finances"]): AppData["finances"] {
 }
 
 const STORAGE_KEY = "life-dashboard:v1";
+const BACKUP_KEY = "life-dashboard:last-good";
 
 /*
   Persistence layer. Everything is kept in one JSON blob in localStorage. The public API
@@ -74,6 +76,7 @@ function loadData(): AppData {
         ...base.settings,
         ...parsed.settings,
         profile: { ...base.settings.profile, ...parsed.settings?.profile },
+        reminders: { ...base.settings.reminders, ...parsed.settings?.reminders },
       },
       habits: parsed.habits ?? [],
       habitLogs: parsed.habitLogs ?? [],
@@ -85,6 +88,7 @@ function loadData(): AppData {
       finances: { ...base.finances, ...parsed.finances },
       workouts: parsed.workouts ?? [],
       projects: parsed.projects ?? [],
+      experiments: parsed.experiments ?? [],
     };
   } catch {
     return emptyData();
@@ -134,6 +138,9 @@ interface StoreCtx {
   saveProject: (p: Project) => Project;
   moveProject: (id: string, column: number) => void;
   removeProject: (id: string) => void;
+  /* experiments */
+  saveExperiment: (e: Experiment) => Experiment;
+  removeExperiment: (id: string) => void;
   /* bulk */
   replaceAll: (d: AppData) => void;
   resetAll: () => void;
@@ -161,7 +168,10 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       return;
     }
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      const json = JSON.stringify(data);
+      localStorage.setItem(STORAGE_KEY, json);
+      // Keep a rolling "last good" copy as a corruption safety net.
+      localStorage.setItem(BACKUP_KEY, json);
     } catch {
       /* ignore quota errors */
     }
@@ -370,6 +380,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         })),
       removeProject: (id) =>
         mutate((d) => ({ ...d, projects: d.projects.filter((x) => x.id !== id) })),
+
+      /* experiments */
+      saveExperiment: (e) => {
+        const exp: Experiment = e.id
+          ? e
+          : { ...e, id: uid("exp"), createdAt: new Date().toISOString() };
+        mutate((d) => {
+          const others = d.experiments.filter((x) => x.id !== exp.id);
+          return { ...d, experiments: [...others, exp] };
+        });
+        return exp;
+      },
+      removeExperiment: (id) =>
+        mutate((d) => ({ ...d, experiments: d.experiments.filter((x) => x.id !== id) })),
 
       replaceAll: (d) => setData(d),
       resetAll: () => setData(emptyData()),

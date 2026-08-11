@@ -27,7 +27,52 @@ const DE: Record<string, string> = {
   Projects: "Projekte",
   Achievements: "Erfolge",
   Reports: "Berichte",
+  Calendar: "Kalender",
+  Morning: "Morgen",
+  Experiments: "Experimente",
   More: "Mehr",
+  "Your life, day by day — tap a day to see everything you logged.":
+    "Dein Leben, Tag für Tag — tippe einen Tag an, um alles Eingetragene zu sehen.",
+  "Nothing logged this day.": "An diesem Tag nichts eingetragen.",
+  "Good morning": "Guten Morgen",
+  "Good afternoon": "Guten Tag",
+  "Good evening": "Guten Abend",
+  "No sleep logged for last night.": "Für letzte Nacht kein Schlaf eingetragen.",
+  "Set your intention for the day. Small, consistent steps compound.":
+    "Setz dir dein Ziel für den Tag. Kleine, konstante Schritte summieren sich.",
+
+  // --- Experiments ---
+  "Test a hypothesis against your own data — correlation, not proof.":
+    "Teste eine Hypothese an deinen eigenen Daten — Korrelation, kein Beweis.",
+  "New experiment": "Neues Experiment",
+  "No experiments yet": "Noch keine Experimente",
+  'e.g. "When I go to bed before midnight, am I more productive the next day?"':
+    'z. B. „Wenn ich vor Mitternacht schlafen gehe, bin ich am nächsten Tag produktiver?"',
+  Hypothesis: "Hypothese",
+  "Outcome metric": "Zielmetrik",
+  Condition: "Bedingung",
+  "Start from a template": "Mit Vorlage starten",
+  "Start date": "Startdatum",
+  "Duration (days)": "Dauer (Tage)",
+  "Bedtime before…": "Zubettgehen vor…",
+  "Sleep at least…": "Schlaf mindestens…",
+  "On days I train": "An Trainingstagen",
+  "A specific habit is done": "Eine bestimmte Gewohnheit ist erledigt",
+  "Bedtime before": "Zubettgehen vor",
+  "Sleep at least": "Schlaf mindestens",
+  Habit: "Gewohnheit",
+  "Bedtime before {time}": "Zubettgehen vor {time}",
+  "Sleep ≥ {dur}": "Schlaf ≥ {dur}",
+  higher: "höher",
+  lower: "niedriger",
+  With: "Mit",
+  Without: "Ohne",
+  "Not enough data yet ({met} vs {not} days). Keep logging.":
+    "Noch nicht genug Daten ({met} vs. {not} Tage). Trage weiter ein.",
+  "On days with the condition, {metric} was on average {pct} {dir}.":
+    "An Tagen mit der Bedingung war {metric} im Schnitt {pct} {dir}.",
+  "Observation from your own data — a correlation, not causation.":
+    "Beobachtung aus deinen eigenen Daten — eine Korrelation, keine Kausalität.",
   "Life Dashboard": "Life Dashboard",
   "Data stays on this device.": "Daten bleiben auf diesem Gerät.",
   "Loading your dashboard…": "Dein Dashboard wird geladen…",
@@ -148,6 +193,9 @@ const DE: Record<string, string> = {
   avoided: "vermieden",
   "last 30 days": "letzte 30 Tage",
   "days / week": "Tage / Woche",
+  "Show heatmap": "Heatmap zeigen",
+  "Hide heatmap": "Heatmap ausblenden",
+  "Current streak": "Aktueller Streak",
   "Create your first habit to start tracking. Habits can be daily, a number of times per week, or on specific weekdays.":
     "Erstelle deine erste Gewohnheit. Gewohnheiten können täglich, mehrmals pro Woche oder an bestimmten Wochentagen sein.",
 
@@ -211,6 +259,10 @@ const DE: Record<string, string> = {
   "Write freely…": "Schreib frei…",
   "Highlight of the day": "Highlight des Tages",
   "Mood (1–10)": "Stimmung (1–10)",
+  Location: "Ort",
+  Weather: "Wetter",
+  "Tags (comma separated)": "Tags (kommagetrennt)",
+  "Add photo": "Foto hinzufügen",
 
   // --- Goals ---
   "Longer-term outcomes, distinct from daily habits.":
@@ -222,6 +274,8 @@ const DE: Record<string, string> = {
   Milestones: "Meilensteine",
   "Add a milestone…": "Meilenstein hinzufügen…",
   "Create goal": "Ziel erstellen",
+  "Linked habits": "Verknüpfte Gewohnheiten",
+  "Habits that contribute to this goal.": "Gewohnheiten, die auf dieses Ziel einzahlen.",
   'A habit is "train 3× / week". A goal is "bench 80kg by December". Add milestones to track progress.':
     'Eine Gewohnheit ist "3× / Woche trainieren". Ein Ziel ist "80kg Bankdrücken bis Dezember". Füge Meilensteine hinzu, um den Fortschritt zu verfolgen.',
   Career: "Karriere",
@@ -264,6 +318,29 @@ const DE: Record<string, string> = {
   "Sleep target": "Schlafziel",
   hours: "Stunden",
   Data: "Daten",
+  "Last backup": "Letztes Backup",
+  "No backup yet": "Noch kein Backup",
+  "1 day ago": "vor 1 Tag",
+  "{n} days ago": "vor {n} Tagen",
+  "Your data lives only in this browser. Export a backup regularly so you never lose it.":
+    "Deine Daten liegen nur in diesem Browser. Exportiere regelmäßig ein Backup, damit du sie nie verlierst.",
+  "Your data lives only in this browser. Export a backup so you don't lose it.":
+    "Deine Daten liegen nur in diesem Browser. Exportiere ein Backup, damit du sie nicht verlierst.",
+  "Back up now": "Jetzt sichern",
+  Dismiss: "Schließen",
+  // reminders
+  Reminders: "Erinnerungen",
+  "A daily nudge to log your day. Works only while the app is open (no background push).":
+    "Ein täglicher Anstoß, deinen Tag einzutragen. Funktioniert nur, solange die App geöffnet ist (kein Hintergrund-Push).",
+  "Notifications aren't supported here.": "Benachrichtigungen werden hier nicht unterstützt.",
+  "Enable notifications": "Benachrichtigungen aktivieren",
+  "Daily check-in reminder": "Tägliche Check-in-Erinnerung",
+  "Reminder time": "Erinnerungszeit",
+  "Include still-open habits": "Offene Gewohnheiten einbeziehen",
+  "Life Dashboard — daily check-in": "Life Dashboard — täglicher Check-in",
+  "{n} goals still open — take a minute to log your day.":
+    "{n} Ziele noch offen — nimm dir kurz Zeit, deinen Tag einzutragen.",
+  "Take a minute to log your day.": "Nimm dir kurz Zeit, deinen Tag einzutragen.",
   "Load demo data": "Demo-Daten laden",
   "Clear demo data": "Demo-Daten löschen",
   "Export JSON": "JSON exportieren",
@@ -450,6 +527,7 @@ const DE: Record<string, string> = {
   Weekly: "Wöchentlich",
   Monthly: "Monatlich",
   "Life Report": "Life Report",
+  "Share as image": "Als Bild teilen",
   "Best day": "Bester Tag",
   "Toughest day": "Härtester Tag",
   "Training sessions": "Trainingseinheiten",

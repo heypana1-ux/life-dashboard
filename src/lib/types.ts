@@ -10,7 +10,7 @@
  * intentionally serialization-friendly so the same model can later back a real database.
  */
 
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 
 export type Language = "en" | "de";
 
@@ -110,6 +110,10 @@ export interface JournalEntry {
   mood?: number; // 1..10
   tags?: string[];
   highlight?: string;
+  /** Small, client-resized images stored as data: URLs. */
+  photos?: string[];
+  location?: string;
+  weather?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -122,6 +126,8 @@ export interface Goal {
   deadline?: string; // YYYY-MM-DD
   progress: number; // 0..100
   milestones: { id: string; label: string; done: boolean }[];
+  /** Habits that contribute to this goal (shown with their recent adherence). */
+  linkedHabitIds?: string[];
   createdAt: string;
   archived: boolean;
 }
@@ -262,7 +268,43 @@ export interface Project {
   updatedAt: string;
 }
 
+/* ---------------- Life Experiments ---------------- */
+
+export type ExperimentMetric = "lifeScore" | "productivity" | "mood" | "energy" | "sleep";
+
+/** How each day is classified into the "condition met" group. */
+export type ExperimentCondition =
+  | "bedtimeBefore" // bedtime earlier than `threshold` (minutes from midnight, evening)
+  | "sleepAtLeast" // sleep duration >= threshold minutes
+  | "trained" // any workout / sport-habit that day
+  | "habitDone"; // a specific habit (habitId) was done
+
+export interface Experiment {
+  id: string;
+  title: string;
+  hypothesis?: string;
+  metric: ExperimentMetric;
+  condition: ExperimentCondition;
+  /** For bedtimeBefore / sleepAtLeast: a minute value. */
+  threshold?: number;
+  /** For habitDone. */
+  habitId?: string;
+  startDate: string; // YYYY-MM-DD
+  days: number; // observation window length
+  createdAt: string;
+}
+
 /* ---------------- Settings ---------------- */
+
+export interface ReminderSettings {
+  enabled: boolean;
+  /** Daily check-in reminder time "HH:MM". */
+  checkinTime?: string;
+  /** Whether to remind about still-open habits at the check-in time. */
+  habitReminders: boolean;
+  /** ISO dates on which reminders already fired (debounce). */
+  firedToday: string[];
+}
 
 export interface Settings {
   onboardingComplete: boolean;
@@ -275,6 +317,11 @@ export interface Settings {
   eloStart: number;
   demoDataLoaded: boolean;
   profile: Profile;
+  reminders: ReminderSettings;
+  /** Last time the Morning screen auto-opened (YYYY-MM-DD). */
+  lastMorningShown?: string;
+  /** Last data export/backup (ISO date). */
+  lastBackupAt?: string;
 }
 
 export interface AppData {
@@ -290,4 +337,5 @@ export interface AppData {
   finances: Finances;
   workouts: Workout[];
   projects: Project[];
+  experiments: Experiment[];
 }

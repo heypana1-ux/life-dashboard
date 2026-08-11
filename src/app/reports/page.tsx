@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { ImageDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
@@ -9,8 +10,9 @@ import { fmtDuration } from "@/lib/date";
 import { fmtMoney } from "@/lib/finance";
 import { buildInsights } from "@/lib/insights";
 import { translate } from "@/lib/i18n";
+import { downloadReportImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
-import { Card, PageHeader, SectionTitle, Chip, Delta, Badge } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 
 type Period = "week" | "month";
 
@@ -52,6 +54,13 @@ export default function ReportsPage() {
       <PageHeader
         title={t("Reports")}
         subtitle={t("Automatic summaries of your week and month.")}
+        action={
+          report.hasData ? (
+            <Button variant="soft" onClick={() => shareImage(report, data.finances.currency, t)}>
+              <ImageDown size={16} /> {t("Share as image")}
+            </Button>
+          ) : undefined
+        }
       />
 
       <div className="flex gap-1.5">
@@ -119,6 +128,36 @@ export default function ReportsPage() {
       )}
     </div>
   );
+}
+
+function shareImage(
+  report: ReportData,
+  currency: string,
+  t: (k: string, v?: Record<string, string | number>) => string,
+) {
+  const tiles = [
+    { label: t("Life Rating"), value: report.elo.toLocaleString() },
+    { label: t("Training sessions"), value: String(report.workouts) },
+    { label: t("Sleep"), value: report.avgSleep ? fmtDuration(report.avgSleep) : "—" },
+    { label: t("Journal entries"), value: String(report.journal) },
+    { label: t("Best day"), value: report.bestDay ? String(report.bestScore) : "—" },
+  ];
+  if (report.netWorthDelta !== null) {
+    tiles.push({
+      label: t("Net worth"),
+      value: `${report.netWorthDelta >= 0 ? "+" : "−"}${fmtMoney(Math.abs(report.netWorthDelta), currency)}`,
+    });
+  }
+  downloadReportImage({
+    title: report.label,
+    period: t("Life Report"),
+    score: String(report.avgScore),
+    scoreDelta: report.scoreDelta === 0 ? "" : `${report.scoreDelta > 0 ? "+" : ""}${report.scoreDelta}`,
+    scoreDeltaPositive: report.scoreDelta >= 0,
+    tiles,
+    highlights: report.highlights,
+    footer: "Life Dashboard",
+  });
 }
 
 function Metric({

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
+import { BellRing, Download, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AreaKey, Language, Profile } from "@/lib/types";
 import { generateDemo, clearDemo } from "@/lib/demo";
@@ -37,6 +37,7 @@ export default function SettingsPage() {
     a.download = `life-dashboard-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    updateSettings({ lastBackupAt: new Date().toISOString() });
   }
   function importData(file: File) {
     const reader = new FileReader();
@@ -155,9 +156,25 @@ export default function SettingsPage() {
         </Field>
       </Card>
 
+      {/* Reminders */}
+      <RemindersCard />
+
       {/* Data */}
       <Card>
-        <SectionTitle>{t("Data")}</SectionTitle>
+        <SectionTitle
+          right={
+            <span className="text-xs text-[var(--text-faint)]">
+              {s.lastBackupAt
+                ? `${t("Last backup")}: ${backupAgeLabel(s.lastBackupAt, t)}`
+                : t("No backup yet")}
+            </span>
+          }
+        >
+          {t("Data")}
+        </SectionTitle>
+        <p className="mb-3 text-sm text-[var(--text-muted)]">
+          {t("Your data lives only in this browser. Export a backup regularly so you never lose it.")}
+        </p>
         <div className="flex flex-wrap gap-2">
           {s.demoDataLoaded ? (
             <Button variant="outline" onClick={() => replaceAll(clearDemo(data))}>
@@ -195,6 +212,87 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
     </div>
+  );
+}
+
+/** Number of whole days since an ISO timestamp. */
+export function daysSince(iso: string): number {
+  const then = new Date(iso).getTime();
+  return Math.floor((Date.now() - then) / 86400000);
+}
+
+function backupAgeLabel(iso: string, t: (k: string, v?: Record<string, string | number>) => string): string {
+  const d = daysSince(iso);
+  if (d <= 0) return t("today");
+  if (d === 1) return t("1 day ago");
+  return t("{n} days ago", { n: d });
+}
+
+function RemindersCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const r = data.settings.reminders;
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    typeof window !== "undefined" && "Notification" in window
+      ? Notification.permission
+      : "unsupported",
+  );
+
+  async function enable() {
+    if (perm === "unsupported") return;
+    const res = await Notification.requestPermission();
+    setPerm(res);
+    if (res === "granted") {
+      updateSettings({ reminders: { ...r, enabled: true } });
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle>{t("Reminders")}</SectionTitle>
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
+        {t("A daily nudge to log your day. Works only while the app is open (no background push).")}
+      </p>
+
+      {perm === "unsupported" ? (
+        <p className="text-sm text-[var(--text-faint)]">{t("Notifications aren't supported here.")}</p>
+      ) : perm !== "granted" ? (
+        <Button variant="soft" onClick={enable}>
+          <BellRing size={16} /> {t("Enable notifications")}
+        </Button>
+      ) : (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
+            <span className="text-sm font-medium">{t("Daily check-in reminder")}</span>
+            <Toggle
+              checked={r.enabled}
+              onChange={(v) => updateSettings({ reminders: { ...r, enabled: v } })}
+            />
+          </div>
+          {r.enabled && (
+            <>
+              <Field label={t("Reminder time")}>
+                <input
+                  type="time"
+                  className={inputCls}
+                  value={r.checkinTime ?? "21:00"}
+                  onChange={(e) =>
+                    updateSettings({ reminders: { ...r, checkinTime: e.target.value } })
+                  }
+                />
+              </Field>
+              <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
+                <span className="text-sm font-medium">{t("Include still-open habits")}</span>
+                <Toggle
+                  checked={r.habitReminders}
+                  onChange={(v) => updateSettings({ reminders: { ...r, habitReminders: v } })}
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 

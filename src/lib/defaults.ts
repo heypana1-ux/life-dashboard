@@ -61,6 +61,7 @@ export function defaultSettings(): Settings {
     eloStart: 1000,
     demoDataLoaded: false,
     profile: {},
+    reminders: { enabled: false, checkinTime: "21:00", habitReminders: true, firedToday: [] },
   };
 }
 
@@ -89,6 +90,7 @@ export function emptyData(): AppData {
     finances: emptyFinances(),
     workouts: [],
     projects: [],
+    experiments: [],
   };
 }
 

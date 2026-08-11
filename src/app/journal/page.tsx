@@ -1,10 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, Plus, Save, Search, Trash2 } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight, ImagePlus, Plus, Save, Search, Trash2, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { JournalEntry } from "@/lib/types";
 import { fmtLong, todayISO } from "@/lib/date";
+import { resizeImageToDataUrl } from "@/lib/image";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
@@ -28,6 +29,7 @@ export default function JournalPage() {
       (e) =>
         e.title.toLowerCase().includes(q) ||
         e.body.toLowerCase().includes(q) ||
+        (e.location ?? "").toLowerCase().includes(q) ||
         (e.tags ?? []).some((t) => t.toLowerCase().includes(q)),
     );
   }, [entries, query]);
@@ -191,6 +193,27 @@ export default function JournalPage() {
                     lineHeight: "28px",
                   }}
                 />
+                {/* Photos */}
+                {(active.photos?.length ?? 0) > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {active.photos!.map((src, i) => (
+                      <div key={i} className="relative">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={src} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                        <button
+                          onClick={() =>
+                            setDraft({ ...active, photos: active.photos!.filter((_, j) => j !== i) })
+                          }
+                          className="absolute -right-1.5 -top-1.5 rounded-full bg-[var(--bad)] p-0.5 text-white"
+                          aria-label={t("Delete")}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   <Field label={t("Highlight of the day")}>
                     <input
@@ -211,7 +234,58 @@ export default function JournalPage() {
                       }
                     />
                   </Field>
+                  <Field label={t("Location")}>
+                    <input
+                      className={inputCls}
+                      value={active.location ?? ""}
+                      onChange={(e) => setDraft({ ...active, location: e.target.value })}
+                    />
+                  </Field>
+                  <Field label={t("Weather")}>
+                    <input
+                      className={inputCls}
+                      placeholder="☀️ / 🌧️ / …"
+                      value={active.weather ?? ""}
+                      onChange={(e) => setDraft({ ...active, weather: e.target.value })}
+                    />
+                  </Field>
                 </div>
+
+                <Field label={t("Tags (comma separated)")}>
+                  <input
+                    className={inputCls}
+                    value={(active.tags ?? []).join(", ")}
+                    onChange={(e) =>
+                      setDraft({
+                        ...active,
+                        tags: e.target.value
+                          .split(",")
+                          .map((s) => s.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                </Field>
+
+                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]">
+                  <ImagePlus size={16} /> {t("Add photo")}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const url = await resizeImageToDataUrl(file);
+                        setDraft({ ...active, photos: [...(active.photos ?? []), url] });
+                      } catch {
+                        /* ignore */
+                      }
+                      e.target.value = "";
+                    }}
+                  />
+                </label>
               </div>
               <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-3">
                 <div className="flex items-center gap-3">

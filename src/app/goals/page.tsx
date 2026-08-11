@@ -7,8 +7,10 @@ import { Goal } from "@/lib/types";
 import { fmtShort, todayISO } from "@/lib/date";
 import { uid } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
+import { habit30dRate } from "@/lib/habitStats";
 import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
+import clsx from "clsx";
 
 const GOAL_AREAS = [
   "sport",
@@ -155,6 +157,35 @@ export default function GoalsPage() {
                   ))}
                 </div>
               )}
+
+              {(g.linkedHabitIds?.length ?? 0) > 0 && (
+                <div className="mt-3 border-t border-[var(--border)] pt-3">
+                  <div className="mb-1.5 text-[11px] font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                    {t("Linked habits")}
+                  </div>
+                  <div className="space-y-1.5">
+                    {(g.linkedHabitIds ?? [])
+                      .map((id) => data.habits.find((h) => h.id === id))
+                      .filter((h): h is NonNullable<typeof h> => !!h)
+                      .map((h) => {
+                        const rate = habit30dRate(data, h);
+                        return (
+                          <div key={h.id} className="flex items-center gap-2 text-sm">
+                            <span className="min-w-0 flex-1 truncate">{h.name}</span>
+                            <span
+                              className={clsx(
+                                "text-xs font-medium tabular-nums",
+                                rate >= 70 ? "text-[var(--good)]" : rate >= 45 ? "text-[var(--warn)]" : "text-[var(--bad)]",
+                              )}
+                            >
+                              {rate}%
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
             </Card>
           ))}
         </div>
@@ -185,8 +216,19 @@ function GoalModal({
   onSubmit: () => void;
 }) {
   const t = useT();
+  const { data } = useStore();
   const [milestoneText, setMilestoneText] = useState("");
   if (!draft) return null;
+
+  const buildHabits = data.habits.filter((h) => h.kind === "build" && !h.archived);
+  const linked = new Set(draft.linkedHabitIds ?? []);
+  function toggleLink(id: string) {
+    if (!draft) return;
+    const next = new Set(draft.linkedHabitIds ?? []);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setDraft({ ...draft, linkedHabitIds: [...next] });
+  }
 
   function addMilestone() {
     if (!milestoneText.trim() || !draft) return;
@@ -251,6 +293,27 @@ function GoalModal({
             className="w-full accent-[var(--accent)]"
           />
         </Field>
+
+        {buildHabits.length > 0 && (
+          <Field label={t("Linked habits")} hint={t("Habits that contribute to this goal.")}>
+            <div className="flex flex-wrap gap-1.5">
+              {buildHabits.map((h) => (
+                <button
+                  key={h.id}
+                  onClick={() => toggleLink(h.id)}
+                  className={clsx(
+                    "rounded-full px-3 py-1 text-xs font-medium transition",
+                    linked.has(h.id)
+                      ? "bg-[var(--accent)] text-white"
+                      : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
+                  )}
+                >
+                  {h.name}
+                </button>
+              ))}
+            </div>
+          </Field>
+        )}
 
         <Field label={t("Milestones")}>
           <div className="space-y-1.5">

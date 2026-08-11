@@ -155,6 +155,7 @@ export function generateDemo(base: AppData): AppData {
     sleep,
     workouts,
     projects: demoProjects(),
+    experiments: demoExperiments(start),
     finances: demoFinances(start, end, rnd),
     journal: [...base.journal, ...journal],
     settings: { ...base.settings, demoDataLoaded: true, onboardingComplete: true },
@@ -175,6 +176,7 @@ export function clearDemo(data: AppData): AppData {
     goals: [],
     workouts: [],
     projects: [],
+    experiments: [],
     finances: {
       currency: data.finances.currency,
       accounts: [],
@@ -217,6 +219,33 @@ function makeStrengthWorkout(
       })),
     })),
   };
+}
+
+function demoExperiments(startISO: string): import("./types").Experiment[] {
+  const now = new Date().toISOString();
+  return [
+    {
+      id: uid("exp"),
+      title: "Before midnight = more productive?",
+      hypothesis: "Going to bed before 00:00 makes the next day more productive.",
+      metric: "productivity",
+      condition: "bedtimeBefore",
+      threshold: 24 * 60, // midnight
+      startDate: startISO,
+      days: 45,
+      createdAt: now,
+    },
+    {
+      id: uid("exp"),
+      title: "Training days feel better",
+      hypothesis: "My mood is higher on days I train.",
+      metric: "mood",
+      condition: "trained",
+      startDate: startISO,
+      days: 45,
+      createdAt: now,
+    },
+  ];
 }
 
 function demoProjects(): Project[] {
