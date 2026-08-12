@@ -9,6 +9,7 @@ import { todayISO, fmtLong } from "@/lib/date";
 import { DailyReview } from "@/lib/types";
 import { useTodayComputation } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
+import { scoreColor, scoreLabel } from "@/lib/score";
 import {
   Card,
   PageHeader,
@@ -20,7 +21,6 @@ import {
   Badge,
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
-import { ScoreRing } from "@/components/ScoreRing";
 
 const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
   { key: "productivity", label: "Productivity" },
@@ -58,12 +58,22 @@ export default function TodayPage() {
     setTimeout(() => setSavedFlash(false), 1800);
   }
 
+  const projected = comp.lifeScore ?? 0;
+  const doneCount = build.filter((g) => g.log?.done).length;
+  const slipCount = reduce.filter((g) => g.log?.done).length;
+  const checkinAvg = existing
+    ? (
+        (existing.productivity + existing.mood + existing.energy + existing.satisfaction + existing.discipline) /
+        5
+      ).toFixed(1)
+    : "—";
+
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader title={t("Today")} subtitle={fmtLong(date)} />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <div className="space-y-4 lg:col-span-2">
+      <div className="grid items-start gap-[18px] lg:grid-cols-[1.3fr_1fr]">
+        <div className="flex flex-col gap-[18px]">
           {/* Goals */}
           <Card>
             <SectionTitle
@@ -159,7 +169,7 @@ export default function TodayPage() {
                 </Field>
               </div>
               <div className="flex items-center gap-3">
-                <Button onClick={save}>
+                <Button variant="soft" onClick={save}>
                   <Save size={16} /> {t("Save check-in")}
                 </Button>
                 {savedFlash && (
@@ -170,14 +180,37 @@ export default function TodayPage() {
           </Card>
         </div>
 
-        {/* Sidebar: live score + sleep */}
-        <div className="space-y-4">
-          <Card className="flex flex-col items-center">
-            <SectionTitle>{t("Projected score")}</SectionTitle>
-            <ScoreRing value={comp.lifeScore ?? 0} size={150} />
-            <p className="mt-2 text-center text-xs text-[var(--text-muted)]">
-              {t("Updates live as you log. Categories with no data yet are excluded.")}
-            </p>
+        {/* Sidebar: projected score + sleep */}
+        <div className="flex flex-col gap-[18px] lg:sticky lg:top-[92px]">
+          <Card>
+            <p className="slabel">{t("Projected score")}</p>
+            <div className="mb-[18px] mt-1.5 flex items-baseline gap-2.5">
+              <span
+                className="num text-[56px] font-bold leading-none tracking-[-0.03em]"
+                style={{ color: scoreColor(projected) }}
+              >
+                {projected}
+              </span>
+              <span className="text-sm font-semibold" style={{ color: scoreColor(projected) }}>
+                {projected > 0 ? t(scoreLabel(projected)) : t("No data yet")}
+              </span>
+            </div>
+            <div className="mb-5 h-[10px] overflow-hidden rounded-[6px] bg-[var(--ring-track)]">
+              <div className="grad h-full rounded-[6px]" style={{ width: `${projected}%`, transition: "width .5s ease" }} />
+            </div>
+            <div className="flex flex-col gap-3 text-[13px]">
+              <Row label={t("goals done")} value={`${doneCount}/${build.length}`} />
+              <Row label={t("Watch-list")} value={String(slipCount)} />
+              <Row label={t("Daily check-in")} value={checkinAvg} />
+            </div>
+            <div className="mt-[22px]">
+              <Button className="w-full !py-3" onClick={save}>
+                <Save size={16} /> {t("Save check-in")}
+              </Button>
+              {savedFlash && (
+                <p className="mt-2 text-center text-sm text-[var(--good)]">{t("Saved ✓")}</p>
+              )}
+            </div>
           </Card>
           <Card>
             <SectionTitle>{t("Sleep")}</SectionTitle>
@@ -194,6 +227,15 @@ export default function TodayPage() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between">
+      <span className="text-[var(--text-muted)]">{label}</span>
+      <span className="num font-semibold">{value}</span>
     </div>
   );
 }

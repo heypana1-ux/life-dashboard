@@ -53,15 +53,15 @@ export default function CalendarPage() {
     <div className="space-y-6">
       <PageHeader title={t("Calendar")} subtitle={t("Your life, day by day — tap a day to see everything you logged.")} />
 
-      <Card>
-        <div className="mb-4 flex items-center justify-between">
-          <button onClick={() => shift(-1)} className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)]" aria-label={t("Move left")}>
+      <Card className="mx-auto max-w-[760px]">
+        <div className="mb-[18px] flex items-center justify-between">
+          <button onClick={() => shift(-1)} className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]" aria-label={t("Move left")}>
             <ChevronLeft size={18} />
           </button>
-          <span className="text-sm font-semibold">
+          <span className="text-[15px] font-semibold">
             {t(monthLabel(ym.m))} {ym.y}
           </span>
-          <button onClick={() => shift(1)} className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)]" aria-label={t("Move right")}>
+          <button onClick={() => shift(1)} className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]" aria-label={t("Move right")}>
             <ChevronRight size={18} />
           </button>
         </div>

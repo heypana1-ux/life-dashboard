@@ -18,6 +18,7 @@ import {
   type LucideIcon,
   Menu,
   Moon,
+  ShieldCheck,
   Sunrise,
   Target,
   Settings as SettingsIcon,
@@ -39,19 +40,19 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { href: "/", label: "Dashboard", icon: Gauge },
-  { href: "/morning", label: "Morning", icon: Sunrise },
   { href: "/today", label: "Today", icon: CalendarCheck },
+  { href: "/morning", label: "Morning", icon: Sunrise },
   { href: "/habits", label: "Habits", icon: ListChecks },
   { href: "/training", label: "Training", icon: Dumbbell },
   { href: "/sleep", label: "Sleep", icon: Moon },
-  { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
+  { href: "/journal", label: "Journal", icon: BookOpen },
+  { href: "/goals", label: "Goals", icon: Target },
+  { href: "/projects", label: "Projects", icon: KanbanSquare },
+  { href: "/experiments", label: "Experiments", icon: FlaskConical },
+  { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/journal", label: "Journal", icon: BookOpen },
-  { href: "/projects", label: "Projects", icon: KanbanSquare },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/experiments", label: "Experiments", icon: FlaskConical },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -82,14 +83,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="mx-auto flex min-h-screen w-full max-w-7xl">
       {/* Desktop sidebar */}
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-[var(--border)] px-3 py-6 md:flex">
-        <div className="mb-6 flex items-center gap-2 px-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-white">
+      <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] px-4 py-[22px] md:flex">
+        <div className="mb-[22px] flex items-center gap-[11px] px-1.5">
+          <div className="grad flex h-[34px] w-[34px] items-center justify-center rounded-[11px] text-white shadow-[var(--shadow)]">
             <Sparkles size={18} />
           </div>
-          <span className="font-semibold tracking-tight">{t("Life Dashboard")}</span>
+          <span className="text-[15px] font-semibold tracking-[-0.02em]">{t("Life Dashboard")}</span>
         </div>
-        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto hide-scrollbar">
+        <nav className="-mx-1 flex flex-1 flex-col gap-[2px] overflow-y-auto px-1 hide-scrollbar">
           {NAV.map((item) => (
             <NavLink
               key={item.href}
@@ -99,16 +100,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
           ))}
         </nav>
-        <p className="px-3 pt-2 text-[11px] text-[var(--text-faint)]">
-          {t("Data stays on this device.")}
-        </p>
+        <div className="flex items-center gap-2 px-2 pt-3 text-[11px] text-[var(--text-faint)]">
+          <ShieldCheck size={13} />
+          <span>{t("Data stays on this device.")}</span>
+        </div>
       </aside>
 
       {/* Main */}
-      <main className="min-w-0 flex-1 px-4 pb-28 pt-6 sm:px-6 md:pb-10 md:pt-8">
-        <BackupReminder />
-        <Reminders />
-        <div className="animate-in">{children}</div>
+      <main className="min-w-0 flex-1">
+        <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
+          <Reminders />
+          <div className="animate-in">
+            <BackupReminder />
+            {children}
+          </div>
+        </div>
       </main>
 
       {/* Mobile bottom nav */}
@@ -180,10 +186,10 @@ function NavLink({ item, label, active }: { item: NavItem; label: string; active
     <Link
       href={item.href}
       className={clsx(
-        "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition",
+        "flex items-center gap-[11px] rounded-[10px] px-[11px] py-[9px] text-[13.5px] transition",
         active
-          ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-          : "text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
+          ? "bg-[var(--accent-soft)] font-semibold text-[var(--accent)]"
+          : "font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
       )}
     >
       <Icon size={18} />

@@ -196,6 +196,8 @@ const DE: Record<string, string> = {
   "Show heatmap": "Heatmap zeigen",
   "Hide heatmap": "Heatmap ausblenden",
   "Current streak": "Aktueller Streak",
+  adherence: "Adhärenz",
+  "day streak": "Tage-Streak",
   "Create your first habit to start tracking. Habits can be daily, a number of times per week, or on specific weekdays.":
     "Erstelle deine erste Gewohnheit. Gewohnheiten können täglich, mehrmals pro Woche oder an bestimmten Wochentagen sein.",
 

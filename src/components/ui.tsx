@@ -10,12 +10,13 @@ export function Card({
   ...rest
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx("card p-4 sm:p-5", className)} {...rest}>
+    <div className={clsx("card p-[22px] sm:px-6", className)} {...rest}>
       {children}
     </div>
   );
 }
 
+/** Sticky topbar carrying the screen title / subtitle and its primary action. */
 export function PageHeader({
   title,
   subtitle,
@@ -26,11 +27,11 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{title}</h1>
+    <div className="sticky top-0 z-20 -mx-5 mb-[18px] flex items-center justify-between gap-4 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-[18px] sm:-mx-8 sm:px-8">
+      <div className="min-w-0">
+        <h1 className="truncate text-[21px] font-semibold tracking-[-0.025em]">{title}</h1>
         {subtitle && (
-          <p className="mt-1 text-sm text-[var(--text-muted)]">{subtitle}</p>
+          <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>
         )}
       </div>
       {action}
@@ -46,11 +47,67 @@ export function SectionTitle({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold uppercase tracking-wide text-[var(--text-faint)]">
-        {children}
-      </h2>
+    <div className="mb-4 flex items-center justify-between gap-2">
+      <h2 className="slabel">{children}</h2>
       {right}
+    </div>
+  );
+}
+
+/** Small stat tile: icon + label, big number, optional sub. */
+export function StatTile({
+  icon,
+  label,
+  value,
+  sub,
+  valueColor,
+}: {
+  icon?: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  valueColor?: string;
+}) {
+  return (
+    <div className="tile flex flex-col gap-2 p-[16px] sm:px-[18px]">
+      <div className="flex items-center gap-[7px] text-[var(--text-faint)]">
+        {icon && <span className="flex text-[15px]">{icon}</span>}
+        <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{label}</span>
+      </div>
+      <div className="num text-[26px] font-bold tracking-[-0.02em]" style={{ color: valueColor }}>
+        {value}
+      </div>
+      {sub !== undefined && <div className="text-xs text-[var(--text-muted)]">{sub}</div>}
+    </div>
+  );
+}
+
+/** Segmented control (pill group on a surface-2 track); active = gradient fill. */
+export function Segmented<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: React.ReactNode }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="inline-flex gap-0.5 rounded-[11px] bg-[var(--surface-2)] p-[3px]">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={clsx(
+            "rounded-[9px] px-3 py-1.5 text-[13px] font-medium transition",
+            value === o.value
+              ? "grad text-white shadow-sm"
+              : "text-[var(--text-muted)] hover:text-[var(--text)]",
+          )}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -70,10 +127,9 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex items-center justify-center gap-2 rounded-[12px] font-medium transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50",
         size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2.5 text-sm",
-        variant === "primary" &&
-          "bg-[var(--accent)] text-white hover:opacity-90 shadow-sm",
+        variant === "primary" && "grad text-white shadow-sm hover:opacity-90",
         variant === "soft" &&
           "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-105",
         variant === "ghost" &&
@@ -142,9 +198,9 @@ export function Chip({
     <button
       onClick={onClick}
       className={clsx(
-        "rounded-full px-3 py-1 text-xs font-medium transition",
+        "rounded-full px-3.5 py-1.5 text-xs font-medium transition",
         active
-          ? "bg-[var(--accent)] text-white"
+          ? "grad text-white shadow-sm"
           : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
         className,
       )}

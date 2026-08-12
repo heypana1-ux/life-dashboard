@@ -2,16 +2,15 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { Flame, Moon, Sunrise, Trophy } from "lucide-react";
+import { Flame, Moon, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { habitsForToday } from "@/lib/habitView";
 import { sleepScore } from "@/lib/score";
 import { fmtDuration, fmtLong, sleepDurationMinutes, todayISO } from "@/lib/date";
-import { Card, PageHeader, SectionTitle, Button } from "@/components/ui";
+import { Card, PageHeader, SectionTitle } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
-import { ScoreRing } from "@/components/ScoreRing";
 
 export default function MorningPage() {
   const { data } = useStore();
@@ -42,71 +41,76 @@ export default function MorningPage() {
   const greeting = hour < 11 ? t("Good morning") : hour < 18 ? t("Good afternoon") : t("Good evening");
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={name ? `${greeting}, ${name}` : greeting}
-        subtitle={fmtLong(date)}
-      />
+    <div>
+      <PageHeader title={t("Morning")} subtitle={fmtLong(date)} />
 
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col items-center justify-center">
-          <SectionTitle>{t("Last night")}</SectionTitle>
-          {sleep ? (
-            <>
-              <ScoreRing value={sScore ?? 0} size={150} label={t("Sleep")} />
-              <div className="mt-3 text-center text-sm text-[var(--text-muted)]">
-                {fmtDuration(sleepMin)} · {t("Morning energy")} {sleep.morningEnergy}/10
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-3 py-6 text-center">
-              <Moon className="text-[var(--text-faint)]" size={28} />
-              <p className="text-sm text-[var(--text-muted)]">{t("No sleep logged for last night.")}</p>
-              <Link href="/sleep">
-                <Button variant="soft" size="sm">{t("Log sleep")}</Button>
+      <div className="flex flex-col gap-[18px]">
+        {/* Gradient greeting banner */}
+        <div className="grad relative overflow-hidden rounded-[22px] p-8 text-white shadow-[var(--shadow)] sm:px-8">
+          <p className="text-sm font-medium opacity-85">{fmtLong(date)}</p>
+          <h2 className="mt-2 text-[32px] font-bold tracking-[-0.03em]">
+            {name ? `${greeting}, ${name}` : greeting}
+          </h2>
+          <p className="mt-1.5 max-w-[460px] text-[15px] leading-[1.5] opacity-90">
+            {t("Set your intention for the day. Small, consistent steps compound.")}
+          </p>
+        </div>
+
+        {/* 3 tiles */}
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="tile p-5">
+            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
+              <Moon size={16} />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Last night")}</span>
+            </div>
+            {sleep ? (
+              <>
+                <div className="num text-[30px] font-bold tracking-[-0.02em]">{fmtDuration(sleepMin)}</div>
+                <div className="mt-0.5 flex items-center gap-2 text-[12.5px] text-[var(--text-muted)]">
+                  {t("Sleep")}{" "}
+                  <span className="num font-bold text-[var(--good)]">{sScore}</span>
+                  · {t("Morning energy")} {sleep.morningEnergy}/10
+                </div>
+              </>
+            ) : (
+              <Link href="/sleep" className="text-sm text-[var(--accent)]">
+                {t("Log sleep")}
               </Link>
+            )}
+          </div>
+          <div className="tile p-5">
+            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
+              <Trophy size={16} />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Life Rating")}</span>
+            </div>
+            <div className="num text-[30px] font-bold tracking-[-0.02em]">{elo.toLocaleString()}</div>
+          </div>
+          <div className="tile p-5">
+            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
+              <Flame size={16} />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Streak")}</span>
+            </div>
+            <div className="num text-[30px] font-bold tracking-[-0.02em]">{streak}d</div>
+            <div className="mt-0.5 text-[12.5px] text-[var(--text-muted)]">{t("days with activity")}</div>
+          </div>
+        </div>
+
+        {/* Focus */}
+        <Card>
+          <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
+            {t("Today's goals")}
+          </SectionTitle>
+          {goals.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No habits scheduled today")}</p>
+          ) : (
+            <div className="grid gap-x-[26px] sm:grid-cols-2">
+              {goals.map((g) => (
+                <HabitRow key={g.habit.id} item={g} date={date} />
+              ))}
             </div>
           )}
         </Card>
-
-        <div className="grid grid-cols-2 gap-4 lg:col-span-2 lg:grid-rows-2">
-          <Stat icon={<Trophy size={18} />} label={t("Life Rating")} value={elo.toLocaleString()} />
-          <Stat icon={<Flame size={18} />} label={t("Streak")} value={`${streak}d`} />
-          <Card className="col-span-2 flex items-center gap-3 !py-4">
-            <Sunrise className="shrink-0 text-[var(--accent)]" size={22} />
-            <p className="text-sm text-[var(--text-muted)]">
-              {t("Set your intention for the day. Small, consistent steps compound.")}
-            </p>
-          </Card>
-        </div>
       </div>
-
-      <Card>
-        <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
-          {t("Today's goals")}
-        </SectionTitle>
-        {goals.length === 0 ? (
-          <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No habits scheduled today")}</p>
-        ) : (
-          <div className="divide-y divide-[var(--border)]">
-            {goals.map((g) => (
-              <HabitRow key={g.habit.id} item={g} date={date} />
-            ))}
-          </div>
-        )}
-      </Card>
     </div>
-  );
-}
-
-function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
-  return (
-    <Card className="!p-4">
-      <div className="mb-1 flex items-center gap-2 text-[var(--text-faint)]">
-        {icon}
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="text-2xl font-bold tabular-nums">{value}</div>
-    </Card>
   );
 }

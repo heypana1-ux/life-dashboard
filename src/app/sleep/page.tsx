@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Moon, Save } from "lucide-react";
+import { Lightbulb, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { SleepLog } from "@/lib/types";
 import { fmtDuration, sleepDurationMinutes, todayISO } from "@/lib/date";
@@ -211,15 +211,13 @@ export default function SleepPage() {
             )}
           </Card>
 
-          <Card>
-            <SectionTitle right={<Badge tone="accent">{t("From your data")}</Badge>}>
-              {t("Personal pattern")}
-            </SectionTitle>
-            {recommendation ? (
-              <div className="flex items-start gap-3">
-                <Moon className="mt-0.5 text-[var(--accent)]" size={20} />
-                <div>
-                  <p className="text-sm">
+          <div className="flex items-start gap-3.5 rounded-[18px] border border-[var(--border)] bg-[var(--accent-soft)] p-5 sm:px-6">
+            <Lightbulb className="mt-0.5 shrink-0 text-[var(--accent)]" size={19} />
+            <div>
+              <p className="mb-1 text-sm font-semibold text-[var(--accent)]">{t("Personal pattern")}</p>
+              {recommendation ? (
+                <>
+                  <p className="text-[13.5px] leading-[1.55]">
                     {t("Your best-rated mornings follow around {dur} of sleep (avg morning energy {energy}/10 in that range).", {
                       dur: fmtDuration(recommendation.minutes),
                       energy: recommendation.energy.toFixed(1),
@@ -228,14 +226,14 @@ export default function SleepPage() {
                   <p className="mt-1 text-xs text-[var(--text-faint)]">
                     {t("A data-based estimate from your own logs — not a medical recommendation.")}
                   </p>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-[var(--text-muted)]">
-                {t("Not enough data yet for a reliable pattern. Keep logging — an estimate appears after ~10 nights.")}
-              </p>
-            )}
-          </Card>
+                </>
+              ) : (
+                <p className="text-[13.5px] text-[var(--text-muted)]">
+                  {t("Not enough data yet for a reliable pattern. Keep logging — an estimate appears after ~10 nights.")}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -244,12 +242,12 @@ export default function SleepPage() {
 
 function MiniStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <Card className="!p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+    <div className="tile p-4 sm:px-5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
         {label}
       </div>
-      <div className="mt-1 text-xl font-bold">{value}</div>
+      <div className="num mt-2 text-[22px] font-bold">{value}</div>
       {hint && <div className="text-xs text-[var(--text-muted)]">{hint}</div>}
-    </Card>
+    </div>
   );
 }

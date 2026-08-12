@@ -1,17 +1,35 @@
 "use client";
 
 import { useState } from "react";
-import { Flame, Pencil, Plus, Trash2, TrendingDown, TrendingUp } from "lucide-react";
+import {
+  Dumbbell,
+  Flame,
+  GraduationCap,
+  type LucideIcon,
+  Moon,
+  Palette,
+  Pencil,
+  Plus,
+  Repeat,
+  Trash2,
+  Zap,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
-import { Habit } from "@/lib/types";
-import { AREA_LABELS } from "@/lib/defaults";
+import { AreaKey, Habit } from "@/lib/types";
 import { fmtDuration } from "@/lib/date";
-import { habitCurrentStreak, habitLongestStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
+import { habitCurrentStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, Button, Badge, EmptyState, Chip } from "@/components/ui";
+import { PageHeader, Button, Badge, EmptyState, Chip } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
-import { Heatmap } from "@/components/Heatmap";
-import clsx from "clsx";
+
+const AREA_ICON: Partial<Record<AreaKey, LucideIcon>> = {
+  sport: Dumbbell,
+  productivity: Zap,
+  learning: GraduationCap,
+  creativity: Palette,
+  sleep: Moon,
+  habits: Repeat,
+};
 
 export default function HabitsPage() {
   const { data, removeHabit } = useStore();
@@ -124,10 +142,8 @@ export default function HabitsPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-[var(--text-faint)]">
-        {title}
-      </h2>
-      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+      <h2 className="slabel mb-2.5">{title}</h2>
+      <div className="flex flex-col gap-3">{children}</div>
     </div>
   );
 }
@@ -148,96 +164,68 @@ function HabitCard({
   const isReduce = h.kind === "reduce";
   const t = useT();
   const { data } = useStore();
-  const [open, setOpen] = useState(false);
   const streak = habitCurrentStreak(data, h);
+  const Icon = AREA_ICON[h.area] ?? Repeat;
+  const dots = habitHeatmap(data, h).slice(-30);
+  const heatColor = (lvl: string) =>
+    lvl === "done" ? "var(--good)" : lvl === "missed" ? "var(--bad-soft)" : "var(--surface-3)";
+
   return (
-    <Card className="!p-4">
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
+    <div className="tile flex items-center gap-4 p-[18px] sm:gap-5 sm:px-[22px]">
+      <div
+        className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] bg-[var(--accent-soft)]"
+        style={{ color: h.color ?? "var(--accent)" }}
+      >
+        <Icon size={19} />
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-[9px]">
+          <span className="truncate text-[15px] font-semibold">{h.name}</span>
+          {isReduce ? <Badge tone="bad">{t("Reduce")}</Badge> : <Badge>{t("Build")}</Badge>}
+          {h.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
+        </div>
+        <div className="mt-0.5 text-[12.5px] text-[var(--text-muted)]">
+          {scheduleLabel} · {rate}% {t("adherence")}
+          {h.targetMinutes ? ` · ${fmtDuration(h.targetMinutes)}` : ""}
+        </div>
+      </div>
+
+      <div className="hidden items-center gap-[3px] lg:flex">
+        {dots.map((c) => (
           <span
-            className="mt-1 h-3 w-3 shrink-0 rounded-full"
-            style={{ background: h.color ?? "var(--accent)" }}
+            key={c.date}
+            className="h-[9px] w-[9px] rounded-[2px]"
+            style={{ background: heatColor(c.level) }}
+            title={c.date}
           />
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">{h.name}</span>
-              {streak > 0 && (
-                <span className="inline-flex items-center gap-0.5 text-xs font-semibold text-[var(--warn)]">
-                  <Flame size={13} /> {streak}
-                </span>
-              )}
-              {isReduce ? <Badge tone="bad">{t("Reduce")}</Badge> : null}
-              {h.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
-            </div>
-            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[var(--text-muted)]">
-              <span>{t(AREA_LABELS[h.area])}</span>
-              <span>·</span>
-              <span>{scheduleLabel}</span>
-              {h.targetMinutes ? (
-                <>
-                  <span>·</span>
-                  <span>{fmtDuration(h.targetMinutes)}</span>
-                </>
-              ) : null}
-              {h.targetValue ? (
-                <>
-                  <span>·</span>
-                  <span>
-                    {h.targetValue.toLocaleString()} {h.unit}
-                  </span>
-                </>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <div className="flex shrink-0 gap-1">
-          <button
-            onClick={onEdit}
-            className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-            aria-label="Edit"
-          >
-            <Pencil size={15} />
-          </button>
-          <button
-            onClick={onDelete}
-            className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]"
-            aria-label="Delete"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
+        ))}
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
-          <div
-            className={clsx("h-full rounded-full")}
-            style={{
-              width: `${Math.max(3, rate)}%`,
-              background: rate >= 70 ? "var(--good)" : rate >= 45 ? "var(--warn)" : "var(--bad)",
-            }}
-          />
+
+      <div className="min-w-[64px] text-right">
+        <div className="flex items-center justify-end gap-[5px] text-[var(--warn)]">
+          <Flame size={14} />
+          <span className="num text-[17px] font-bold">{streak}</span>
         </div>
-        <span className="flex items-center gap-1 text-xs font-medium text-[var(--text-muted)]">
-          {rate >= 50 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
-          {rate}%
-        </span>
+        <div className="text-[11px] text-[var(--text-faint)]">{t("day streak")}</div>
       </div>
-      <div className="mt-1 flex items-center justify-between">
-        <p className="text-[11px] text-[var(--text-faint)]">
-          {isReduce ? t("avoided") : t("completed")} · {t("last 30 days")}
-        </p>
-        <button onClick={() => setOpen((o) => !o)} className="text-[11px] font-medium text-[var(--accent)]">
-          {open ? t("Hide heatmap") : t("Show heatmap")}
+
+      <div className="flex shrink-0 flex-col gap-1">
+        <button
+          onClick={onEdit}
+          className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+          aria-label={t("Edit")}
+        >
+          <Pencil size={15} />
+        </button>
+        <button
+          onClick={onDelete}
+          className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]"
+          aria-label={t("Delete")}
+        >
+          <Trash2 size={15} />
         </button>
       </div>
-      {open && (
-        <div className="mt-3 border-t border-[var(--border)] pt-3">
-          <Heatmap cells={habitHeatmap(data, h)} />
-          <p className="mt-2 text-[11px] text-[var(--text-faint)]">
-            {t("Current streak")}: {streak} · {t("Longest streak")}: {habitLongestStreak(data, h)}
-          </p>
-        </div>
-      )}
-    </Card>
+    </div>
   );
 }

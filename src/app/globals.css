@@ -30,7 +30,10 @@
   --ring-track: #e6e8ec;
 
   --shadow: 0 1px 2px rgba(16, 18, 22, 0.04), 0 4px 16px rgba(16, 18, 22, 0.06);
-  --radius: 16px;
+  --radius: 20px;
+  --grad: linear-gradient(135deg, #4f46e5, #6366f1);
+  --grad-a: #4f46e5;
+  --grad-b: #6366f1;
 }
 
 .dark {
@@ -55,6 +58,9 @@
   --ring-track: #262a32;
 
   --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 30px rgba(0, 0, 0, 0.35);
+  --grad: linear-gradient(135deg, #7c7bff, #a78bfa);
+  --grad-a: #7c7bff;
+  --grad-b: #a78bfa;
 }
 
 @theme inline {
@@ -131,4 +137,33 @@ body {
 }
 .animate-in {
   animation: fadeIn 0.35s ease both;
+}
+
+/* ---- Redesign helpers ---- */
+
+/* Small stat tile (18px radius) */
+.tile {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+/* Section label: 12px, 600, uppercase, wide tracking, faint */
+.slabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+
+/* Accent gradient fill (logo badge, primary buttons, meters, ring) */
+.grad {
+  background: var(--grad);
+}
+
+/* Numeric figures always tabular */
+.num {
+  font-variant-numeric: tabular-nums;
 }

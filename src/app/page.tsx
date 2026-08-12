@@ -11,7 +11,7 @@ import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AreaKey } from "@/lib/types";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile } from "@/components/ui";
 import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
@@ -59,7 +59,7 @@ export default function DashboardPage() {
   const eloBest = d.history.reduce((m, h) => Math.max(m, h.elo), data.settings.eloStart);
 
   return (
-    <div className="space-y-6">
+    <div>
       <PageHeader
         title={name ? `${t("Dashboard")} · ${name}` : t("Dashboard")}
         subtitle={fmtLong(d.today)}
@@ -70,70 +70,77 @@ export default function DashboardPage() {
         }
       />
 
-      {/* Hero: score + categories */}
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="flex flex-col items-center justify-center lg:col-span-1">
-          <SectionTitle>{t("Life Score today")}</SectionTitle>
-          <ScoreRing value={liveScore} sublabel={liveScore > 0 ? t(scoreLabel(liveScore)) : t("No data yet")} />
-          <div className="mt-4 flex items-center gap-4 text-sm">
-            <div className="flex flex-col items-center">
-              <span className="text-[var(--text-faint)]">{t("vs yesterday")}</span>
-              <Delta value={vsYesterday} />
+      <div className="flex flex-col gap-[18px]">
+        {/* Hero row: score card + 2x2 stat tiles */}
+        <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">
+          <Card className="flex flex-col items-center gap-6 !p-[26px] sm:flex-row sm:gap-[26px]">
+            <ScoreRing
+              value={liveScore}
+              sublabel={liveScore > 0 ? t(scoreLabel(liveScore)) : t("No data yet")}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="slabel">{t("Life Score today")}</p>
+              <p className="mt-1 text-sm leading-[1.45] text-[var(--text-muted)]">
+                {liveScore > 0
+                  ? `${doneCount}/${buildGoals.length} ${t("goals done")}`
+                  : t("No data yet")}
+                {todayComp.slips > 0 && (
+                  <span className="text-[var(--bad)]">
+                    {" "}· {todayComp.slips} {t("Reduce")}
+                  </span>
+                )}
+              </p>
+              <div className="mt-[18px] flex gap-6">
+                <div>
+                  <p className="text-[11px] text-[var(--text-faint)]">{t("vs yesterday")}</p>
+                  <div className="mt-[3px]"><Delta value={vsYesterday} className="!text-[15px]" /></div>
+                </div>
+                <div className="w-px bg-[var(--border)]" />
+                <div>
+                  <p className="text-[11px] text-[var(--text-faint)]">{t("vs 7-day avg")}</p>
+                  <div className="mt-[3px]"><Delta value={vsAvg} className="!text-[15px]" /></div>
+                </div>
+              </div>
             </div>
-            <div className="h-8 w-px bg-[var(--border)]" />
-            <div className="flex flex-col items-center">
-              <span className="text-[var(--text-faint)]">{t("vs 7-day avg")}</span>
-              <Delta value={vsAvg} />
-            </div>
+          </Card>
+
+          <div className="grid grid-cols-2 gap-[14px]">
+            <StatTile icon={<Trophy size={15} />} label={t("Life Rating")} value={elo.toLocaleString()} sub={`${t("Best")} ${eloBest.toLocaleString()}`} />
+            <StatTile icon={<Flame size={15} />} label={t("Streak")} value={`${streak}d`} sub={t("days with activity")} />
+            <StatTile icon={<ArrowUpRight size={15} />} label={t("7-day avg")} value={String(d.avg7)} sub={t("Life Score")} />
+            <StatTile icon={<Sparkles size={15} />} label={t("Today")} value={`${doneCount}/${buildGoals.length}`} sub={t("goals done")} />
           </div>
-          {todayComp.slips > 0 && (
-            <p className="mt-3 text-xs text-[var(--bad)]">
-              {todayComp.slips} reduce-habit {todayComp.slips === 1 ? "slip" : "slips"} logged today
+        </div>
+
+        {/* Categories + Insights */}
+        <div className="grid gap-[18px] lg:grid-cols-[1.4fr_1fr]">
+          <Card>
+            <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
+              {t("Categories")}
+            </SectionTitle>
+            <div className="flex flex-col">
+              {enabledAreas.map((a) => (
+                <CategoryRow key={a.key} area={a.key} derived={d} live={todayComp.categories[a.key]} />
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
+            <div className="flex flex-col gap-2.5">
+              {d.insights.slice(0, 4).map((ins) => (
+                <div key={ins.id} className="flex gap-[11px] rounded-[13px] bg-[var(--surface-2)] p-[13px]">
+                  <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: toneColor(ins.tone) }} />
+                  <p className="text-[13px] leading-[1.5]">{ins.text}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-[14px] text-[11px] leading-[1.5] text-[var(--text-faint)]">
+              {t("Observations from your own logs. These are associations, not medical or causal claims.")}
             </p>
-          )}
-        </Card>
+          </Card>
+        </div>
 
-        <Card className="lg:col-span-2">
-          <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
-            {t("Categories")}
-          </SectionTitle>
-          <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-            {enabledAreas.map((a) => (
-              <CategoryRow key={a.key} area={a.key} derived={d} live={todayComp.categories[a.key]} />
-            ))}
-          </div>
-        </Card>
-      </div>
-
-      {/* Rating + streak strip */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          icon={<Trophy size={18} />}
-          label={t("Life Rating")}
-          value={elo.toLocaleString()}
-          sub={`${t("Best")} ${eloBest.toLocaleString()}`}
-        />
-        <StatCard
-          icon={<Flame size={18} />}
-          label={t("Streak")}
-          value={`${streak}d`}
-          sub={t("days with activity")}
-        />
-        <StatCard
-          icon={<ArrowUpRight size={18} />}
-          label={t("7-day avg")}
-          value={String(d.avg7)}
-          sub={t("Life Score")}
-        />
-        <StatCard
-          icon={<Sparkles size={18} />}
-          label={t("Today")}
-          value={`${doneCount}/${buildGoals.length}`}
-          sub={t("goals done")}
-        />
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-2">
         {/* Today's goals */}
         <Card>
           <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
@@ -145,50 +152,36 @@ export default function DashboardPage() {
               hint={t("Add habits to start building your daily plan.")}
               action={
                 <Link href="/habits">
-                  <Button variant="soft" size="sm">
-                    {t("Add habits")}
-                  </Button>
+                  <Button variant="soft" size="sm">{t("Add habits")}</Button>
                 </Link>
               }
             />
           ) : (
-            <div className="divide-y divide-[var(--border)]">
+            <div className="grid gap-x-[26px] sm:grid-cols-2">
               {todayGoals.map((g) => (
                 <HabitRow key={g.habit.id} item={g} date={d.today} />
               ))}
             </div>
           )}
         </Card>
-
-        {/* Insights */}
-        <Card>
-          <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
-          <div className="space-y-2.5">
-            {d.insights.slice(0, 4).map((ins) => (
-              <div key={ins.id} className="flex gap-2.5 rounded-xl bg-[var(--surface-2)] p-3">
-                <span
-                  className="mt-1 h-2 w-2 shrink-0 rounded-full"
-                  style={{
-                    background:
-                      ins.tone === "good"
-                        ? "var(--good)"
-                        : ins.tone === "warn"
-                          ? "var(--warn)"
-                          : "var(--info)",
-                  }}
-                />
-                <p className="text-sm text-[var(--text)]">{ins.text}</p>
-              </div>
-            ))}
-          </div>
-          <p className="mt-3 text-[11px] text-[var(--text-faint)]">
-            {t("Observations from your own logs. These are associations, not medical or causal claims.")}
-          </p>
-        </Card>
       </div>
     </div>
   );
 }
+
+export function toneColor(tone: "good" | "warn" | "info"): string {
+  return tone === "good" ? "var(--good)" : tone === "warn" ? "var(--warn)" : "var(--info)";
+}
+
+const AREA_COLORS: Partial<Record<AreaKey, string>> = {
+  productivity: "#4f46e5",
+  sport: "#16a34a",
+  sleep: "#0ea5e9",
+  habits: "#d97706",
+  learning: "#9333ea",
+  creativity: "#db2777",
+  reflection: "#0891b2",
+};
 
 function CategoryRow({
   area,
@@ -200,6 +193,7 @@ function CategoryRow({
   live?: number;
 }) {
   const t = useT();
+  const color = AREA_COLORS[area] ?? "var(--accent)";
   const spark = derived.history
     .slice(-14)
     .map((h) => ({ date: h.date, value: h.categories[area] ?? 0 }));
@@ -207,43 +201,20 @@ function CategoryRow({
   const cur = live ?? derived.todayScore?.categories[area] ?? 0;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--border)] py-3 last:border-0 sm:border-0 sm:py-2.5">
+    <div className="flex items-center gap-4 border-b border-[var(--border)] py-[11px] last:border-0">
       <div className="min-w-0 flex-1">
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="text-sm font-medium">{t(AREA_LABELS[area])}</span>
+        <div className="mb-2 flex items-center justify-between">
+          <span className="text-[13.5px] font-medium">{t(AREA_LABELS[area])}</span>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tabular-nums">{cur}</span>
+            <span className="num text-[13.5px] font-semibold">{cur}</span>
             {yest !== undefined && <Delta value={cur - yest} />}
           </div>
         </div>
-        <Meter value={cur} />
+        <Meter value={cur} color={color} />
       </div>
-      <div className="hidden w-20 sm:block">
-        <MiniSpark data={spark} />
+      <div className="hidden w-20 shrink-0 sm:block">
+        <MiniSpark data={spark} color={color} />
       </div>
     </div>
-  );
-}
-
-function StatCard({
-  icon,
-  label,
-  value,
-  sub,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <Card className="!p-4">
-      <div className="mb-1 flex items-center gap-2 text-[var(--text-faint)]">
-        {icon}
-        <span className="text-xs font-medium uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="text-2xl font-bold tabular-nums">{value}</div>
-      <div className="text-xs text-[var(--text-muted)]">{sub}</div>
-    </Card>
   );
 }
