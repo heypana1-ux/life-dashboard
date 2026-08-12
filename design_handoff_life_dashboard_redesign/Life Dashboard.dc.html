@@ -1,0 +1,1180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg,#f6f7f9);color:var(--text,#14161a);font-family:'Geist',ui-sans-serif,system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent,#4f46e5);text-decoration:none}
+  a:hover{opacity:.85}
+  .lucide{width:1em;height:1em;display:block;stroke-width:2}
+  .num{font-variant-numeric:tabular-nums}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-thumb{background:var(--s3,#e9ecef);border-radius:8px}
+  ::-webkit-scrollbar-track{background:transparent}
+  .noscroll::-webkit-scrollbar{display:none}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+<div style="display:flex;min-height:100vh;width:100%">
+
+  <!-- Sidebar -->
+  <aside style="position:sticky;top:0;height:100vh;width:236px;flex-shrink:0;display:flex;flex-direction:column;padding:22px 16px;border-right:1px solid var(--border);background:var(--surface)">
+    <div style="display:flex;align-items:center;gap:11px;padding:0 6px 22px">
+      <div style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:11px;background:var(--grad);color:#fff;font-size:18px;box-shadow:var(--shadow)"><i data-lucide="sparkles"></i></div>
+      <span style="font-weight:600;font-size:15px;letter-spacing:-.02em">Life Dashboard</span>
+    </div>
+    <nav class="noscroll" style="display:flex;flex-direction:column;gap:2px;flex:1;overflow-y:auto;min-height:0;margin:0 -4px;padding:0 4px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="7">
+        <button onClick="{{ n.go }}" style="{{ n.style }}" style-hover="background:var(--s2)">
+          <span style="font-size:18px;display:flex"><i data-lucide="{{ n.icon }}"></i></span>
+          <span>{{ n.label }}</span>
+        </button>
+      </sc-for>
+    </nav>
+    <div style="display:flex;align-items:center;gap:8px;padding:12px 8px 0;color:var(--faint);font-size:11px">
+      <span style="font-size:13px;display:flex"><i data-lucide="shield-check"></i></span>
+      <span>{{ T.dataLocal }}</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <!-- Top bar -->
+    <header style="position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 32px;border-bottom:1px solid var(--border);background:var(--bg)">
+      <div>
+        <h1 style="margin:0;font-size:21px;font-weight:600;letter-spacing:-.025em">{{ pageTitle }}</h1>
+        <p style="margin:3px 0 0;font-size:13px;color:var(--muted)">{{ pageSub }}</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;padding:3px;gap:2px;background:var(--s2);border-radius:11px">
+          <sc-for list="{{ dirs }}" as="d" hint-placeholder-count="3">
+            <button onClick="{{ d.go }}" style="{{ d.style }}">{{ d.label }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex;padding:3px;gap:2px;background:var(--s2);border-radius:11px">
+          <button onClick="{{ setDe }}" style="{{ deStyle }}">DE</button>
+          <button onClick="{{ setEn }}" style="{{ enStyle }}">EN</button>
+        </div>
+        <button onClick="{{ toggleTheme }}" title="Theme" style="display:flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;font-size:17px" style-hover="background:var(--s2)">
+          <i data-lucide="{{ themeIcon }}"></i>
+        </button>
+      </div>
+    </header>
+
+    <div style="padding:28px 32px 48px;max-width:1160px;width:100%;margin:0 auto">
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ sDash }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+
+      <!-- Hero row -->
+      <div style="display:grid;grid-template-columns:1.15fr 1fr;gap:18px">
+        <!-- Score card -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:26px;display:flex;align-items:center;gap:26px">
+          <div style="position:relative;width:190px;height:190px;flex-shrink:0">
+            <svg width="190" height="190" viewBox="0 0 208 208" style="transform:rotate(-90deg)">
+              <defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{{ ringA }}"></stop><stop offset="1" stop-color="{{ ringB }}"></stop></linearGradient></defs>
+              <circle cx="104" cy="104" r="95" fill="none" stroke="var(--ringTrack)" stroke-width="18"></circle>
+              <circle cx="104" cy="104" r="95" fill="none" stroke="url(#ringGrad)" stroke-width="18" stroke-linecap="round" stroke-dasharray="{{ ringC }}" stroke-dashoffset="{{ ringOffset }}" style="transition:stroke-dashoffset .7s cubic-bezier(.4,0,.2,1)"></circle>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+              <span class="num" style="font-size:52px;font-weight:700;line-height:1;letter-spacing:-.03em">{{ liveScore }}</span>
+              <span style="margin-top:6px;font-size:13px;font-weight:600;color:{{ scoreColor }}">{{ scoreLabelTxt }}</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:0">
+            <p style="margin:0 0 2px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.lifeScoreToday }}</p>
+            <p style="margin:0 0 18px;font-size:14px;color:var(--muted);line-height:1.45">{{ heroLine }}</p>
+            <div style="display:flex;gap:22px">
+              <div>
+                <p style="margin:0;font-size:11px;color:var(--faint)">{{ T.vsYesterday }}</p>
+                <p class="num" style="margin:3px 0 0;font-size:17px;font-weight:600;color:{{ vsY.color }}">{{ vsY.str }}</p>
+              </div>
+              <div style="width:1px;background:var(--border)"></div>
+              <div>
+                <p style="margin:0;font-size:11px;color:var(--faint)">{{ T.vs7d }}</p>
+                <p class="num" style="margin:3px 0 0;font-size:17px;font-weight:600;color:{{ vs7.color }}">{{ vs7.str }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Stat tiles -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <sc-for list="{{ statTiles }}" as="s" hint-placeholder-count="4">
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px 18px;display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;align-items:center;gap:7px;color:var(--faint)">
+                <span style="font-size:15px;display:flex"><i data-lucide="{{ s.icon }}"></i></span>
+                <span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ s.label }}</span>
+              </div>
+              <div class="num" style="font-size:26px;font-weight:700;letter-spacing:-.02em">{{ s.value }}</div>
+              <div style="font-size:12px;color:var(--muted)">{{ s.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Categories + Insights -->
+      <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:18px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <div style="display:flex;align-items:center;justify-content:between;justify-content:space-between;margin-bottom:16px">
+            <h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.categories }}</h2>
+            <a onClick="{{ goStats }}" style="font-size:12px;cursor:pointer">{{ T.allStats }}</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ areas }}" as="a" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:16px;padding:11px 0;border-bottom:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                    <span style="font-size:13.5px;font-weight:500">{{ a.label }}</span>
+                    <span style="display:flex;align-items:center;gap:8px">
+                      <span class="num" style="font-size:13.5px;font-weight:600">{{ a.value }}</span>
+                      <span class="num" style="font-size:11.5px;font-weight:600;color:{{ a.delta.color }}">{{ a.delta.str }}</span>
+                    </span>
+                  </div>
+                  <div style="height:7px;width:100%;border-radius:6px;background:var(--ringTrack);overflow:hidden">
+                    <div style="height:100%;border-radius:6px;background:{{ a.color }};width:{{ a.value }}%;transition:width .6s ease"></div>
+                  </div>
+                </div>
+                <svg width="80" height="30" viewBox="0 0 80 30" style="flex-shrink:0;overflow:visible">
+                  <polyline points="{{ a.spark }}" fill="none" stroke="{{ a.color }}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".75"></polyline>
+                </svg>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.insights }}</h2>
+            <span style="font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ T.dataDriven }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ insights }}" as="i" hint-placeholder-count="4">
+              <div style="display:flex;gap:11px;padding:13px 14px;border-radius:13px;background:var(--s2)">
+                <span style="margin-top:5px;width:8px;height:8px;flex-shrink:0;border-radius:50%;background:{{ i.color }}"></span>
+                <p style="margin:0;font-size:13px;line-height:1.5;color:var(--text)">{{ i.text }}</p>
+              </div>
+            </sc-for>
+          </div>
+          <p style="margin:14px 0 0;font-size:11px;color:var(--faint);line-height:1.5">{{ T.insightsNote }}</p>
+        </div>
+      </div>
+
+      <!-- Today's goals -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.todaysGoals }}</h2>
+          <a onClick="{{ goToday }}" style="font-size:12px;cursor:pointer">{{ T.open }}</a>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 26px">
+          <sc-for list="{{ goals }}" as="g" hint-placeholder-count="6">
+            <button onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:13px;padding:11px 4px;border:none;background:none;cursor:pointer;text-align:left;border-bottom:1px solid var(--border)">
+              <span style="{{ g.boxStyle }}"><sc-if value="{{ g.done }}" hint-placeholder-val="{{ true }}"><i data-lucide="check" style="font-size:14px"></i></sc-if></span>
+              <span style="flex:1;min-width:0;font-size:14px;font-weight:500;color:{{ g.textColor }};text-decoration:{{ g.strike }}">{{ g.label }}</span>
+              <span style="width:7px;height:7px;border-radius:50%;background:{{ g.dot }}"></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ HEUTE / TODAY ============ -->
+    <sc-if value="{{ sToday }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:18px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <h2 style="margin:0 0 4px;font-size:16px;font-weight:600">{{ T.checkOff }}</h2>
+          <p style="margin:0 0 16px;font-size:13px;color:var(--muted)">{{ doneSummary }}</p>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <sc-for list="{{ goals }}" as="g" hint-placeholder-count="6">
+              <button onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:14px;padding:13px 4px;border:none;background:none;cursor:pointer;text-align:left;border-bottom:1px solid var(--border)">
+                <span style="{{ g.boxStyle }}"><sc-if value="{{ g.done }}" hint-placeholder-val="{{ true }}"><i data-lucide="check" style="font-size:15px"></i></sc-if></span>
+                <span style="width:8px;height:8px;border-radius:50%;background:{{ g.dot }}"></span>
+                <span style="flex:1;min-width:0;font-size:14.5px;font-weight:500;color:{{ g.textColor }};text-decoration:{{ g.strike }}">{{ g.label }}</span>
+                <span style="font-size:11px;font-weight:600;color:var(--faint)">{{ g.tag }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <h2 style="margin:0 0 16px;font-size:16px;font-weight:600">{{ T.dailyCheckin }}</h2>
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="5">
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-size:13.5px;font-weight:500">{{ m.label }}</span><span class="num" style="font-size:13.5px;font-weight:600;color:var(--accent)">{{ m.value }}</span></div>
+                <div style="display:flex;gap:5px">
+                  <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="10">
+                    <button onClick="{{ c.set }}" style="{{ c.style }}">{{ c.n }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="position:sticky;top:96px;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:24px">
+        <p style="margin:0 0 4px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.projected }}</p>
+        <div style="display:flex;align-items:baseline;gap:10px;margin:6px 0 18px">
+          <span class="num" style="font-size:56px;font-weight:700;line-height:1;letter-spacing:-.03em;color:{{ projColor }}">{{ projected }}</span>
+          <span style="font-size:14px;font-weight:600;color:{{ projColor }}">{{ projLabel }}</span>
+        </div>
+        <div style="height:10px;border-radius:6px;background:var(--ringTrack);overflow:hidden;margin-bottom:20px"><div style="height:100%;border-radius:6px;background:var(--grad);width:{{ projected }}%;transition:width .5s ease"></div></div>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">{{ T.goalsDone }}</span><span class="num" style="font-weight:600">{{ goalsDoneStr }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">{{ T.slips }}</span><span class="num" style="font-weight:600">{{ slipsStr }}</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:var(--muted)">{{ T.checkinAvg }}</span><span class="num" style="font-weight:600">{{ checkinAvg }}</span></div>
+        </div>
+        <button style="margin-top:22px;width:100%;padding:12px;border:none;border-radius:13px;background:var(--grad);color:#fff;font-size:14px;font-weight:600;cursor:pointer;box-shadow:var(--shadow)" style-hover="opacity:.92">{{ T.saveDay }}</button>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ MORGEN / MORNING ============ -->
+    <sc-if value="{{ sMorning }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="border-radius:22px;padding:34px 32px;color:#fff;background:var(--grad);box-shadow:var(--shadow);position:relative;overflow:hidden">
+        <p style="margin:0;font-size:14px;font-weight:500;opacity:.85">{{ morningDate }}</p>
+        <h2 style="margin:8px 0 6px;font-size:32px;font-weight:700;letter-spacing:-.03em">{{ greeting }}</h2>
+        <p style="margin:0;font-size:15px;opacity:.9;max-width:460px;line-height:1.5">{{ morningLine }}</p>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px 22px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--faint);margin-bottom:12px"><span style="font-size:16px;display:flex"><i data-lucide="moon"></i></span><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ T.lastNight }}</span></div>
+          <div class="num" style="font-size:30px;font-weight:700;letter-spacing:-.02em">{{ sleep.duration }}</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ sleep.window }}</div>
+          <div style="margin-top:14px;display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--muted)">{{ T.sleepScore }}</span><span class="num" style="font-size:14px;font-weight:700;color:var(--good)">{{ sleep.score }}</span></div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px 22px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--faint);margin-bottom:12px"><span style="font-size:16px;display:flex"><i data-lucide="trophy"></i></span><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ T.lifeRating }}</span></div>
+          <div class="num" style="font-size:30px;font-weight:700;letter-spacing:-.02em">{{ elo }}</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ eloSub }}</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px 22px">
+          <div style="display:flex;align-items:center;gap:8px;color:var(--faint);margin-bottom:12px"><span style="font-size:16px;display:flex"><i data-lucide="flame"></i></span><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ T.streak }}</span></div>
+          <div class="num" style="font-size:30px;font-weight:700;letter-spacing:-.02em">{{ streakStr }}</div>
+          <div style="font-size:12.5px;color:var(--muted);margin-top:2px">{{ T.daysActive }}</div>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.todayFocus }}</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 26px">
+          <sc-for list="{{ goals }}" as="g" hint-placeholder-count="6">
+            <button onClick="{{ g.toggle }}" style="display:flex;align-items:center;gap:13px;padding:11px 4px;border:none;background:none;cursor:pointer;text-align:left;border-bottom:1px solid var(--border)">
+              <span style="{{ g.boxStyle }}"><sc-if value="{{ g.done }}" hint-placeholder-val="{{ true }}"><i data-lucide="check" style="font-size:14px"></i></sc-if></span>
+              <span style="flex:1;min-width:0;font-size:14px;font-weight:500;color:{{ g.textColor }};text-decoration:{{ g.strike }}">{{ g.label }}</span>
+              <span style="width:7px;height:7px;border-radius:50%;background:{{ g.dot }}"></span>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ GEWOHNHEITEN / HABITS ============ -->
+    <sc-if value="{{ sHabits }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:16px">
+      <sc-for list="{{ habitList }}" as="h" hint-placeholder-count="5">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 22px;display:flex;align-items:center;gap:20px">
+          <div style="width:42px;height:42px;flex-shrink:0;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:19px;background:var(--accentSoft);color:{{ h.color }}"><i data-lucide="{{ h.icon }}"></i></div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:3px">
+              <span style="font-size:15px;font-weight:600">{{ h.name }}</span>
+              <span style="font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:{{ h.tagBg }};color:{{ h.tagColor }}">{{ h.kind }}</span>
+            </div>
+            <div style="font-size:12.5px;color:var(--muted)">{{ h.schedule }} · {{ h.adherence }}% {{ T.adherence }}</div>
+          </div>
+          <div style="display:flex;gap:3px;align-items:flex-end">
+            <sc-for list="{{ h.heat }}" as="c" hint-placeholder-count="30">
+              <span style="width:9px;height:9px;border-radius:2px;background:{{ c.color }}"></span>
+            </sc-for>
+          </div>
+          <div style="text-align:right;min-width:74px">
+            <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;color:var(--warn)"><span style="font-size:14px;display:flex"><i data-lucide="flame"></i></span><span class="num" style="font-size:17px;font-weight:700">{{ h.streak }}</span></div>
+            <div style="font-size:11px;color:var(--faint)">{{ T.dayStreak }}</div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <!-- ============ SCHLAF / SLEEP ============ -->
+    <sc-if value="{{ sSleep }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.lastNight }}</p><p class="num" style="margin:8px 0 0;font-size:27px;font-weight:700">{{ sleep.duration }}</p><p style="margin:2px 0 0;font-size:12px;color:var(--muted)">{{ sleep.window }}</p></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.sleepScore }}</p><p class="num" style="margin:8px 0 0;font-size:27px;font-weight:700;color:var(--good)">{{ sleep.score }}</p><p style="margin:2px 0 0;font-size:12px;color:var(--muted)">{{ T.quality }} {{ sleep.quality }}/10</p></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.avgDuration }}</p><p class="num" style="margin:8px 0 0;font-size:27px;font-weight:700">{{ sleep.avg }}</p><p style="margin:2px 0 0;font-size:12px;color:var(--muted)">{{ T.last30 }}</p></div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.regularity }}</p><p class="num" style="margin:8px 0 0;font-size:27px;font-weight:700">{{ sleep.regularity }}</p><p style="margin:2px 0 0;font-size:12px;color:var(--muted)">{{ T.bedtimeVar }}</p></div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 18px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.trend30 }}</h2>
+        <div style="display:flex;align-items:flex-end;gap:5px;height:150px">
+          <sc-for list="{{ sleepTrend }}" as="b" hint-placeholder-count="21">
+            <div style="flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%"><div style="width:100%;border-radius:5px 5px 0 0;background:{{ b.color }};height:{{ b.pct }}%;transition:height .5s ease"></div></div>
+          </sc-for>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:10px;font-size:11px;color:var(--faint)"><span>{{ sleep.rangeStart }}</span><span>{{ sleep.target }}</span><span>{{ T.today }}</span></div>
+      </div>
+      <div style="background:var(--accentSoft);border:1px solid var(--border);border-radius:18px;padding:20px 24px;display:flex;gap:14px;align-items:flex-start">
+        <span style="font-size:19px;display:flex;color:var(--accent);margin-top:1px"><i data-lucide="lightbulb"></i></span>
+        <div><p style="margin:0 0 3px;font-size:14px;font-weight:600;color:var(--accent)">{{ T.estimate }}</p><p style="margin:0;font-size:13.5px;line-height:1.55;color:var(--text)">{{ sleep.estimateText }}</p></div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ FINANZEN / FINANCES ============ -->
+    <sc-if value="{{ sFin }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:24px 26px">
+          <p style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.netWorth }}</p>
+          <div style="display:flex;align-items:baseline;gap:12px;margin:8px 0 4px"><span class="num" style="font-size:40px;font-weight:700;letter-spacing:-.03em">{{ fin.netWorth }}</span><span class="num" style="font-size:14px;font-weight:600;color:var(--good)">{{ fin.netWorthDelta }}</span></div>
+          <svg viewBox="0 0 560 120" width="100%" height="120" preserveAspectRatio="none" style="margin-top:12px;overflow:visible">
+            <path d="{{ fin.areaPath }}" fill="var(--accentSoft)" opacity=".7"></path>
+            <path d="{{ fin.linePath }}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--faint)"><span>{{ T.jan }}</span><span>{{ T.now }}</span></div>
+        </div>
+        <div style="display:grid;grid-template-rows:1fr 1fr;gap:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.assets }}</p><p class="num" style="margin:8px 0 0;font-size:24px;font-weight:700;color:var(--good)">{{ fin.assets }}</p></div>
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:18px 20px"><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ T.liabilities }}</p><p class="num" style="margin:8px 0 0;font-size:24px;font-weight:700;color:var(--bad)">{{ fin.liabilities }}</p></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.portfolio }}</h2>
+          <div style="display:flex;height:11px;border-radius:6px;overflow:hidden;margin-bottom:18px">
+            <sc-for list="{{ fin.holdings }}" as="h" hint-placeholder-count="4"><div style="height:100%;background:{{ h.color }};width:{{ h.pct }}%"></div></sc-for>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:2px">
+            <sc-for list="{{ fin.holdings }}" as="h" hint-placeholder-count="4">
+              <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+                <span style="width:9px;height:9px;border-radius:3px;background:{{ h.color }}"></span>
+                <span style="flex:1;font-size:13.5px;font-weight:500">{{ h.name }}</span>
+                <span class="num" style="font-size:12.5px;color:var(--muted);width:44px;text-align:right">{{ h.pct }}%</span>
+                <span class="num" style="font-size:13.5px;font-weight:600;width:72px;text-align:right">{{ h.val }}</span>
+                <span class="num" style="font-size:12.5px;font-weight:600;width:56px;text-align:right;color:{{ h.plColor }}">{{ h.pl }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.budget }}</h2>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--muted)">{{ T.income }}</span><span class="num" style="font-weight:600;color:var(--good)">{{ fin.income }}</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="color:var(--muted)">{{ T.expenses }}</span><span class="num" style="font-weight:600">{{ fin.expenses }}</span></div>
+            <div style="height:1px;background:var(--border)"></div>
+            <div style="display:flex;justify-content:space-between;font-size:14px"><span style="font-weight:600">{{ T.savingsRate }}</span><span class="num" style="font-weight:700;color:var(--accent)">{{ fin.savingsRate }}</span></div>
+            <div style="height:9px;border-radius:6px;background:var(--ringTrack);overflow:hidden"><div style="height:100%;border-radius:6px;background:var(--grad);width:{{ fin.savingsPct }}%"></div></div>
+            <p style="margin:2px 0 0;font-size:12px;color:var(--muted);line-height:1.5">{{ fin.budgetNote }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ STATISTIK / STATISTICS ============ -->
+    <sc-if value="{{ sStats }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 26px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <div>
+            <h2 style="margin:0;font-size:15px;font-weight:600">{{ T.lifeScoreTrend }}</h2>
+            <div style="display:flex;gap:20px;margin-top:8px">
+              <span style="font-size:12px;color:var(--faint)">{{ T.avg }} <b class="num" style="color:var(--text)">{{ stat.avg }}</b></span>
+              <span style="font-size:12px;color:var(--faint)">{{ T.best2 }} <b class="num" style="color:var(--good)">{{ stat.best }}</b></span>
+              <span style="font-size:12px;color:var(--faint)">{{ T.low }} <b class="num" style="color:var(--text)">{{ stat.low }}</b></span>
+            </div>
+          </div>
+          <div style="display:flex;padding:3px;gap:2px;background:var(--s2);border-radius:11px">
+            <sc-for list="{{ ranges }}" as="r" hint-placeholder-count="4"><button onClick="{{ r.go }}" style="{{ r.style }}">{{ r.label }}</button></sc-for>
+          </div>
+        </div>
+        <svg viewBox="0 0 640 220" width="100%" height="220" preserveAspectRatio="none" style="overflow:visible">
+          <line x1="0" y1="55" x2="640" y2="55" stroke="var(--border)" stroke-width="1"></line>
+          <line x1="0" y1="110" x2="640" y2="110" stroke="var(--border)" stroke-width="1"></line>
+          <line x1="0" y1="165" x2="640" y2="165" stroke="var(--border)" stroke-width="1"></line>
+          <path d="{{ stat.areaPath }}" fill="url(#ringGrad)" opacity=".14"></path>
+          <path d="{{ stat.linePath }}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </div>
+      <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:18px;align-items:start">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <h2 style="margin:0 0 18px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ T.weekdayBreakdown }}</h2>
+          <div style="display:flex;align-items:flex-end;gap:12px;height:150px">
+            <sc-for list="{{ weekday }}" as="w" hint-placeholder-count="7">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%">
+                <div style="flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end"><div style="width:100%;border-radius:6px 6px 0 0;background:{{ w.color }};height:{{ w.pct }}%;transition:height .5s ease"></div></div>
+                <span class="num" style="font-size:11px;font-weight:600;color:var(--muted)">{{ w.value }}</span>
+                <span style="font-size:11px;color:var(--faint)">{{ w.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);padding:20px 22px">
+            <div style="display:flex;align-items:center;gap:8px;color:var(--faint);margin-bottom:10px"><span style="font-size:16px;display:flex"><i data-lucide="trophy"></i></span><span style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">{{ T.eloRating }}</span></div>
+            <div class="num" style="font-size:30px;font-weight:700;letter-spacing:-.02em">{{ elo }}</div>
+            <div style="font-size:12.5px;color:var(--good);margin-top:2px">{{ stat.eloWeek }}</div>
+          </div>
+          <div style="background:var(--accentSoft);border:1px solid var(--border);border-radius:18px;padding:20px 22px;display:flex;gap:12px;align-items:flex-start">
+            <span style="font-size:18px;display:flex;color:var(--accent);margin-top:1px"><i data-lucide="git-compare"></i></span>
+            <div><p style="margin:0 0 3px;font-size:13px;font-weight:600;color:var(--accent)">{{ T.correlation }}</p><p style="margin:0;font-size:13px;line-height:1.55;color:var(--text)">{{ stat.correlationText }}</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ TRAINING ============ -->
+    <sc-if value="{{ sTraining }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px">
+        <sc-for list="{{ training.stats }}" as="s" hint-placeholder-count="3">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);padding:16px 18px">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--faint)">{{ s.label }}</div>
+            <div class="num" style="margin-top:6px;font-size:24px;font-weight:700">{{ s.value }}</div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ training.volTitle }}</h2>
+        <div style="display:flex;align-items:flex-end;gap:10px;height:170px">
+          <sc-for list="{{ training.volume }}" as="v" hint-placeholder-count="8">
+            <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%">
+              <div style="flex:1;width:100%;display:flex;flex-direction:column;justify-content:flex-end"><div style="width:100%;border-radius:6px 6px 0 0;background:var(--good);height:{{ v.pct }}%;transition:height .5s ease"></div></div>
+              <span class="num" style="font-size:11px;color:var(--faint)">{{ v.value }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ training.recentTitle }}</h2>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ training.workouts }}" as="w" hint-placeholder-count="4">
+            <div style="border:1px solid var(--border);border-radius:14px;padding:14px 16px">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+                <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                  <span style="font-size:14.5px;font-weight:600">{{ w.sport }}</span>
+                  <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:7px;background:var(--s2);color:var(--muted)">{{ w.dur }}</span>
+                  <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ training.perfLabel }} {{ w.perf }}/10</span>
+                </div>
+                <span style="font-size:12px;color:var(--faint)">{{ w.date }}</span>
+              </div>
+              <div style="margin-top:5px;font-size:12.5px;color:var(--muted)">{{ w.meta }}</div>
+              <sc-if value="{{ w.hasTags }}" hint-placeholder-val="{{ true }}">
+                <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ w.tags }}" as="tg" hint-placeholder-count="3"><span style="font-size:11.5px;padding:4px 9px;border-radius:8px;background:var(--s2)">{{ tg }}</span></sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ CALENDAR ============ -->
+    <sc-if value="{{ sCalendar }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px;max-width:760px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+          <button onClick="{{ calendar.prev }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:none;background:var(--s2);color:var(--muted);cursor:pointer"><i data-lucide="chevron-left"></i></button>
+          <span style="font-size:15px;font-weight:600">{{ calendar.title }}</span>
+          <button onClick="{{ calendar.next }}" style="display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:10px;border:none;background:var(--s2);color:var(--muted);cursor:pointer"><i data-lucide="chevron-right"></i></button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:7px">
+          <sc-for list="{{ calendar.headers }}" as="h" hint-placeholder-count="7">
+            <div style="padding-bottom:4px;text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--faint)">{{ h }}</div>
+          </sc-for>
+          <sc-for list="{{ calendar.cells }}" as="c" hint-placeholder-count="35">
+            <div style="{{ c.cellStyle }}">
+              <sc-if value="{{ c.show }}" hint-placeholder-val="{{ true }}"><span>{{ c.day }}</span><span style="width:6px;height:6px;border-radius:50%;background:{{ c.dot }}"></span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <div style="margin-top:18px;display:flex;align-items:center;justify-content:center;gap:20px;font-size:11px;color:var(--faint)">
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--bad)"></span>{{ calendar.lRough }}</span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--warn)"></span>{{ calendar.lMixed }}</span>
+          <span style="display:flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:50%;background:var(--good)"></span>{{ calendar.lStrong }}</span>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ REPORTS ============ -->
+    <sc-if value="{{ sReports }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;padding:3px;gap:3px;background:var(--s2);border-radius:12px;width:fit-content">
+        <button onClick="{{ reports.setWeek }}" style="{{ reports.weekStyle }}">{{ reports.weekly }}</button>
+        <button onClick="{{ reports.setMonth }}" style="{{ reports.monthStyle }}">{{ reports.monthly }}</button>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px">
+          <div><h2 style="margin:0;font-size:17px;font-weight:600">{{ reports.reportTitle }}</h2><p style="margin:3px 0 0;font-size:13px;color:var(--muted)">{{ reports.label }}</p></div>
+          <div style="text-align:right"><div class="num" style="font-size:32px;font-weight:700;line-height:1">{{ reports.avg }}</div><div class="num" style="font-size:13px;font-weight:600;color:var(--good)">{{ reports.delta }}</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <sc-for list="{{ reports.tiles }}" as="t" hint-placeholder-count="7">
+            <div style="background:var(--s2);border-radius:13px;padding:13px 14px">
+              <div style="font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--faint)">{{ t.label }}</div>
+              <div class="num" style="margin-top:5px;font-size:18px;font-weight:700;color:{{ t.color }}">{{ t.value }}</div>
+              <sc-if value="{{ t.hasSub }}" hint-placeholder-val="{{ true }}"><div class="num" style="font-size:11px;color:var(--faint)">{{ t.sub }}</div></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ reports.highTitle }}</h2><span style="font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ reports.dataDriven }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ reports.highlights }}" as="h" hint-placeholder-count="4">
+            <div style="display:flex;gap:11px;padding:13px 14px;border-radius:13px;background:var(--s2)"><span style="margin-top:5px;width:8px;height:8px;flex-shrink:0;border-radius:50%;background:var(--good)"></span><p style="margin:0;font-size:13px;line-height:1.5">{{ h }}</p></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ JOURNAL ============ -->
+    <sc-if value="{{ sJournal }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:grid;grid-template-columns:300px 1fr;gap:18px;align-items:start">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:16px">
+        <div style="position:relative;margin-bottom:12px"><span style="position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint);display:flex"><i data-lucide="search"></i></span><input placeholder="{{ journal.searchPh }}" style="width:100%;padding:9px 12px 9px 36px;border-radius:11px;border:1px solid var(--border);background:var(--s2);color:var(--text);font-family:inherit;font-size:13px;outline:none"></div>
+        <div style="display:flex;flex-direction:column;gap:3px">
+          <sc-for list="{{ journal.entries }}" as="e" hint-placeholder-count="5">
+            <button onClick="{{ e.open }}" style="{{ e.style }}">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font-size:13.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ e.title }}</span><sc-if value="{{ e.hasMood }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;font-weight:600;padding:2px 7px;border-radius:6px;background:var(--s3);color:var(--muted)">{{ e.mood }}</span></sc-if></div>
+              <div style="margin-top:2px;font-size:11.5px;color:var(--faint)">{{ e.date }}</div>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);overflow:hidden">
+        <div style="border-bottom:1px solid var(--border);padding:18px 26px">
+          <div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:var(--muted)">{{ journal.active.date }}</span><div style="display:flex;gap:4px"><button style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:none;background:var(--s2);color:var(--muted);cursor:pointer"><i data-lucide="chevron-left"></i></button><button style="display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9px;border:none;background:var(--s2);color:var(--muted);cursor:pointer"><i data-lucide="chevron-right"></i></button></div></div>
+          <h2 style="margin:8px 0 0;font-size:24px;font-weight:600;letter-spacing:-.02em">{{ journal.active.title }}</h2>
+        </div>
+        <div style="padding:22px 26px">
+          <p style="margin:0;font-size:15px;line-height:1.75;color:var(--text);white-space:pre-line">{{ journal.active.body }}</p>
+          <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:8px">
+            <sc-for list="{{ journal.active.chips }}" as="ch" hint-placeholder-count="4"><span style="font-size:11.5px;padding:5px 11px;border-radius:9px;background:var(--s2);color:var(--muted)">{{ ch }}</span></sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ GOALS ============ -->
+    <sc-if value="{{ sGoals }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <sc-for list="{{ goalsPage.goals }}" as="g" hint-placeholder-count="4">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap"><span style="font-size:15px;font-weight:600">{{ g.title }}</span><span style="font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ g.area }}</span></div>
+          <sc-if value="{{ g.hasDesc }}" hint-placeholder-val="{{ true }}"><p style="margin:6px 0 0;font-size:13px;color:var(--muted)">{{ g.desc }}</p></sc-if>
+          <div style="margin-top:14px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:7px"><span style="color:var(--muted)">{{ goalsPage.progressL }}</span><span class="num" style="font-weight:600">{{ g.progress }}%</span></div><div style="height:8px;border-radius:6px;background:var(--ringTrack);overflow:hidden"><div style="height:100%;border-radius:6px;background:var(--grad);width:{{ g.progress }}%;transition:width .5s ease"></div></div></div>
+          <sc-if value="{{ g.hasDeadline }}" hint-placeholder-val="{{ true }}"><p style="margin:10px 0 0;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--faint)"><span style="display:flex;font-size:13px"><i data-lucide="flag"></i></span>{{ g.deadline }}</p></sc-if>
+          <sc-if value="{{ g.hasMs }}" hint-placeholder-val="{{ true }}">
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ g.ms }}" as="m" hint-placeholder-count="3">
+                <button onClick="{{ m.toggle }}" style="display:flex;align-items:center;gap:10px;border:none;background:none;cursor:pointer;text-align:left;padding:0">
+                  <span style="{{ m.boxStyle }}"><sc-if value="{{ m.done }}" hint-placeholder-val="{{ true }}"><i data-lucide="check" style="font-size:13px"></i></sc-if></span>
+                  <span style="{{ m.textStyle }}">{{ m.label }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <!-- ============ PROJECTS ============ -->
+    <sc-if value="{{ sProjects }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;gap:8px">
+        <button onClick="{{ projects.setCreative }}" style="{{ projects.cStyle }}">{{ projects.creative }}</button>
+        <button onClick="{{ projects.setLearning }}" style="{{ projects.lStyle }}">{{ projects.learning }}</button>
+      </div>
+      <div style="display:flex;gap:14px;overflow-x:auto;padding-bottom:6px">
+        <sc-for list="{{ projects.cols }}" as="col" hint-placeholder-count="5">
+          <div style="width:240px;flex-shrink:0">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:0 4px;margin-bottom:10px"><span style="font-size:13px;font-weight:600">{{ col.name }}</span><span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:7px;background:var(--s2);color:var(--muted)">{{ col.count }}</span></div>
+            <div style="display:flex;flex-direction:column;gap:8px;background:var(--s2);border-radius:16px;padding:9px;min-height:70px">
+              <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="2">
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:12px 13px;box-shadow:var(--shadow)">
+                  <div style="font-size:13.5px;font-weight:500">{{ it.title }}</div>
+                  <sc-if value="{{ it.hasDesc }}" hint-placeholder-val="{{ true }}"><p style="margin:5px 0 0;font-size:12px;color:var(--muted)">{{ it.desc }}</p></sc-if>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ EXPERIMENTS ============ -->
+    <sc-if value="{{ sExperiments }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <sc-for list="{{ experiments.exps }}" as="e" hint-placeholder-count="3">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+          <div style="font-size:15px;font-weight:600">{{ e.title }}</div>
+          <p style="margin:5px 0 0;font-size:13px;color:var(--muted)">{{ e.hyp }}</p>
+          <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px">
+            <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ e.metric }}</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--s2);color:var(--muted)">{{ e.cond }}</span>
+            <span style="font-size:11px;font-weight:600;padding:3px 9px;border-radius:7px;background:var(--s2);color:var(--muted)">{{ e.days }} {{ experiments.daysL }}</span>
+          </div>
+          <div style="margin-top:14px;border-radius:13px;background:var(--s2);padding:14px">
+            <sc-if value="{{ e.enough }}" hint-placeholder-val="{{ true }}">
+              <p style="margin:0;font-size:13px">{{ e.result }}</p>
+              <div style="margin-top:9px;display:flex;gap:18px;font-size:11.5px;color:var(--faint)"><span class="num">{{ e.withV }}</span><span class="num">{{ e.withoutV }}</span></div>
+            </sc-if>
+            <sc-if value="{{ e.notEnough }}" hint-placeholder-val="{{ true }}"><p style="margin:0;font-size:13px;color:var(--muted)">{{ experiments.notEnough }}</p></sc-if>
+          </div>
+          <p style="margin:9px 0 0;font-size:11px;color:var(--faint)">{{ experiments.note }}</p>
+        </div>
+      </sc-for>
+    </div>
+    </sc-if>
+
+    <!-- ============ ACHIEVEMENTS ============ -->
+    <sc-if value="{{ sAchievements }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:18px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ achievements.title }}</h2><span style="font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:7px;background:var(--accentSoft);color:var(--accent)">{{ achievements.unlocked }} {{ achievements.unlockedLabel }}</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <sc-for list="{{ achievements.ach }}" as="a" hint-placeholder-count="6">
+            <div style="{{ a.cardStyle }}">
+              <div style="{{ a.iconStyle }}">{{ a.icon }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:13px;font-weight:600">{{ a.title }}</div>
+                <p style="margin:2px 0 0;font-size:11.5px;color:var(--muted);line-height:1.4">{{ a.desc }}</p>
+                <sc-if value="{{ a.locked }}" hint-placeholder-val="{{ true }}">
+                  <div style="margin-top:8px;height:6px;border-radius:5px;background:var(--ringTrack);overflow:hidden"><div style="height:100%;border-radius:5px;background:var(--accent);width:{{ a.pct }}%"></div></div>
+                  <div class="num" style="margin-top:5px;font-size:10.5px;color:var(--faint)">{{ a.curStr }}</div>
+                </sc-if>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <p style="margin:14px 0 0;font-size:11px;color:var(--faint)">{{ achievements.note }}</p>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ achievements.recTitle }}</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+          <sc-for list="{{ achievements.records }}" as="r" hint-placeholder-count="6">
+            <div style="background:var(--s2);border-radius:14px;padding:16px"><div style="font-size:22px;line-height:1">{{ r.icon }}</div><div class="num" style="margin-top:6px;font-size:18px;font-weight:700">{{ r.value }}</div><div style="font-size:12px;color:var(--muted)">{{ r.label }}</div></div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    <!-- ============ SETTINGS ============ -->
+    <sc-if value="{{ sSettings }}" hint-placeholder-val="{{ true }}">
+    <div style="animation:fadeIn .35s ease both;display:flex;flex-direction:column;gap:16px;max-width:720px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ settings.appearL }}</h2>
+        <div style="display:flex;gap:10px">
+          <sc-for list="{{ settings.appear }}" as="o" hint-placeholder-count="3">
+            <button onClick="{{ o.go }}" style="{{ o.style }}"><span style="display:flex;font-size:15px"><i data-lucide="{{ o.icon }}"></i></span>{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 16px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ settings.langL }}</h2>
+        <div style="display:flex;gap:10px">
+          <sc-for list="{{ settings.langs }}" as="o" hint-placeholder-count="2">
+            <button onClick="{{ o.go }}" style="{{ o.style }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px"><h2 style="margin:0;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ settings.areasL }}</h2><span style="font-size:11px;color:var(--faint)">{{ settings.normL }}</span></div>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <sc-for list="{{ settings.areas }}" as="a" hint-placeholder-count="6">
+            <div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><span style="font-size:13.5px;font-weight:500">{{ a.label }}</span><span class="num" style="font-size:12.5px;font-weight:600;color:var(--accent)">{{ a.pctStr }}</span></div>
+              <div style="height:7px;border-radius:6px;background:var(--ringTrack);overflow:hidden"><div style="height:100%;border-radius:6px;background:var(--grad);width:{{ a.pct }}%"></div></div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow);padding:22px 24px">
+        <h2 style="margin:0 0 12px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)">{{ settings.dataL }}</h2>
+        <p style="margin:0 0 14px;font-size:13px;color:var(--muted);line-height:1.5">{{ settings.dataNote }}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px">
+          <sc-for list="{{ settings.dataBtns }}" as="b" hint-placeholder-count="3"><span style="display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);font-size:13.5px;font-weight:500;cursor:pointer"><span style="display:flex;font-size:15px"><i data-lucide="{{ b.icon }}"></i></span>{{ b.label }}</span></sc-for>
+        </div>
+      </div>
+    </div>
+    </sc-if>
+
+    </div>
+  </main>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:860}}">
+class Component extends DCLogic {
+  state = {
+    theme: 'light', lang: 'de', dir: 'calm', screen: 'dashboard', range: '30D',
+    checks: { g1: true, g2: true, g3: true, g4: false, g5: false, g6: true },
+    metrics: { productivity: 8, mood: 8, energy: 7, satisfaction: 8, discipline: 7 },
+    reportPeriod: 'week', projectBoard: 'creative', calOffset: 0, goalChecks: {}, journalActive: '',
+  };
+  D = this.buildData();
+
+  clamp(n, lo=0, hi=100){ return Math.max(lo, Math.min(hi, n)); }
+  gen(n, base, amp, seed, noClamp){ let x=seed, a=[]; for(let i=0;i<n;i++){ x=(x*1103515245+12345)&0x7fffffff; const r=x/0x7fffffff; const v=base+Math.sin(i/3.2)*amp*0.55+(r-0.5)*amp; a.push(Math.round(noClamp?v:this.clamp(v))); } return a; }
+  spark(arr,w,h){ const mn=Math.min(...arr),mx=Math.max(...arr),rng=(mx-mn)||1; return arr.map((v,i)=>`${((i/(arr.length-1))*w).toFixed(1)},${(h-((v-mn)/rng)*h).toFixed(1)}`).join(' '); }
+  linePath(arr,w,h){ const mn=Math.min(...arr),mx=Math.max(...arr),rng=(mx-mn)||1; return arr.map((v,i)=>`${i?'L':'M'}${((i/(arr.length-1))*w).toFixed(1)} ${(h-((v-mn)/rng)*(h-8)-4).toFixed(1)}`).join(' '); }
+  areaPath(arr,w,h){ return this.linePath(arr,w,h)+` L${w} ${h} L0 ${h} Z`; }
+
+  buildData(){
+    return {
+      sparks: {
+        productivity:[70,74,72,78,75,80,77,82,79,84,80,82,78,82],
+        sport:[60,55,64,58,70,66,72,64,68,60,66,70,66,68],
+        sleep:[68,72,70,66,74,71,76,73,70,74,78,72,68,74],
+        reflection:[72,70,76,74,78,75,80,78,82,79,80,78,82,80],
+        learning:[65,68,70,66,72,74,70,68,72,75,71,73,70,71],
+      },
+      series: { '7D': this.gen(7,74,16,7), '30D': this.gen(30,72,20,30), '90D': this.gen(90,70,22,90), 'All': this.gen(180,68,24,180) },
+      weekday: [76,72,81,74,69,64,78],
+      sleepTrend: this.gen(21,438,70,3,true),
+      netWorth: this.gen(24,44000,4200,11,true),
+    };
+  }
+
+  L = {
+    de: {
+      dataLocal:'Daten bleiben auf diesem Gerät', dashboard:'Dashboard', today:'Heute', morning:'Morgen', habits:'Gewohnheiten', sleep:'Schlaf', finances:'Finanzen', statistics:'Statistik',
+      lifeScoreToday:'Life Score heute', vsYesterday:'vs. gestern', vs7d:'vs. 7-Tage-Ø', categories:'Kategorien', allStats:'Alle Statistiken →', open:'Öffnen →', insights:'Insights', dataDriven:'datenbasiert',
+      insightsNote:'Beobachtungen aus deinen eigenen Logs – Zusammenhänge, keine medizinischen oder kausalen Aussagen.', todaysGoals:'Heutige Ziele', lifeRating:'Life Rating', streak:'Streak', avg7:'7-Tage-Ø', goalsDone:'Ziele erledigt', slips:'Ausrutscher', checkinAvg:'Check-in Ø',
+      checkOff:'Gewohnheiten abhaken', dailyCheckin:'Täglicher Check-in', projected:'Projizierter Life Score', saveDay:'Tag speichern', daysActive:'Tage mit Aktivität', todayFocus:'Fokus für heute', lastNight:'Letzte Nacht', sleepScore:'Schlaf-Score', quality:'Qualität',
+      avgDuration:'Ø Dauer', last30:'letzte 30 Nächte', regularity:'Regelmäßigkeit', bedtimeVar:'Schlafenszeit-Varianz', trend30:'30-Nächte-Trend', today:'Heute', estimate:'Deine persönliche Schlafschätzung', adherence:'Adhärenz', dayStreak:'Tage-Streak',
+      netWorth:'Nettovermögen', assets:'Vermögen', liabilities:'Verbindlichkeiten', portfolio:'Portfolio', budget:'Budget', income:'Einnahmen', expenses:'Ausgaben', savingsRate:'Sparquote', jan:'Jan', now:'Jetzt',
+      lifeScoreTrend:'Life-Score-Verlauf', avg:'Ø', best2:'Best', low:'Tief', weekdayBreakdown:'Nach Wochentag', eloRating:'Life Rating (ELO)', correlation:'Korrelation',
+      build:'Aufbauen', reduce:'Reduzieren', daily:'Täglich', perWeek:'3×/Woche',
+    },
+    en: {
+      dataLocal:'Data stays on this device', dashboard:'Dashboard', today:'Today', morning:'Morning', habits:'Habits', sleep:'Sleep', finances:'Finances', statistics:'Statistics',
+      lifeScoreToday:'Life Score today', vsYesterday:'vs. yesterday', vs7d:'vs. 7-day avg', categories:'Categories', allStats:'All stats →', open:'Open →', insights:'Insights', dataDriven:'data-driven',
+      insightsNote:'Observations from your own logs — associations, not medical or causal claims.', todaysGoals:"Today's goals", lifeRating:'Life Rating', streak:'Streak', avg7:'7-day avg', goalsDone:'Goals done', slips:'Slips', checkinAvg:'Check-in avg',
+      checkOff:'Check off habits', dailyCheckin:'Daily check-in', projected:'Projected Life Score', saveDay:'Save day', daysActive:'days with activity', todayFocus:"Today's focus", lastNight:'Last night', sleepScore:'Sleep score', quality:'Quality',
+      avgDuration:'Avg duration', last30:'last 30 nights', regularity:'Regularity', bedtimeVar:'Bedtime variance', trend30:'30-night trend', today:'Today', estimate:'Your personal sleep estimate', adherence:'adherence', dayStreak:'day streak',
+      netWorth:'Net worth', assets:'Assets', liabilities:'Liabilities', portfolio:'Portfolio', budget:'Budget', income:'Income', expenses:'Expenses', savingsRate:'Savings rate', jan:'Jan', now:'Now',
+      lifeScoreTrend:'Life Score trend', avg:'Avg', best2:'Best', low:'Low', weekdayBreakdown:'By weekday', eloRating:'Life Rating (ELO)', correlation:'Correlation',
+      build:'Build', reduce:'Reduce', daily:'Daily', perWeek:'3×/week',
+    },
+  };
+
+  buildVars(theme, dir){
+    const base = theme==='dark'
+      ? {'--bg':'#0a0b0e','--surface':'#14161b','--s2':'#1b1e25','--s3':'#23272f','--border':'#262a32','--text':'#eef1f5','--muted':'#9aa3b0','--faint':'#6b7482','--good':'#34d399','--warn':'#fbbf24','--bad':'#f87171','--info':'#38bdf8','--goodSoft':'#10281f','--badSoft':'#2a1414','--ringTrack':'#262a32','--shadow':'0 1px 2px rgba(0,0,0,.3),0 8px 30px rgba(0,0,0,.35)'}
+      : {'--bg':'#f6f7f9','--surface':'#ffffff','--s2':'#f1f3f5','--s3':'#e9ecef','--border':'#e2e5ea','--text':'#14161a','--muted':'#5b6470','--faint':'#8a929e','--good':'#16a34a','--warn':'#d97706','--bad':'#dc2626','--info':'#0ea5e9','--goodSoft':'#e7f6ec','--badSoft':'#fdeaea','--ringTrack':'#e6e8ec','--shadow':'0 1px 2px rgba(16,18,22,.04),0 4px 16px rgba(16,18,22,.06)'};
+    let accent, accentSoft, grad, ringA, ringB;
+    if(dir==='calm'){ accent=theme==='dark'?'#7c7bff':'#4f46e5'; accentSoft=theme==='dark'?'#1e1e42':'#eef0fe'; grad=theme==='dark'?'linear-gradient(135deg,#7c7bff,#a78bfa)':'linear-gradient(135deg,#4f46e5,#6366f1)'; ringA=accent; ringB=accent; }
+    else if(dir==='aurora'){ accent=theme==='dark'?'#2dd4bf':'#0ea5e9'; accentSoft=theme==='dark'?'#0e2b2c':'#e5f6fd'; grad='linear-gradient(135deg,#0ea5e9,#6366f1,#a855f7)'; ringA='#0ea5e9'; ringB='#a855f7'; }
+    else { accent=theme==='dark'?'#e4e4e7':'#18181b'; accentSoft=theme==='dark'?'#26262a':'#f4f4f5'; grad=theme==='dark'?'linear-gradient(135deg,#a1a1aa,#e4e4e7)':'linear-gradient(135deg,#3f3f46,#18181b)'; ringA=accent; ringB=accent; }
+    const shadow = dir==='mono' ? (theme==='dark'?'0 0 0 1px rgba(255,255,255,.02)':'0 1px 2px rgba(16,18,22,.03)') : base['--shadow'];
+    return { style: {...base, '--accent':accent, '--accentSoft':accentSoft, '--grad':grad, '--shadow':shadow, background:base['--bg'], color:base['--text'], minHeight:'100vh'}, accent, ringA, ringB, dir };
+  }
+
+  scoreColor(s){ return s>=70?'var(--good)':s>=45?'var(--warn)':'var(--bad)'; }
+  scoreLabel(s,lang){ const de=['Rough','Mixed','Solid','Strong','Excellent']; const map={de:{Rough:'Schwach',Mixed:'Gemischt',Solid:'Solide',Strong:'Stark',Excellent:'Exzellent'},en:{Rough:'Rough',Mixed:'Mixed',Solid:'Solid',Strong:'Strong',Excellent:'Excellent'}}; const k=s>=85?'Excellent':s>=70?'Strong':s>=55?'Solid':s>=40?'Mixed':'Rough'; return map[lang][k]; }
+  fmtDelta(v, invert){ const up=v>0, zero=v===0; const good=zero?false:invert?!up:up; return { str:(v>0?'+':'')+v, color:zero?'var(--faint)':good?'var(--good)':'var(--bad)' }; }
+
+  refreshIcons(){ if(typeof window!=='undefined'&&window.lucide){ window.lucide.createIcons(); } else { this._t=setTimeout(()=>this.refreshIcons(),120); } }
+  componentDidMount(){ this.refreshIcons(); }
+  componentDidUpdate(){ this.refreshIcons(); }
+
+  renderVals(){
+    const s = this.state, lang = s.lang, T = this.L[lang], theme = s.theme, dir = s.dir;
+    const V = this.buildVars(theme, dir);
+    const areaColor = dir==='mono' ? ()=> 'var(--faint)' : (c)=>c;
+    const monoColors = { productivity:'var(--accent)', sport:'var(--good)', sleep:'var(--info)', reflection:'#a855f7', learning:'var(--warn)' };
+
+    // ----- navigation -----
+    const de0 = lang==='de';
+    const navItems = [
+      ['dashboard','gauge',{de:'Dashboard',en:'Dashboard'}],
+      ['today','calendar-check',{de:'Heute',en:'Today'}],
+      ['morning','sunrise',{de:'Morgen',en:'Morning'}],
+      ['habits','list-checks',{de:'Gewohnheiten',en:'Habits'}],
+      ['training','dumbbell',{de:'Training',en:'Training'}],
+      ['sleep','moon',{de:'Schlaf',en:'Sleep'}],
+      ['calendar','calendar-days',{de:'Kalender',en:'Calendar'}],
+      ['journal','book-open',{de:'Tagebuch',en:'Journal'}],
+      ['goals','target',{de:'Ziele',en:'Goals'}],
+      ['projects','kanban-square',{de:'Projekte',en:'Projects'}],
+      ['experiments','flask-conical',{de:'Experimente',en:'Experiments'}],
+      ['finances','wallet',{de:'Finanzen',en:'Finances'}],
+      ['statistics','bar-chart-3',{de:'Statistik',en:'Statistics'}],
+      ['reports','file-text',{de:'Berichte',en:'Reports'}],
+      ['achievements','award',{de:'Erfolge',en:'Achievements'}],
+      ['settings','settings',{de:'Einstellungen',en:'Settings'}],
+    ];
+    const nav = navItems.map(([k,icon,lbl])=>{
+      const active = s.screen===k;
+      return { key:k, icon, label:lbl[lang], go:()=>this.setState({screen:k}),
+        style:`display:flex;align-items:center;gap:12px;padding:9px 12px;border:none;border-radius:11px;cursor:pointer;font-size:13.5px;font-weight:${active?'600':'500'};font-family:inherit;text-align:left;transition:background .15s;`+(active?'background:var(--accentSoft);color:var(--accent);':'background:none;color:var(--muted);') };
+    });
+
+    // ----- direction / lang / theme controls -----
+    const dirDefs = [['calm', lang==='de'?'Ruhig':'Calm'],['aurora','Aurora'],['mono','Mono']];
+    const segBtn = (active)=>`padding:6px 12px;border:none;border-radius:8px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit;transition:.15s;`+(active?'background:var(--surface);color:var(--text);box-shadow:0 1px 2px rgba(0,0,0,.08);':'background:none;color:var(--faint);');
+    const dirs = dirDefs.map(([k,label])=>({ label, go:()=>this.setState({dir:k}), style:segBtn(dir===k) }));
+
+    // ----- page title -----
+    const titles = {
+      dashboard:['Dashboard · Jonas', this.fmtLong(lang)],
+      today:[T.today, lang==='de'?'Hake ab, was du heute geschafft hast':'Check off what you got done today'],
+      morning:[T.morning, this.fmtLong(lang)],
+      habits:[T.habits, lang==='de'?'Aufbau- und Reduktions-Gewohnheiten':'Build and reduce habits'],
+      sleep:[T.sleep, lang==='de'?'Dauer, Regelmäßigkeit und Trend':'Duration, regularity and trend'],
+      finances:[T.finances, lang==='de'?'Vermögen, Portfolio und Budget':'Net worth, portfolio and budget'],
+      statistics:[T.statistics, lang==='de'?'Verläufe und Korrelationen':'Trends and correlations'],
+      training:[lang==='de'?'Training':'Training', lang==='de'?'Workouts mit Übungen, Sätzen und Metriken':'Workouts with exercises, sets and metrics'],
+      calendar:[lang==='de'?'Kalender':'Calendar', lang==='de'?'Dein Leben, Tag für Tag':'Your life, day by day'],
+      journal:[lang==='de'?'Tagebuch':'Journal', lang==='de'?'Privat und nur auf diesem Gerät':'Private and on this device only'],
+      goals:[lang==='de'?'Ziele':'Goals', lang==='de'?'Längerfristige Vorhaben – anders als Gewohnheiten':'Longer-term outcomes, distinct from habits'],
+      projects:[lang==='de'?'Projekte':'Projects', lang==='de'?'Lern- und Kreativprojekte von Idee bis fertig':'Learning and creative projects, idea to done'],
+      experiments:[lang==='de'?'Experimente':'Experiments', lang==='de'?'Teste eine Hypothese an deinen Daten':'Test a hypothesis against your data'],
+      reports:[lang==='de'?'Berichte':'Reports', lang==='de'?'Automatische Wochen- und Monatszusammenfassungen':'Automatic weekly and monthly summaries'],
+      achievements:[lang==='de'?'Erfolge':'Achievements', lang==='de'?'Meilensteine und persönliche Rekorde':'Milestones and personal records'],
+      settings:[lang==='de'?'Einstellungen':'Settings', lang==='de'?'Was du trackst und wie dein Score berechnet wird':'What you track and how your score is computed'],
+    };
+
+    // ----- dashboard core -----
+    const liveScore = 78;
+    const r=95, c=2*Math.PI*r, ringOffset=c*(1-liveScore/100);
+    const areaMeta = [
+      ['productivity', lang==='de'?'Produktivität':'Productivity', 82, 4, 'var(--accent)'],
+      ['sport', lang==='de'?'Sport':'Sport', 68, -3, 'var(--good)'],
+      ['sleep', lang==='de'?'Schlaf':'Sleep', 74, 6, 'var(--info)'],
+      ['reflection', lang==='de'?'Reflexion':'Reflection', 80, 2, '#a855f7'],
+      ['learning', lang==='de'?'Lernen':'Learning', 71, -1, 'var(--warn)'],
+    ];
+    const areas = areaMeta.map(([k,label,value,dv,col])=>({ key:k, label, value, delta:this.fmtDelta(dv), color: dir==='mono'?'var(--faint)':col, spark:this.spark(this.D.sparks[k],80,26) }));
+
+    const statTiles = [
+      { icon:'trophy', label:T.lifeRating, value:'1.184', sub:(lang==='de'?'Best':'Best')+' 1.210' },
+      { icon:'flame', label:T.streak, value:'12d', sub:T.daysActive },
+      { icon:'trending-up', label:T.avg7, value:'74', sub:'Life Score' },
+      { icon:'circle-check', label:T.today, value:this.buildDone(), sub:T.goalsDone },
+    ];
+
+    const insDefs = [
+      ['good', lang==='de'?'An Nächten mit Schlaf vor Mitternacht liegt deine Produktivität ~12 % höher.':'On nights you sleep before midnight, productivity runs ~12% higher.'],
+      ['info', lang==='de'?'Dein stärkster Wochentag ist Mittwoch (Ø 81).':'Your strongest weekday is Wednesday (avg 81).'],
+      ['warn', lang==='de'?'Sport-Adhärenz sinkt am Wochenende – zuletzt 2 Sessions verpasst.':'Sport adherence dips on weekends — 2 sessions missed lately.'],
+      ['good', lang==='de'?'12-Tage-Streak – dein längster in diesem Quartal.':'12-day streak — your longest this quarter.'],
+    ];
+    const toneCol = { good:'var(--good)', warn:'var(--warn)', info:'var(--info)' };
+    const insights = insDefs.map(([t,text])=>({ color:toneCol[t], text }));
+
+    // ----- goals -----
+    const goalDefs = [
+      ['g1', {de:'10 Min meditieren',en:'Meditate 10 min'}, '#a855f7', false, lang==='de'?'täglich':'daily'],
+      ['g2', {de:'Tiefarbeit 2 Std',en:'Deep work 2h'}, 'var(--accent)', false, lang==='de'?'täglich':'daily'],
+      ['g3', {de:'Sport 45 Min',en:'Workout 45 min'}, 'var(--good)', false, '3×'],
+      ['g4', {de:'20 Seiten lesen',en:'Read 20 pages'}, 'var(--warn)', false, lang==='de'?'täglich':'daily'],
+      ['g5', {de:'2 L Wasser',en:'2 L water'}, 'var(--info)', false, lang==='de'?'täglich':'daily'],
+      ['g6', {de:'Kein Zucker',en:'No sugar'}, 'var(--bad)', true, lang==='de'?'reduzieren':'reduce'],
+    ];
+    const goals = goalDefs.map(([id,nm,dot,isReduce,tag])=>{
+      const done = !!s.checks[id];
+      const filled = done;
+      return { id, label:nm[lang], dot: dir==='mono'?'var(--faint)':dot, done: filled,
+        tag, toggle:()=>this.toggleGoal(id),
+        boxStyle:`display:flex;align-items:center;justify-content:center;width:24px;height:24px;flex-shrink:0;border-radius:8px;color:#fff;font-size:14px;transition:.15s;`+(filled?'background:var(--grad);border:none;':'background:transparent;border:2px solid var(--border);'),
+        textColor: filled?'var(--faint)':'var(--text)', strike: filled&&!isReduce?'line-through':'none' };
+    });
+
+    // ----- today check-in -----
+    const metricDefs = [['productivity', lang==='de'?'Produktivität':'Productivity'],['mood', lang==='de'?'Stimmung':'Mood'],['energy', lang==='de'?'Energie':'Energy'],['satisfaction', lang==='de'?'Zufriedenheit':'Satisfaction'],['discipline', lang==='de'?'Disziplin':'Discipline']];
+    const metrics = metricDefs.map(([k,label])=>({ key:k, label, value:s.metrics[k],
+      cells: Array.from({length:10},(_,i)=>{ const n=i+1, active=s.metrics[k]===n; return { n, active, set:()=>this.setMetric(k,n),
+        style:`width:30px;height:34px;border:none;border-radius:9px;cursor:pointer;font-size:13px;font-weight:600;font-family:inherit;transition:.12s;`+(active?'background:var(--grad);color:#fff;':'background:var(--s2);color:var(--muted);') }; }) }));
+    const buildIds=['g1','g2','g3','g4','g5'];
+    const doneBuild = buildIds.filter(i=>s.checks[i]).length;
+    const projected = this.clamp(Math.round(30 + (doneBuild/buildIds.length)*52 + (s.checks.g6?8:0) + (this.checkinAvgNum()-7)*3));
+    const goalsDoneStr = `${doneBuild}/${buildIds.length}`;
+    const slipsStr = s.checks.g6 ? (lang==='de'?'0':'0') : '1';
+
+    // ----- sleep -----
+    const trendMax = Math.max(...this.D.sleepTrend);
+    const sleepTrend = this.D.sleepTrend.map(v=>({ pct: Math.round((v/trendMax)*100), color: v>=420?'var(--good)':v>=390?'var(--warn)':'var(--bad)' }));
+    const sleep = { duration:'7h 12m', window:'23:20 – 06:40', score:82, quality:8, avg:'7h 04m', regularity:lang==='de'?'Gut':'Good',
+      rangeStart:'-21d', target:lang==='de'?'Ziel 7h 30':'Target 7h 30', 
+      estimateText: lang==='de'?'Basierend auf 30 Nächten scheinen ~7 h 30 dein Optimum: mehr Energie am Folgetag, höhere Reflexions-Scores.':'Across 30 nights, ~7h 30 looks optimal for you: more next-day energy and higher reflection scores.' };
+
+    // ----- finances -----
+    const nw=this.D.netWorth;
+    const holdDefs=[['FTSE All-World (VWCE)',45,'€28.100','+12,4 %',true,'var(--accent)'],['S&P 500 (VUAA)',25,'€15.600','+9,8 %',true,'var(--info)'],['Bitcoin',10,'€6.250','-4,2 %',false,'var(--warn)'],[lang==='de'?'Cash / Tagesgeld':'Cash / savings',20,'€12.450','+3,1 %',true,'var(--good)']];
+    const fin = { netWorth:'€48.250', netWorthDelta:'+€3.180 (30d)', assets:'€62.400', liabilities:'€14.150',
+      linePath:this.linePath(nw,560,110), areaPath:this.areaPath(nw,560,110),
+      holdings: holdDefs.map(([name,pct,val,pl,up,color])=>({ name, pct, val, pl, up, color: dir==='mono'?'var(--faint)':color, plColor:up?'var(--good)':'var(--bad)' })),
+      income:'€3.900', expenses:'€2.650', savingsRate:'32 %', savingsPct:32,
+      budgetNote: lang==='de'?'Du sparst €1.250/Monat – über deinem Ziel von 25 %.':'You save €1,250/month — above your 25% target.' };
+
+    // ----- statistics -----
+    const ser=this.D.series[s.range];
+    const ranges=['7D','30D','90D','All'].map(rk=>({ label:rk, go:()=>this.setState({range:rk}), style:segBtn(s.range===rk) }));
+    const stat = { avg:Math.round(ser.reduce((a,b)=>a+b,0)/ser.length), best:Math.max(...ser), low:Math.min(...ser),
+      linePath:this.linePath(ser,640,210), areaPath:this.areaPath(ser,640,210), eloWeek:lang==='de'?'+22 diese Woche':'+22 this week',
+      correlationText: lang==='de'?'Life Score ist an Tagen nach ≥7 h Schlaf im Schnitt 9 Punkte höher als nach kürzeren Nächten.':'Life Score averages 9 points higher on days after ≥7h sleep than after shorter nights.' };
+    const wdLabels = lang==='de'?['Mo','Di','Mi','Do','Fr','Sa','So']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const wdMax=Math.max(...this.D.weekday);
+    const weekday=this.D.weekday.map((v,i)=>({ label:wdLabels[i], value:v, pct:Math.round((v/wdMax)*100), color: dir==='mono'?'var(--faint)':(v>=75?'var(--good)':v>=68?'var(--accent)':'var(--warn)') }));
+
+    return {
+      rootStyle:V.style, ringA:V.ringA, ringB:V.ringB, T,
+      nav, dirs, setDe:()=>this.setState({lang:'de'}), setEn:()=>this.setState({lang:'en'}),
+      deStyle:segBtn(lang==='de'), enStyle:segBtn(lang==='en'),
+      toggleTheme:()=>this.setState({theme:theme==='dark'?'light':'dark'}), themeIcon: theme==='dark'?'sun':'moon',
+      pageTitle:titles[s.screen][0], pageSub:titles[s.screen][1],
+      sDash:s.screen==='dashboard', sToday:s.screen==='today', sMorning:s.screen==='morning', sHabits:s.screen==='habits', sSleep:s.screen==='sleep', sFin:s.screen==='finances', sStats:s.screen==='statistics',
+      sTraining:s.screen==='training', sCalendar:s.screen==='calendar', sJournal:s.screen==='journal', sGoals:s.screen==='goals', sProjects:s.screen==='projects', sExperiments:s.screen==='experiments', sReports:s.screen==='reports', sAchievements:s.screen==='achievements', sSettings:s.screen==='settings',
+      goStats:()=>this.setState({screen:'statistics'}), goToday:()=>this.setState({screen:'today'}),
+      liveScore, scoreColor:this.scoreColor(liveScore), scoreLabelTxt:this.scoreLabel(liveScore,lang),
+      ringC:c.toFixed(1), ringOffset:ringOffset.toFixed(1),
+      heroLine: lang==='de'?'Solider Tag – über deinem 7-Tage-Schnitt. Weiter so.':'Solid day — above your 7-day average. Keep it going.',
+      vsY:this.fmtDelta(4), vs7:this.fmtDelta(4),
+      areas, statTiles, insights, goals,
+      metrics, doneSummary: lang==='de'?`${this.buildDone()} von 5 Aufbau-Zielen erledigt`:`${this.buildDone()} of 5 build goals done`,
+      projected, projColor:this.scoreColor(projected), projLabel:this.scoreLabel(projected,lang),
+      goalsDoneStr, slipsStr, checkinAvg:this.checkinAvgNum().toFixed(1),
+      greeting: lang==='de'?'Guten Morgen, Jonas':'Good morning, Jonas', morningDate:this.fmtLong(lang),
+      morningLine: lang==='de'?'Du hast gut geschlafen und liegst auf einem 12-Tage-Streak. Hier ist dein Fokus für heute.':"You slept well and you're on a 12-day streak. Here's your focus for today.",
+      elo:'1.184', eloSub: lang==='de'?'Best 1.210':'Best 1.210', streakStr:'12d',
+      sleep, sleepTrend, habitList:this.habitList(lang, dir),
+      fin, ranges, stat, weekday,
+      training:this.trainingData(lang), calendar:this.calendarData(lang), reports:this.reportsData(lang),
+      journal:this.journalData(lang), projects:this.projectsData(lang),
+      experiments:this.experimentsData(lang), achievements:this.achievementsData(lang), settings:this.settingsData(lang, theme), goalsPage:this.goalsData(lang),
+    };
+  }
+
+  fmtLong(lang){ const d=new Date(2026,7,11); return d.toLocaleDateString(lang==='de'?'de-DE':'en-US',{weekday:'long',day:'numeric',month:'long'}); }
+  buildDone(){ return ['g1','g2','g3','g4','g5'].filter(i=>this.state.checks[i]).length+'/5'; }
+  checkinAvgNum(){ const m=this.state.metrics; return (m.productivity+m.mood+m.energy+m.satisfaction+m.discipline)/5; }
+  toggleGoal(id){ this.setState(st=>({checks:{...st.checks,[id]:!st.checks[id]}})); }
+  setMetric(k,n){ this.setState(st=>({metrics:{...st.metrics,[k]:n}})); }
+
+  habitList(lang, dir){
+    const defs=[
+      ['brain', lang==='de'?'Meditieren':'Meditate', 'build', lang==='de'?'Täglich':'Daily', 92, 18, 'var(--accent)'],
+      ['dumbbell', lang==='de'?'Krafttraining':'Strength training', 'build', '3×/'+(lang==='de'?'Woche':'week'), 78, 9, 'var(--good)'],
+      ['book-open', lang==='de'?'Lesen':'Reading', 'build', lang==='de'?'Täglich':'Daily', 71, 6, 'var(--warn)'],
+      ['droplet', lang==='de'?'2 L Wasser':'2 L water', 'build', lang==='de'?'Täglich':'Daily', 85, 14, 'var(--info)'],
+      ['candy-off', lang==='de'?'Kein Zucker':'No sugar', 'reduce', lang==='de'?'Reduzieren':'Reduce', 64, 5, 'var(--bad)'],
+    ];
+    return defs.map(([icon,name,kind,schedule,adherence,streak,col],idx)=>{
+      const heat = Array.from({length:30},(_,i)=>{ const x=(i*7+idx*13)%11; const on=x<(adherence/12); return { color: on?(dir==='mono'?'var(--accent)':col):'var(--ringTrack)' }; });
+      const isReduce=kind==='reduce';
+      return { icon, name, kind: kind==='build'?(lang==='de'?'Aufbauen':'Build'):(lang==='de'?'Reduzieren':'Reduce'),
+        tagBg: isReduce?'var(--badSoft)':'var(--goodSoft)', tagColor: isReduce?'var(--bad)':'var(--good)',
+        schedule, adherence, streak, color: dir==='mono'?'var(--accent)':col, heat };
+    });
+  }
+
+  chip(active){ return `padding:7px 14px;border:none;border-radius:10px;cursor:pointer;font-size:12.5px;font-weight:600;font-family:inherit;transition:.15s;`+(active?'background:var(--accent);color:#fff;':'background:var(--s2);color:var(--muted);'); }
+  toggleMs(key, val){ this.setState(st=>({goalChecks:{...st.goalChecks,[key]:val}})); }
+
+  trainingData(lang){
+    const de=lang==='de';
+    const vol=[3,4,4,6,5,7,6,8];
+    const vmax=Math.max(...vol);
+    const volume=vol.map((h,i)=>({ pct:Math.round(h/vmax*100), value:h+'h', label:'W'+(i+1) }));
+    const raw=[
+      {sport:de?'Krafttraining':'Strength training', dur:'1h 05m', perf:8, date:de?'Heute':'Today', meta:'Push · 5 '+(de?'Übungen':'exercises'), tags:[de?'Bankdrücken · 4×':'Bench · 4×',de?'Schulterdrücken · 3×':'OHP · 3×',de?'Trizeps · 3×':'Triceps · 3×']},
+      {sport:de?'Laufen':'Running', dur:'42m', perf:7, date:de?'Gestern':'Yesterday', meta:'8,2 km · 148 bpm', tags:[]},
+      {sport:de?'Krafttraining':'Strength training', dur:'1h 12m', perf:9, date:'Mi', meta:'Pull · 6 '+(de?'Übungen':'exercises'), tags:[de?'Klimmzüge · 4×':'Pull-ups · 4×',de?'Rudern · 4×':'Rows · 4×',de?'Bizeps · 3×':'Curls · 3×']},
+      {sport:'Yoga', dur:'35m', perf:6, date:'Di', meta:de?'Mobilität':'Mobility', tags:[]},
+    ];
+    const workouts=raw.map(w=>({...w, hasTags:w.tags.length>0}));
+    return { stats:[
+        {label:de?'Sessions diese Woche':'Sessions this week', value:'4'},
+        {label:de?'Gesamtzeit':'Total time', value:'3h 34m'},
+        {label:de?'Ø Leistung':'Avg performance', value:'7.5'} ],
+      volume, workouts, perfLabel:de?'Leistung':'Performance',
+      volTitle:(de?'Volumen':'Volume')+' · h / '+(de?'Woche':'week'), recentTitle:de?'Letzte Workouts':'Recent workouts' };
+  }
+
+  calendarData(lang){
+    const de=lang==='de';
+    const off=this.state.calOffset;
+    const base=new Date(2026,7,1); base.setMonth(base.getMonth()+off);
+    const y=base.getFullYear(), m=base.getMonth();
+    const months={de:['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],en:['January','February','March','April','May','June','July','August','September','October','November','December']};
+    const first=new Date(y,m,1).getDay(); const leading=(first+6)%7;
+    const total=new Date(y,m+1,0).getDate();
+    const isCurrent=off===0; const todayD=11;
+    const cells=[];
+    for(let i=0;i<leading;i++) cells.push({ empty:true, show:false, day:'', dot:'transparent', cellStyle:'aspect-ratio:1' });
+    for(let d=1;d<=total;d++){
+      const future=isCurrent && d>todayD;
+      let show=false, col='transparent';
+      if(!future){ let sc=48+((d*37+m*17)%42); if(d%5===0) sc+=6; sc=Math.min(96,sc); col=sc>=70?'var(--good)':sc>=52?'var(--warn)':'var(--bad)'; show=true; }
+      const isToday=isCurrent&&d===todayD;
+      cells.push({ empty:false, show, day:d, dot:show?col:'transparent',
+        cellStyle:`aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:11px;border:1px solid ${isToday?'var(--accent)':'transparent'};font-size:13px;font-weight:500;opacity:${future?'.3':'1'};cursor:${future?'default':'pointer'};background:${show?`color-mix(in srgb, ${col} 20%, var(--surface))`:'var(--s2)'};` });
+    }
+    return { title:months[lang][m]+' '+y, cells,
+      headers: de?['Mo','Di','Mi','Do','Fr','Sa','So']:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      prev:()=>this.setState({calOffset:off-1}), next:()=>this.setState({calOffset:off+1}),
+      lRough:de?'Schwach':'Rough', lMixed:de?'Gemischt':'Mixed', lStrong:de?'Stark':'Strong' };
+  }
+
+  reportsData(lang){
+    const de=lang==='de'; const wk=this.state.reportPeriod==='week';
+    const tilesRaw=[
+      {label:de?'Life Rating':'Life Rating', value:'1.184', sub:'+22'},
+      {label:de?'Trainings':'Training sessions', value: wk?'4':'17'},
+      {label:de?'Schlaf':'Sleep', value: wk?'7h 06m':'7h 01m', sub:'Ø'},
+      {label:de?'Journal-Einträge':'Journal entries', value: wk?'5':'21'},
+      {label:de?'Bester Tag':'Best day', value:'88', sub: wk?'Mi':'12. Aug'},
+      {label:de?'Härtester Tag':'Toughest day', value:'61', sub: wk?'Sa':'3. Aug'},
+      {label:de?'Nettovermögen':'Net worth', value:'+€780', money:true},
+    ];
+    const tiles=tilesRaw.map(t=>({...t, hasSub:!!t.sub, color:t.money?'var(--good)':'var(--text)'}));
+    const highlights=[
+      de?'Dein Ø Life Score stieg um 4 Punkte gegenüber der Vorperiode.':'Your average Life Score improved 4 points versus the period before.',
+      de?'Du hast 4× trainiert – starke Konstanz.':'You trained 4 times — strong consistency.',
+      de?'An Tagen nach ≥7 h Schlaf lag dein Score im Schnitt 9 Punkte höher.':'On days after ≥7h sleep your score averaged 9 points higher.',
+      de?'Mittwoch war dein stärkster Tag mit 88.':'Wednesday was your strongest day at 88.',
+    ];
+    return { tiles, highlights, label: wk?(de?'4. – 10. Aug':'Aug 4 – 10'):'August 2026', avg: wk?'76':'74', delta:'+4',
+      weekly:de?'Wöchentlich':'Weekly', monthly:de?'Monatlich':'Monthly',
+      setWeek:()=>this.setState({reportPeriod:'week'}), setMonth:()=>this.setState({reportPeriod:'month'}),
+      weekStyle:this.chip(wk), monthStyle:this.chip(!wk),
+      reportTitle:de?'Life Report':'Life Report', highTitle:'Highlights', dataDriven:de?'datenbasiert':'data-driven' };
+  }
+
+  journalData(lang){
+    const de=lang==='de';
+    const entries=[
+      {id:'j1', title:de?'Ein guter Rhythmus':'Finding a rhythm', date:de?'Montag, 11. August':'Monday, August 11', mood:'8/10',
+        body:de?'Früh aufgestanden und direkt zwei Stunden Tiefarbeit vor dem ersten Meeting – der Kopf war klar.\n\nAbends nochmal ins Studio. Der neue Track nimmt langsam Form an, endlich ein Refrain, der trägt.':'Up early and straight into two hours of deep work before the first meeting — head was clear.\n\nStudio again in the evening. The new track is slowly taking shape; finally a chorus that carries.',
+        chips:[de?'📍 Berlin':'📍 Berlin', de?'☀️ Sonnig':'☀️ Sunny', 'Fokus', 'Musik']},
+      {id:'j2', title:de?'Langer Lauf':'Long run', date:de?'Sonntag, 10. August':'Sunday, August 10', mood:'7/10',
+        body:de?'14 km am Kanal entlang. Die ersten fünf waren zäh, danach lief es von selbst.':'14 km along the canal. The first five were a slog, then it flowed on its own.', chips:['Sport']},
+      {id:'j3', title:de?'Ruhiger Samstag':'Quiet Saturday', date:de?'Samstag, 9. August':'Saturday, August 9', mood:'6/10',
+        body:de?'Wenig vorgenommen, viel gelesen. Manchmal ist ein leerer Tag genau richtig.':'Planned little, read a lot. Sometimes an empty day is exactly right.', chips:[]},
+      {id:'j4', title:de?'Studio-Session':'Studio session', date:de?'Freitag, 8. August':'Friday, August 8', mood:'9/10',
+        body:de?'Sechs Stunden am Stück gemischt. Bester Flow seit Wochen.':'Six hours mixing straight. Best flow in weeks.', chips:['Musik']},
+      {id:'j5', title:'Reset', date:de?'Donnerstag, 7. August':'Thursday, August 7', mood:'',
+        body:de?'Früh ins Bett, Bildschirm aus. Morgen wieder mit Energie.':'Early to bed, screens off. Back with energy tomorrow.', chips:[]},
+    ];
+    const activeId=this.state.journalActive||entries[0].id;
+    const active=entries.find(e=>e.id===activeId)||entries[0];
+    const list=entries.map(e=>({ title:e.title, date:e.date, mood:e.mood, hasMood:!!e.mood, open:()=>this.setState({journalActive:e.id}),
+      style:`display:block;width:100%;text-align:left;padding:10px 12px;border:none;border-radius:11px;cursor:pointer;font-family:inherit;transition:.12s;`+(e.id===activeId?'background:var(--accentSoft);':'background:none;') }));
+    return { entries:list, active:{date:active.date, title:active.title, body:active.body, chips:active.chips}, searchPh:de?'Einträge durchsuchen…':'Search entries…' };
+  }
+
+  projectsData(lang){
+    const de=lang==='de'; const board=this.state.projectBoard;
+    const boards={
+      creative:{ cols:[de?'Idee':'Idea','Draft',de?'Aufnahme':'Recording','Mixing',de?'Fertig':'Done'],
+        items:[{t:'Song: Nightdrive',d:'Synthwave, 110 BPM',col:1},{t:'EP Artwork',d:de?'Cover + 3 Singles':'Cover + 3 singles',col:0},{t:'Track: Coastline',d:'',col:2},{t:'Remix: Aurora',d:'',col:3},{t:'Single: Ember',d:de?'Master fertig':'Master done',col:4}] },
+      learning:{ cols:['Backlog',de?'Lernen':'Learning','Review',de?'Beherrscht':'Mastered'],
+        items:[{t:'Rust Basics',d:'',col:1},{t:'System Design',d:de?'Kapitel 3':'Chapter 3',col:1},{t:'French A2',d:'',col:0},{t:'SQL Tuning',d:'',col:2},{t:'Git Internals',d:'',col:3}] },
+    };
+    const b=boards[board];
+    const cols=b.cols.map((c,ci)=>{ const items=b.items.filter(i=>Math.min(i.col,b.cols.length-1)===ci); return { name:c, count:String(items.length), items:items.map(i=>({title:i.t, desc:i.d, hasDesc:!!i.d})) }; });
+    return { cols, creative:de?'Kreativ':'Creative', learning:de?'Lernen':'Learning',
+      setCreative:()=>this.setState({projectBoard:'creative'}), setLearning:()=>this.setState({projectBoard:'learning'}),
+      cStyle:this.chip(board==='creative'), lStyle:this.chip(board==='learning') };
+  }
+
+  goalsData(lang){
+    const de=lang==='de'; const gc=this.state.goalChecks;
+    const defs=[
+      {id:'go1', title:de?'Bankdrücken 80 kg':'Bench press 80 kg', area:de?'Sport':'Sport', desc:de?'Bis Dezember':'By December', progress:65, deadline:'31.12.', ms:[['m1',de?'70 kg × 5':'70 kg × 5',true],['m2',de?'75 kg × 3':'75 kg × 3',true],['m3',de?'80 kg × 1':'80 kg × 1',false]]},
+      {id:'go2', title:de?'EP veröffentlichen':'Release an EP', area:de?'Kreativität':'Creativity', desc:de?'5 Tracks':'5 tracks', progress:40, deadline:'', ms:[['m1',de?'3 Tracks geschrieben':'3 tracks written',true],['m2',de?'Alle aufgenommen':'All recorded',false],['m3',de?'Gemischt & gemastert':'Mixed & mastered',false]]},
+      {id:'go3', title:de?'€60k Nettovermögen':'€60k net worth', area:de?'Finanzen':'Finances', desc:'', progress:80, deadline:'', ms:[]},
+      {id:'go4', title:de?'Halbmarathon':'Half marathon', area:de?'Sport':'Sport', desc:de?'Unter 1:50':'Under 1:50', progress:30, deadline:'12.10.', ms:[['m1',de?'10 km unter 50 min':'10k under 50 min',true],['m2',de?'15 km Longrun':'15k long run',false]]},
+    ];
+    const goals=defs.map(g=>{
+      const ms=g.ms.map(([mid,label,def])=>{ const done = gc[g.id+mid]!==undefined?gc[g.id+mid]:def; return { label, done, toggle:()=>this.toggleMs(g.id+mid,!done),
+        boxStyle:`display:flex;align-items:center;justify-content:center;width:20px;height:20px;flex-shrink:0;border-radius:6px;color:#fff;`+(done?'background:var(--good);border:none;':'border:1.5px solid var(--border);'),
+        textStyle:`font-size:13px;`+(done?'color:var(--faint);text-decoration:line-through;':'color:var(--text);') }; });
+      const prog = ms.length? Math.round(ms.filter(m=>m.done).length/ms.length*100): g.progress;
+      return { title:g.title, area:g.area, desc:g.desc, hasDesc:!!g.desc, progress:prog, hasDeadline:!!g.deadline, deadline:(de?'Frist ':'Deadline ')+g.deadline, ms, hasMs:ms.length>0 };
+    });
+    return { goals, progressL:de?'Fortschritt':'Progress' };
+  }
+
+  experimentsData(lang){
+    const de=lang==='de';
+    const exps=[
+      { title:de?'Vor Mitternacht = produktiver?':'Before midnight = more productive?', hyp:de?'Vor 0 Uhr ins Bett macht mich produktiver.':'Going to bed before 00:00 makes me more productive.', metric:de?'Produktivität':'Productivity', cond:de?'Schlafenszeit vor 00:00':'Bedtime before 00:00', days:'22/30', enough:true, result:de?'An Tagen mit Bedingung war Produktivität im Schnitt 14 % höher.':'On days with the condition, Productivity was on average 14% higher.', withV:de?'Mit: 8.1 (14)':'With: 8.1 (14)', withoutV:de?'Ohne: 7.1 (8)':'Without: 7.1 (8)'},
+      { title:de?'Mehr Schlaf = bessere Stimmung?':'More sleep = better mood?', hyp:de?'≥7:30 Schlaf hebt meine Stimmung.':'≥7:30 of sleep lifts my mood.', metric:de?'Stimmung':'Mood', cond:de?'Schlaf ≥ 7h 30m':'Sleep ≥ 7h 30m', days:'18/30', enough:true, result:de?'An Tagen mit Bedingung war Stimmung im Schnitt 9 % höher.':'On days with the condition, Mood was on average 9% higher.', withV:de?'Mit: 8.0 (11)':'With: 8.0 (11)', withoutV:de?'Ohne: 7.3 (7)':'Without: 7.3 (7)'},
+      { title:de?'Training hebt meinen Tag':'Training lifts my day', hyp:de?'Mein Life Score ist an Trainingstagen höher.':'My Life Score is higher on days I train.', metric:'Life Score', cond:de?'An Trainingstagen':'On days I train', days:'9/30', enough:false, result:'', withV:'', withoutV:''},
+    ].map(e=>({...e, notEnough:!e.enough}));
+    return { exps, daysL:de?'Tage':'days', note:de?'Beobachtung aus deinen eigenen Daten – Korrelation, keine Kausalität.':'Observation from your own data — a correlation, not causation.', notEnough:de?'Noch nicht genug Daten. Weiter loggen.':'Not enough data yet. Keep logging.' };
+  }
+
+  achievementsData(lang){
+    const de=lang==='de';
+    const ach=[
+      {icon:'🔥', title:de?'Woche in Serie':'Week streak', desc:de?'7 Tage am Stück geloggt':'Logged 7 days straight', unlocked:true},
+      {icon:'🌙', title:de?'Früher Vogel':'Early bird', desc:de?'10× vor 7 Uhr auf':'Woke before 7am 10×', unlocked:true},
+      {icon:'💪', title:de?'Kraftpaket':'Powerhouse', desc:de?'50 Workouts geloggt':'Logged 50 workouts', unlocked:true},
+      {icon:'📚', title:de?'Chronist':'Chronicler', desc:de?'30 Journal-Einträge':'30 journal entries', unlocked:false, cur:21, target:30},
+      {icon:'🏆', title:'Elite', desc:de?'Life Rating 1.250':'Life Rating 1,250', unlocked:false, cur:1184, target:1250},
+      {icon:'🎯', title:de?'Zielstrebig':'Driven', desc:de?'5 Ziele erreicht':'Completed 5 goals', unlocked:false, cur:2, target:5},
+    ].map(a=>({...a, locked:!a.unlocked, pct: a.unlocked?100:Math.round(a.cur/a.target*100), curStr: a.unlocked?'':`${a.cur} / ${a.target}`,
+      cardStyle:`display:flex;align-items:flex-start;gap:12px;padding:14px;border-radius:14px;border:1px solid ${a.unlocked?'var(--accent)':'var(--border)'};background:${a.unlocked?'var(--accentSoft)':'var(--s2)'};`,
+      iconStyle:`font-size:24px;line-height:1;${a.unlocked?'':'filter:grayscale(1);opacity:.4;'}` }));
+    const records=[
+      {icon:'⚡', value:'88', label:de?'Bester Life Score':'Best Life Score'},
+      {icon:'🔥', value:'23', label:de?'Längster Streak':'Longest streak'},
+      {icon:'💤', value:'8h 40m', label:de?'Längster Schlaf':'Longest sleep'},
+      {icon:'🏋️', value:'82 kg', label:de?'Bankdrücken PR':'Bench press PR'},
+      {icon:'🏃', value:'12,4 km', label:de?'Längster Lauf':'Longest run'},
+      {icon:'📈', value:'1.210', label:de?'Höchstes Rating':'Peak rating'},
+    ];
+    return { ach, records, unlocked:'3/6', title:de?'Erfolge':'Achievements', recTitle:de?'Persönliche Rekorde':'Personal records', unlockedLabel:de?'freigeschaltet':'unlocked', note:de?'Weiter loggen, um mehr freizuschalten.':'Keep logging to unlock more.' };
+  }
+
+  settingsData(lang, theme){
+    const de=lang==='de';
+    const optBtn=(active)=>`display:flex;align-items:center;justify-content:center;gap:8px;flex:1;padding:12px;border-radius:12px;font-size:13.5px;font-weight:500;font-family:inherit;cursor:pointer;transition:.15s;`+(active?'border:1px solid var(--accent);background:var(--accentSoft);color:var(--accent);':'border:1px solid var(--border);background:var(--s2);color:var(--text);');
+    const appear=[['light',de?'Hell':'Light','sun'],['dark',de?'Dunkel':'Dark','moon'],['system','System','monitor']].map(([k,label,icon])=>({label,icon,go:()=>this.setState({theme:k==='system'?'dark':k}),style:optBtn(theme===k)}));
+    const langs=[['de','Deutsch'],['en','English']].map(([k,label])=>({label,go:()=>this.setState({lang:k}),style:optBtn(lang===k)}));
+    const areas=[
+      {label:de?'Produktivität':'Productivity', pct:22},{label:de?'Sport':'Sport', pct:20},{label:de?'Schlaf':'Sleep', pct:18},
+      {label:de?'Reflexion':'Reflection', pct:16},{label:de?'Lernen':'Learning', pct:14},{label:de?'Finanzen':'Finances', pct:10},
+    ].map(a=>({...a, pctStr:a.pct+'%'}));
+    const dataBtns=[{icon:'download',label:de?'JSON exportieren':'Export JSON'},{icon:'upload',label:de?'JSON importieren':'Import JSON'},{icon:'rotate-ccw',label:de?'Zurücksetzen':'Reset'}];
+    return { appear, langs, areas, dataBtns, appearL:de?'Darstellung':'Appearance', langL:de?'Sprache':'Language',
+      areasL:de?'Lebensbereiche & Gewichtung':'Life areas & weights', normL:de?'auf 100 % normiert':'normalized to 100%',
+      dataL:de?'Daten':'Data', dataNote:de?'Deine Daten leben nur in diesem Browser. Exportiere regelmäßig ein Backup, damit nichts verloren geht.':'Your data lives only in this browser. Export a backup regularly so you never lose it.' };
+  }
+}
+</script>
+</body>
+</html>
