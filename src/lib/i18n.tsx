@@ -150,6 +150,9 @@ const DE: Record<string, string> = {
 
   // --- Today ---
   "Daily check-in": "Täglicher Check-in",
+  "Edit day": "Tag bearbeiten",
+  "Edit this day": "Diesen Tag bearbeiten",
+  "Night of": "Nacht vom",
   Goals_section: "Ziele",
   "Watch-list": "Beobachtungsliste",
   Reduce: "Reduzieren",
@@ -287,6 +290,10 @@ const DE: Record<string, string> = {
   "Tune what you track and how your score is computed.":
     "Passe an, was du trackst und wie dein Score berechnet wird.",
   Appearance: "Darstellung",
+  Accent: "Akzentfarbe",
+  Calm: "Calm",
+  Aurora: "Aurora",
+  Mono: "Mono",
   Light: "Hell",
   Dark: "Dunkel",
   System: "System",
@@ -357,6 +364,9 @@ const DE: Record<string, string> = {
 
   // --- Onboarding ---
   "Which areas matter to you?": "Welche Bereiche sind dir wichtig?",
+  "About you": "Über dich",
+  "Optional and private — used to personalize the app and your stats.":
+    "Optional und privat — zur Personalisierung der App und deiner Statistiken.",
   "A few targets": "Ein paar Ziele",
   "Start with data?": "Mit Daten starten?",
   "Explore with demo data": "Mit Demo-Daten erkunden",

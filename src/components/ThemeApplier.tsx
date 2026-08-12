@@ -7,6 +7,12 @@ import { useStore } from "@/lib/store";
 export function ThemeApplier() {
   const { data, ready } = useStore();
   const theme = data.settings.theme;
+  const accent = data.settings.accent ?? "calm";
+
+  useEffect(() => {
+    if (!ready) return;
+    document.documentElement.setAttribute("data-accent", accent);
+  }, [accent, ready]);
 
   useEffect(() => {
     if (!ready) return;

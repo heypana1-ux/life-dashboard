@@ -3,7 +3,13 @@
 import { useState } from "react";
 import { BellRing, Download, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { AreaKey, Language, Profile } from "@/lib/types";
+import { Accent, AreaKey, Language, Profile } from "@/lib/types";
+
+const ACCENTS: { key: Accent; label: string; a: string; b: string }[] = [
+  { key: "calm", label: "Calm", a: "#4f46e5", b: "#6366f1" },
+  { key: "aurora", label: "Aurora", a: "#06b6d4", b: "#4f46e5" },
+  { key: "mono", label: "Mono", a: "#52525b", b: "#27272a" },
+];
 import { generateDemo, clearDemo } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
 import { todayISO, fmtShort, ageFrom } from "@/lib/date";
@@ -80,6 +86,31 @@ export default function SettingsPage() {
               )}
             >
               <Icon size={16} /> {label}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      {/* Accent */}
+      <Card>
+        <SectionTitle>{t("Accent")}</SectionTitle>
+        <div className="flex gap-2">
+          {ACCENTS.map((a) => (
+            <button
+              key={a.key}
+              onClick={() => updateSettings({ accent: a.key })}
+              className={clsx(
+                "flex flex-1 items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition",
+                s.accent === a.key
+                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                  : "border-[var(--border)] bg-[var(--surface-2)]",
+              )}
+            >
+              <span
+                className="h-4 w-4 rounded-full"
+                style={{ background: `linear-gradient(135deg, ${a.a}, ${a.b})` }}
+              />
+              {t(a.label)}
             </button>
           ))}
         </div>
@@ -323,10 +354,17 @@ function ProfileCard() {
         </Field>
         <Field label={t("Age")}>
           <input
-            type="date"
+            type="number"
+            inputMode="numeric"
+            min={5}
+            max={120}
+            placeholder={t("years")}
             className={inputCls}
-            value={p.birthDate ?? ""}
-            onChange={(e) => updateProfile({ birthDate: e.target.value })}
+            value={age ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              updateProfile({ birthDate: v ? `${new Date().getFullYear() - Number(v)}-01-01` : undefined });
+            }}
           />
         </Field>
         <Field label={t("Sex")}>

@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { Moon, Save } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Moon, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { habitsForToday } from "@/lib/habitView";
-import { todayISO, fmtLong } from "@/lib/date";
+import { todayISO, fmtLong, addDays } from "@/lib/date";
 import { DailyReview } from "@/lib/types";
-import { useTodayComputation } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
-import { scoreColor, scoreLabel } from "@/lib/score";
+import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import {
   Card,
   PageHeader,
@@ -30,26 +29,43 @@ const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
   { key: "discipline", label: "Discipline" },
 ];
 
+const blankReview = (date: string): DailyReview => ({
+  date,
+  productivity: 6,
+  mood: 6,
+  energy: 6,
+  satisfaction: 6,
+  discipline: 6,
+});
+
 export default function TodayPage() {
   const { data, saveReview } = useStore();
   const t = useT();
-  const date = todayISO();
-  const comp = useTodayComputation();
+  const today = todayISO();
+  const [date, setDate] = useState(today);
+
+  // Allow deep-linking to a specific day (e.g. from the calendar) via ?date=YYYY-MM-DD.
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("date");
+    if (q && /^\d{4}-\d{2}-\d{2}$/.test(q) && q <= today) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDate(q);
+    }
+  }, [today]);
+
+  const comp = useMemo(() => computeDay(data, date), [data, date]);
   const goals = habitsForToday(data, date);
   const build = goals.filter((g) => g.habit.kind === "build");
   const reduce = goals.filter((g) => g.habit.kind === "reduce");
 
   const existing = data.reviews.find((r) => r.date === date);
-  const [review, setReview] = useState<DailyReview>(
-    existing ?? {
-      date,
-      productivity: 6,
-      mood: 6,
-      energy: 6,
-      satisfaction: 6,
-      discipline: 6,
-    },
-  );
+  const [review, setReview] = useState<DailyReview>(existing ?? blankReview(date));
+  // Load the selected day's check-in when the date changes.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setReview(data.reviews.find((r) => r.date === date) ?? blankReview(date));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
   const [savedFlash, setSavedFlash] = useState(false);
 
   function save() {
@@ -68,9 +84,48 @@ export default function TodayPage() {
       ).toFixed(1)
     : "—";
 
+  const isToday = date === today;
+
   return (
     <div>
-      <PageHeader title={t("Today")} subtitle={fmtLong(date)} />
+      <PageHeader
+        title={isToday ? t("Today") : t("Edit day")}
+        subtitle={fmtLong(date)}
+        action={
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setDate((d) => addDays(d, -1))}
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+              aria-label={t("Move left")}
+            >
+              <ChevronLeft size={18} />
+            </button>
+            <label className="relative flex items-center">
+              <CalendarDays size={15} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
+              <input
+                type="date"
+                max={today}
+                value={date}
+                onChange={(e) => e.target.value && setDate(e.target.value)}
+                className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-8 pr-2 text-sm outline-none"
+              />
+            </label>
+            <button
+              onClick={() => setDate((d) => (d < today ? addDays(d, 1) : d))}
+              disabled={isToday}
+              className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] enabled:hover:bg-[var(--surface-3)] disabled:opacity-40"
+              aria-label={t("Move right")}
+            >
+              <ChevronRight size={18} />
+            </button>
+            {!isToday && (
+              <Button variant="soft" size="sm" onClick={() => setDate(today)}>
+                {t("Today")}
+              </Button>
+            )}
+          </div>
+        }
+      />
 
       <div className="grid items-start gap-[18px] lg:grid-cols-[1.3fr_1fr]">
         <div className="flex flex-col gap-[18px]">
@@ -95,7 +150,7 @@ export default function TodayPage() {
             ) : (
               <div className="divide-y divide-[var(--border)]">
                 {build.map((g) => (
-                  <HabitRow key={g.habit.id} item={g} date={date} />
+                  <HabitRow key={g.habit.id} item={g} date={date} showAmount />
                 ))}
               </div>
             )}

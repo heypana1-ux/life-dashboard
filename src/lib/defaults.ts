@@ -55,6 +55,7 @@ export function defaultSettings(): Settings {
   return {
     onboardingComplete: false,
     theme: "system",
+    accent: "calm",
     language: "en",
     areas: DEFAULT_AREAS.map((a) => ({ ...a })),
     sleepTargetMinutes: 8 * 60,

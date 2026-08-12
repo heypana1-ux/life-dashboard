@@ -5,9 +5,10 @@ import { Moon, Sparkles, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AREA_LABELS, DEFAULT_AREAS, starterHabits } from "@/lib/defaults";
 import { generateDemo } from "@/lib/demo";
-import { AreaKey, Language } from "@/lib/types";
+import { AreaKey, Language, Profile } from "@/lib/types";
+import { todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
-import { Button, Card, Field } from "@/components/ui";
+import { Button, Card, Field, inputCls } from "@/components/ui";
 import clsx from "clsx";
 
 const AREA_DESC_KEYS: Record<AreaKey, string> = {
@@ -42,6 +43,13 @@ export function Onboarding() {
   );
   const [sleepH, setSleepH] = useState(8);
   const [trainPerWeek, setTrainPerWeek] = useState(3);
+  const [profile, setProfile] = useState<{
+    name: string;
+    age: string;
+    sex: NonNullable<Profile["sex"]>;
+    heightCm: string;
+    weightKg: string;
+  }>({ name: "", age: "", sex: "prefer_not", heightCm: "", weightKg: "" });
 
   const toggle = (k: AreaKey) =>
     setSelected((s) => {
@@ -56,16 +64,26 @@ export function Onboarding() {
       const enabled = a.key === "finances" ? selected.has("finances") : selected.has(a.key);
       return { ...a, enabled };
     });
+    const prof: Profile = { ...data.settings.profile };
+    if (profile.name.trim()) prof.name = profile.name.trim();
+    if (profile.age) prof.birthDate = `${new Date().getFullYear() - Number(profile.age)}-01-01`;
+    if (profile.sex !== "prefer_not") prof.sex = profile.sex;
+    if (profile.heightCm) prof.heightCm = Number(profile.heightCm);
+
     // redistribute weight of disabled areas is handled at scoring time; keep base weights.
     let next = {
       ...data,
       settings: {
         ...data.settings,
         areas,
+        profile: prof,
         sleepTargetMinutes: Math.round(sleepH * 60),
         onboardingComplete: true,
       },
     };
+    if (profile.weightKg) {
+      next = { ...next, weight: [{ date: todayISO(), kg: Number(profile.weightKg) }] };
+    }
 
     if (withDemo) {
       next = generateDemo(next);
@@ -152,6 +170,73 @@ export function Onboarding() {
 
       {step === 1 && (
         <Card className="animate-in">
+          <h1 className="text-2xl font-semibold tracking-tight">{t("About you")}</h1>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
+            {t("Optional and private — used to personalize the app and your stats.")}
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Field label={t("Name")}>
+              <input
+                className={inputCls}
+                value={profile.name}
+                onChange={(e) => setProfile((p) => ({ ...p, name: e.target.value }))}
+              />
+            </Field>
+            <Field label={t("Age")}>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={5}
+                max={120}
+                placeholder={t("years")}
+                className={inputCls}
+                value={profile.age}
+                onChange={(e) => setProfile((p) => ({ ...p, age: e.target.value }))}
+              />
+            </Field>
+            <Field label={t("Sex")}>
+              <select
+                className={inputCls}
+                value={profile.sex}
+                onChange={(e) => setProfile((p) => ({ ...p, sex: e.target.value as NonNullable<Profile["sex"]> }))}
+              >
+                {(["prefer_not", "male", "female", "other"] as const).map((x) => (
+                  <option key={x} value={x}>{t(x)}</option>
+                ))}
+              </select>
+            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label={t("Height (cm)")}>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={inputCls}
+                  value={profile.heightCm}
+                  onChange={(e) => setProfile((p) => ({ ...p, heightCm: e.target.value }))}
+                />
+              </Field>
+              <Field label={t("Weight (kg)")}>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  className={inputCls}
+                  value={profile.weightKg}
+                  onChange={(e) => setProfile((p) => ({ ...p, weightKg: e.target.value }))}
+                />
+              </Field>
+            </div>
+          </div>
+          <div className="mt-6 flex justify-between">
+            <Button variant="ghost" onClick={() => setStep(0)}>
+              {t("Back")}
+            </Button>
+            <Button onClick={() => setStep(2)}>{t("Continue")}</Button>
+          </div>
+        </Card>
+      )}
+
+      {step === 2 && (
+        <Card className="animate-in">
           <h1 className="text-2xl font-semibold tracking-tight">{t("A few targets")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
             {t("These seed your goals. Nothing here is a medical recommendation — just your own targets to measure against.")}
@@ -183,15 +268,15 @@ export function Onboarding() {
             )}
           </div>
           <div className="mt-6 flex justify-between">
-            <Button variant="ghost" onClick={() => setStep(0)}>
+            <Button variant="ghost" onClick={() => setStep(1)}>
               {t("Back")}
             </Button>
-            <Button onClick={() => setStep(2)}>{t("Continue")}</Button>
+            <Button onClick={() => setStep(3)}>{t("Continue")}</Button>
           </div>
         </Card>
       )}
 
-      {step === 2 && (
+      {step === 3 && (
         <Card className="animate-in">
           <h1 className="text-2xl font-semibold tracking-tight">{t("Start with data?")}</h1>
           <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -224,7 +309,7 @@ export function Onboarding() {
             </button>
           </div>
           <div className="mt-6">
-            <Button variant="ghost" onClick={() => setStep(1)}>
+            <Button variant="ghost" onClick={() => setStep(2)}>
               {t("Back")}
             </Button>
           </div>

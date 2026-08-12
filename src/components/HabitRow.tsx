@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { Check, Minus, X } from "lucide-react";
-import { Habit } from "@/lib/types";
+import { Habit, HabitLog } from "@/lib/types";
 import { HabitToday } from "@/lib/habitView";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
@@ -18,14 +18,28 @@ const areaLabel = (a: AreaKey): string => AREA_LABELS[a];
  * - build habits: tap the circle to mark done.
  * - reduce habits: tap to record that the behavior happened ("slip"); done=true means it occurred.
  */
-export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
-  const { toggleHabit } = useStore();
+export function HabitRow({
+  item,
+  date,
+  showAmount = false,
+}: {
+  item: HabitToday;
+  date: string;
+  showAmount?: boolean;
+}) {
+  const { toggleHabit, setHabitLog } = useStore();
   const t = useT();
   const { habit, log } = item;
   const isReduce = habit.kind === "reduce";
   const marked = !!log?.done;
   // For build: marked = good (green). For reduce: marked = slip (red).
   const success = isReduce ? !marked : marked;
+
+  const amountKind = habit.targetMinutes ? "minutes" : habit.targetValue ? "value" : null;
+  const canEnterAmount = showAmount && !isReduce && amountKind !== null;
+  const amountVal = amountKind === "minutes" ? log?.minutes : log?.value;
+  const amountTarget = amountKind === "minutes" ? habit.targetMinutes : habit.targetValue;
+  const amountUnit = amountKind === "minutes" ? "min" : habit.unit ?? "";
 
   return (
     <div className="flex items-center gap-3 rounded-xl px-1 py-2">
@@ -76,12 +90,35 @@ export function HabitRow({ item, date }: { item: HabitToday; date: string }) {
         </div>
       </div>
 
+      {canEnterAmount && (
+        <div className="flex items-center gap-1">
+          <input
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder={String(amountTarget)}
+            value={amountVal ?? ""}
+            onChange={(e) => {
+              const v = e.target.value;
+              const n = v ? Number(v) : undefined;
+              const next: HabitLog = { ...log, habitId: habit.id, date, done: n != null && n > 0 };
+              if (amountKind === "minutes") next.minutes = n;
+              else next.value = n;
+              setHabitLog(next);
+            }}
+            className="w-14 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-right text-xs outline-none focus:border-[var(--accent)]"
+            aria-label={t("Amount")}
+          />
+          <span className="w-8 text-xs text-[var(--text-faint)]">{amountUnit}</span>
+        </div>
+      )}
+
       {isReduce ? (
         <span className={clsx("text-xs font-medium", marked ? "text-[var(--bad)]" : "text-[var(--good)]")}>
           {marked ? t("Occurred") : t("Avoided")}
         </span>
       ) : (
-        marked && <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
+        marked && !canEnterAmount && <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
       )}
     </div>
   );

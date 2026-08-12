@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, Dumbbell, Moon, BookOpen, ListChecks, ClipboardCheck } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, Dumbbell, Moon, BookOpen, ListChecks, ClipboardCheck, Pencil } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { AREA_LABELS } from "@/lib/defaults";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
-import { Card, PageHeader, Modal, Badge } from "@/components/ui";
+import { Card, PageHeader, Modal, Badge, Button } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
 import clsx from "clsx";
 
@@ -213,6 +214,14 @@ function DayDetail({ date, onClose }: { date: string | null; onClose: () => void
         {!sleep && !workouts.length && !buildDone.length && !review && !journal.length && (
           <p className="py-4 text-center text-sm text-[var(--text-muted)]">{t("Nothing logged this day.")}</p>
         )}
+
+        <div className="border-t border-[var(--border)] pt-4">
+          <Link href={`/today?date=${date}`}>
+            <Button variant="soft" className="w-full">
+              <Pencil size={15} /> {t("Edit this day")}
+            </Button>
+          </Link>
+        </div>
       </div>
     </Modal>
   );

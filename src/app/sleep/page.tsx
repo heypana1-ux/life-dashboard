@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Lightbulb, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { SleepLog } from "@/lib/types";
@@ -18,23 +18,30 @@ import {
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
+const blankSleep = (date: string): SleepLog => ({
+  date,
+  bedTime: "23:00",
+  wakeTime: "07:00",
+  fallAsleepMinutes: 15,
+  awakenings: 0,
+  quality: 7,
+  morningEnergy: 7,
+});
+
 export default function SleepPage() {
   const { data, saveSleep } = useStore();
   const t = useT();
-  const date = todayISO();
+  const today = todayISO();
+  const [date, setDate] = useState(today);
   const existing = data.sleep.find((s) => s.date === date);
 
-  const [log, setLog] = useState<SleepLog>(
-    existing ?? {
-      date,
-      bedTime: "23:00",
-      wakeTime: "07:00",
-      fallAsleepMinutes: 15,
-      awakenings: 0,
-      quality: 7,
-      morningEnergy: 7,
-    },
-  );
+  const [log, setLog] = useState<SleepLog>(existing ?? blankSleep(date));
+  // Load the selected night when the date changes.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLog(data.sleep.find((s) => s.date === date) ?? blankSleep(date));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date]);
   const [flash, setFlash] = useState(false);
 
   // All sleep-derived analytics computed together from a single stable input.
@@ -110,6 +117,15 @@ export default function SleepPage() {
             {t("Last night")}
           </SectionTitle>
           <div className="space-y-4">
+            <Field label={t("Night of")}>
+              <input
+                type="date"
+                max={today}
+                className={inputCls}
+                value={date}
+                onChange={(e) => e.target.value && setDate(e.target.value)}
+              />
+            </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("Bedtime")}>
                 <input

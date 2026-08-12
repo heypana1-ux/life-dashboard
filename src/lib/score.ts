@@ -59,12 +59,37 @@ function logFor(logs: HabitLog[], habitId: string, dateISO: string): HabitLog | 
   return logs.find((l) => l.habitId === habitId && l.date === dateISO);
 }
 
-/** Rolling completion fraction for a weekly-target habit (0..1). */
+/** Max bonus for exceeding a habit's target (e.g. 2h vs a 1h goal → up to +15%). */
+const OVERFILL_CAP = 0.15;
+
+/**
+ * Credit for a single completed occurrence: 1.0 normally, slightly more when the logged
+ * amount (minutes or value) exceeds the habit's target. The bonus is small and capped, so
+ * doing twice the goal is a nudge up — never "double".
+ */
+export function fulfillment(habit: Habit, log: HabitLog | undefined): number {
+  if (!log?.done) return 0;
+  let amount: number | undefined;
+  let target: number | undefined;
+  if (habit.targetMinutes && log.minutes != null) {
+    amount = log.minutes;
+    target = habit.targetMinutes;
+  } else if (habit.targetValue && log.value != null) {
+    amount = log.value;
+    target = habit.targetValue;
+  }
+  if (!amount || !target || target <= 0) return 1;
+  const over = Math.max(0, amount / target - 1);
+  return 1 + Math.min(OVERFILL_CAP, over * 0.15);
+}
+
+/** Rolling completion fraction for a weekly-target habit (0..1+bonus). */
 function weeklyFraction(habit: Habit, dateISO: string, logs: HabitLog[]): number {
   const target = habit.schedule.timesPerWeek ?? 1;
   const window = isoRange(dateISO, 7);
-  const done = window.filter((d) => logFor(logs, habit.id, d)?.done).length;
-  return Math.min(1, done / target);
+  let sum = 0;
+  for (const d of window) sum += fulfillment(habit, logFor(logs, habit.id, d));
+  return Math.min(1 + OVERFILL_CAP, sum / target);
 }
 
 /** Score (0..100) for one habit-driven area on a day, or null if the area has no habits in scope. */
@@ -90,7 +115,7 @@ function habitAreaScore(
         wSum += w;
         counted++;
       } else if (isDueOn(h, dateISO)) {
-        fSum += w * (logFor(logs, h.id, dateISO)?.done ? 1 : 0);
+        fSum += w * fulfillment(h, logFor(logs, h.id, dateISO));
         wSum += w;
         counted++;
       }

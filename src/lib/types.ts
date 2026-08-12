@@ -306,9 +306,12 @@ export interface ReminderSettings {
   firedToday: string[];
 }
 
+export type Accent = "calm" | "aurora" | "mono";
+
 export interface Settings {
   onboardingComplete: boolean;
   theme: "light" | "dark" | "system";
+  accent: Accent;
   language: Language;
   areas: AreaConfig[];
   /** Personal sleep target in minutes (the user's chosen goal). */
