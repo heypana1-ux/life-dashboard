@@ -777,6 +777,45 @@ const DE: Record<string, string> = {
   "Working for you: {s}": "Das läuft für dich: {s}",
   "Focus next: {w}": "Als Nächstes im Fokus: {w}",
 
+  // --- Analysis (deeper generators) ---
+  strong: "stark",
+  trained: "trainiert",
+  "slept enough": "genug geschlafen",
+  journaled: "Tagebuch geschrieben",
+  "Sleep → next day": "Schlaf → nächster Tag",
+  "After a night hitting your sleep target, the next day's productivity runs about {pct}% higher.":
+    "Nach einer Nacht mit erreichtem Schlafziel ist die Produktivität am Folgetag rund {pct}% höher.",
+  "Sleep quality ↔ energy": "Schlafqualität ↔ Energie",
+  "On nights you rate sleep 7+/10, your energy the next morning is {diff}/10 higher.":
+    "In Nächten mit Schlafqualität 7+/10 ist deine Energie am nächsten Morgen {diff}/10 höher.",
+  "Morning energy ↔ day": "Morgenenergie ↔ Tag",
+  "Days you wake up with 7+/10 energy end with a Life Score about {diff} points higher.":
+    "Tage, an denen du mit 7+/10 Energie aufwachst, enden mit einem rund {diff} Punkte höheren Life Score.",
+  "Training → next-day energy": "Training → Energie am Folgetag",
+  "The day after you train, your energy is {diff}/10 higher.":
+    "Am Tag nach dem Training ist deine Energie {diff}/10 höher.",
+  "Your winning combo": "Deine Gewinner-Kombi",
+  "Days with both enough sleep and a workout beat days with neither by {diff} Life-Score points. Stacking these two is your strongest routine.":
+    "Tage mit genug Schlaf UND Training liegen {diff} Life-Score-Punkte über Tagen mit keinem von beidem. Diese Kombi ist deine stärkste Routine.",
+  "Weekend vs weekday": "Wochenende vs. Wochentag",
+  "Your weekends score {diff} points higher than weekdays — the structure of your days off is working.":
+    "Deine Wochenenden liegen {diff} Punkte über den Wochentagen — die Struktur deiner freien Tage funktioniert.",
+  "Your weekends score {diff} points lower than weekdays — they might need a little more structure.":
+    "Deine Wochenenden liegen {diff} Punkte unter den Wochentagen — etwas mehr Struktur könnte helfen.",
+  "{a} and {b} rise and fall together in your data ({strength} link) — lifting one tends to lift the other.":
+    "{a} und {b} steigen und fallen in deinen Daten gemeinsam ({strength} Zusammenhang) — hebst du eines, hebt sich meist auch das andere.",
+  "When your {a} is high, your {b} tends to be lower ({strength} link) — worth watching the trade-off.":
+    "Wenn dein {a} hoch ist, ist dein {b} tendenziell niedriger ({strength} Zusammenhang) — der Trade-off lohnt einen Blick.",
+  "Costliest habit": "Teuerste Gewohnheit",
+  "“{name}” days come with a {diff}/10 mood drop — the reduce-habit worth tackling first.":
+    "„{name}“-Tage gehen mit einem Stimmungsabfall von {diff}/10 einher — die Reduzier-Gewohnheit, die du zuerst angehen solltest.",
+  "What your best days share": "Was deine besten Tage gemeinsam haben",
+  "On your top days you {label} {top}% of the time — versus {base}% overall. That's your highest-leverage routine.":
+    "An deinen besten Tagen hast du zu {top}% {label} — gegenüber {base}% insgesamt. Das ist deine wirkungsvollste Routine.",
+  "A weak weekday": "Ein schwacher Wochentag",
+  "{day}s show your reduce-habits about {pct}% above your average — plan a countermeasure for that day.":
+    "An {day}en liegen deine Reduzier-Gewohnheiten rund {pct}% über deinem Schnitt — plane für den Tag eine Gegenmaßnahme.",
+
   // --- Exercise picker ---
   "Choose exercise": "Übung wählen",
   "Search exercises…": "Übungen suchen…",
