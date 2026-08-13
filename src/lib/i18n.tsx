@@ -692,6 +692,51 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Training module ---
+  "Plan workouts, log sets and track strength progress.":
+    "Plane Workouts, tracke Sätze und deinen Kraftfortschritt.",
+  Workouts: "Workouts",
+  Plans: "Pläne",
+  "Your plans": "Deine Pläne",
+  "New plan": "Neuer Plan",
+  "Edit plan": "Plan bearbeiten",
+  "Plan name": "Plan-Name",
+  "Create a plan (e.g. Push / Pull / Legs) so you can start a workout in one tap.":
+    "Erstelle einen Plan (z. B. Push / Pull / Legs), um ein Workout mit einem Tipp zu starten.",
+  "No exercises yet": "Noch keine Übungen",
+  "Start workout": "Workout starten",
+  Templates: "Vorlagen",
+  "Add a ready-made split, then customise it.": "Füge einen fertigen Split hinzu und passe ihn an.",
+  "Exercise progress": "Übungs-Fortschritt",
+  "Estimated 1RM": "Geschätztes 1RM",
+  "Log this exercise on at least two days to see a trend.":
+    "Trage diese Übung an mindestens zwei Tagen ein, um einen Trend zu sehen.",
+  "Volume by muscle group": "Volumen nach Muskelgruppe",
+  "No sets logged in the last 30 days.": "In den letzten 30 Tagen keine Sätze eingetragen.",
+  sets: "Sätze",
+  "No progress data yet": "Noch keine Fortschrittsdaten",
+  "Log a few workouts with weights and reps to see your strength trend per exercise and muscle group.":
+    "Trage ein paar Workouts mit Gewicht und Wiederholungen ein, um deinen Kraft-Trend pro Übung und Muskelgruppe zu sehen.",
+  "Edit workout": "Workout bearbeiten",
+  Actual: "Ist",
+  reps: "Wdh",
+  "Remove set": "Satz entfernen",
+  // muscle groups
+  Chest: "Brust",
+  "Back / Lats": "Rücken",
+  Shoulders: "Schultern",
+  Biceps: "Bizeps",
+  Triceps: "Trizeps",
+  Quads: "Quadrizeps",
+  Hamstrings: "Beinbeuger",
+  Glutes: "Gesäß",
+  Calves: "Waden",
+  Core: "Core",
+  Forearms: "Unterarme",
+  Traps: "Trapez",
+  "Full body": "Ganzkörper",
+  Cardio: "Cardio",
+
   // --- Scoreboard ---
   Scoreboard: "Rangliste",
   "Compare your Life Score with others.": "Vergleiche deinen Life Score mit anderen.",

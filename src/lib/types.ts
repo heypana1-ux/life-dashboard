@@ -230,14 +230,34 @@ export interface Finances {
 /* ---------------- Training ---------------- */
 
 export interface ExerciseSet {
-  reps?: number;
-  weight?: number; // kg
+  reps?: number; // actual reps done
+  weight?: number; // actual kg
+  targetReps?: number; // planned reps
+  targetWeight?: number; // planned kg
 }
 
 export interface Exercise {
   id: string;
   name: string;
+  /** Primary muscle group (from the catalog), used for per-muscle progress. */
+  muscle?: string;
   sets: ExerciseSet[];
+}
+
+/** One line in a reusable workout plan/template (e.g. a Push day). */
+export interface PlanExercise {
+  name: string;
+  muscle?: string;
+  sets?: number;
+  targetReps?: number;
+  targetWeight?: number;
+}
+
+export interface WorkoutPlan {
+  id: string;
+  name: string;
+  exercises: PlanExercise[];
+  createdAt: string;
 }
 
 export interface Workout {
@@ -368,6 +388,7 @@ export interface AppData {
   weight: WeightLog[];
   finances: Finances;
   workouts: Workout[];
+  workoutPlans: WorkoutPlan[];
   projects: Project[];
   experiments: Experiment[];
 }

@@ -27,6 +27,7 @@ import {
   Transaction,
   WeightLog,
   Workout,
+  WorkoutPlan,
   SCHEMA_VERSION,
 } from "./types";
 import { emptyData, uid } from "./defaults";
@@ -86,6 +87,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     weight: parsed.weight ?? [],
     finances: { ...base.finances, ...parsed.finances },
     workouts: parsed.workouts ?? [],
+    workoutPlans: parsed.workoutPlans ?? [],
     projects: parsed.projects ?? [],
     experiments: parsed.experiments ?? [],
   };
@@ -141,6 +143,8 @@ interface StoreCtx {
   /* workouts */
   saveWorkout: (w: Workout) => Workout;
   removeWorkout: (id: string) => void;
+  savePlan: (p: WorkoutPlan) => WorkoutPlan;
+  removePlan: (id: string) => void;
   /* projects */
   saveProject: (p: Project) => Project;
   moveProject: (id: string, column: number) => void;
@@ -522,6 +526,18 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       removeWorkout: (id) =>
         mutate((d) => ({ ...d, workouts: d.workouts.filter((x) => x.id !== id) })),
+      savePlan: (p) => {
+        const plan: WorkoutPlan = p.id
+          ? p
+          : { ...p, id: uid("plan"), createdAt: new Date().toISOString() };
+        mutate((d) => {
+          const others = d.workoutPlans.filter((x) => x.id !== plan.id);
+          return { ...d, workoutPlans: [...others, plan] };
+        });
+        return plan;
+      },
+      removePlan: (id) =>
+        mutate((d) => ({ ...d, workoutPlans: d.workoutPlans.filter((x) => x.id !== id) })),
 
       /* projects */
       saveProject: (p) => {

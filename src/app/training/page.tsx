@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Dumbbell, Plus, Save, Trash2 } from "lucide-react";
+import { Dumbbell, Plus, Save, Trash2, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
-import { Exercise, Workout } from "@/lib/types";
+import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { DEFAULT_SPORTS, uid } from "@/lib/defaults";
+import { EXERCISES, MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
+import { exerciseHistory, loggedExerciseNames, muscleVolume } from "@/lib/trainingStats";
 import { fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
 import {
   Card,
@@ -17,54 +19,104 @@ import {
   inputCls,
   EmptyState,
   Badge,
+  Chip,
   ScaleInput,
 } from "@/components/ui";
-import { Bars } from "@/components/charts";
+import { Bars, TrendLine } from "@/components/charts";
+
+type Tab = "workouts" | "plans" | "progress";
 
 export default function TrainingPage() {
   const { data, removeWorkout } = useStore();
   const t = useT();
+  const [tab, setTab] = useState<Tab>("workouts");
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Workout | undefined>();
+  const [fromPlan, setFromPlan] = useState<WorkoutPlan | undefined>();
 
   const workouts = useMemo(
     () => [...data.workouts].sort((a, b) => (a.date < b.date ? 1 : -1)),
     [data.workouts],
   );
 
+  function newWorkout(plan?: WorkoutPlan) {
+    setEditing(undefined);
+    setFromPlan(plan);
+    setModal(true);
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t("Training")}
+        subtitle={t("Plan workouts, log sets and track strength progress.")}
+        action={
+          <Button onClick={() => newWorkout()}>
+            <Plus size={16} /> {t("Log workout")}
+          </Button>
+        }
+      />
+
+      <div className="flex flex-wrap gap-2">
+        <Chip active={tab === "workouts"} onClick={() => setTab("workouts")}>{t("Workouts")}</Chip>
+        <Chip active={tab === "plans"} onClick={() => setTab("plans")}>{t("Plans")}</Chip>
+        <Chip active={tab === "progress"} onClick={() => setTab("progress")}>{t("Progress")}</Chip>
+      </div>
+
+      {tab === "workouts" && (
+        <WorkoutsTab
+          workouts={workouts}
+          onEdit={(w) => {
+            setEditing(w);
+            setFromPlan(undefined);
+            setModal(true);
+          }}
+          onDelete={removeWorkout}
+          onNew={() => newWorkout()}
+        />
+      )}
+      {tab === "plans" && <PlansTab onStart={(p) => newWorkout(p)} />}
+      {tab === "progress" && <ProgressTab workouts={data.workouts} />}
+
+      <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} fromPlan={fromPlan} />
+    </div>
+  );
+}
+
+/* ---------------- Workouts tab ---------------- */
+
+function WorkoutsTab({
+  workouts,
+  onEdit,
+  onDelete,
+  onNew,
+}: {
+  workouts: Workout[];
+  onEdit: (w: Workout) => void;
+  onDelete: (id: string) => void;
+  onNew: () => void;
+}) {
+  const { data } = useStore();
+  const t = useT();
   const week = isoRange(todayISO(), 7);
   const thisWeek = workouts.filter((w) => week.includes(w.date));
   const totalMin = workouts.reduce((s, w) => s + w.durationMin, 0);
   const perf = workouts.filter((w) => w.performance);
   const avgPerf = perf.length ? (perf.reduce((s, w) => s + (w.performance ?? 0), 0) / perf.length).toFixed(1) : "—";
 
-  // weekly training minutes for the last 8 weeks
   const volume = useMemo(() => {
     const weeks: { label: string; value: number }[] = [];
     for (let w = 7; w >= 0; w--) {
-      const end = todayISO();
-      const start = isoRange(end, (w + 1) * 7).slice(0, 7);
+      const start = isoRange(todayISO(), (w + 1) * 7).slice(0, 7);
       const range = new Set(start);
-      const mins = data.workouts
-        .filter((x) => range.has(x.date))
-        .reduce((s, x) => s + x.durationMin, 0);
+      const mins = data.workouts.filter((x) => range.has(x.date)).reduce((s, x) => s + x.durationMin, 0);
       weeks.push({ label: fmtShort(start[0]), value: Math.round(mins / 60) });
     }
     return weeks;
   }, [data.workouts]);
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title={t("Training")}
-        subtitle={t("Detailed workout logging with exercises, sets and metrics.")}
-        action={
-          <Button onClick={() => { setEditing(undefined); setModal(true); }}>
-            <Plus size={16} /> {t("Log workout")}
-          </Button>
-        }
-      />
-
+    <>
       <div className="grid grid-cols-3 gap-3">
         <MiniStat label={t("Sessions this week")} value={String(thisWeek.length)} />
         <MiniStat label={t("Total time")} value={totalMin ? fmtDuration(totalMin) : "—"} />
@@ -85,7 +137,7 @@ export default function TrainingPage() {
             icon={<Dumbbell size={26} />}
             title={t("No workouts yet")}
             action={
-              <Button variant="soft" size="sm" onClick={() => setModal(true)}>
+              <Button variant="soft" size="sm" onClick={onNew}>
                 <Plus size={16} /> {t("Log workout")}
               </Button>
             }
@@ -108,22 +160,24 @@ export default function TrainingPage() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <button onClick={() => { setEditing(w); setModal(true); }} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">
+                    <button onClick={() => onEdit(w)} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">
                       {t("Edit")}
                     </button>
-                    <button onClick={() => removeWorkout(w.id)} className="rounded-lg p-1.5 text-[var(--text-faint)] hover:text-[var(--bad)]">
+                    <button onClick={() => onDelete(w.id)} className="rounded-lg p-1.5 text-[var(--text-faint)] hover:text-[var(--bad)]">
                       <Trash2 size={14} />
                     </button>
                   </div>
                 </div>
                 {w.exercises.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {w.exercises.map((ex) => (
-                      <span key={ex.id} className="rounded-lg bg-[var(--surface-2)] px-2 py-1 text-xs">
-                        {ex.name} · {ex.sets.length}×
-                        {ex.sets[0]?.weight ? ` ${ex.sets[0].weight}kg` : ""}
-                      </span>
-                    ))}
+                    {w.exercises.map((ex) => {
+                      const best = ex.sets.reduce((m, s) => Math.max(m, s.weight ?? 0), 0);
+                      return (
+                        <span key={ex.id} className="rounded-lg bg-[var(--surface-2)] px-2 py-1 text-xs">
+                          {ex.name} · {ex.sets.length}×{best ? ` ${best}kg` : ""}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
                 {w.notes && <p className="mt-2 text-xs text-[var(--text-muted)]">{w.notes}</p>}
@@ -132,10 +186,164 @@ export default function TrainingPage() {
           </div>
         )}
       </Card>
-
-      <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} />
-    </div>
+    </>
   );
+}
+
+/* ---------------- Plans tab ---------------- */
+
+function PlansTab({ onStart }: { onStart: (p: WorkoutPlan) => void }) {
+  const { data, savePlan, removePlan } = useStore();
+  const t = useT();
+  const [modal, setModal] = useState(false);
+  const [editing, setEditing] = useState<WorkoutPlan | undefined>();
+
+  const existingNames = new Set(data.workoutPlans.map((p) => p.name.toLowerCase()));
+
+  return (
+    <>
+      <Card>
+        <SectionTitle
+          right={
+            <Button variant="soft" size="sm" onClick={() => { setEditing(undefined); setModal(true); }}>
+              <Plus size={15} /> {t("New plan")}
+            </Button>
+          }
+        >
+          {t("Your plans")}
+        </SectionTitle>
+        {data.workoutPlans.length === 0 ? (
+          <p className="py-4 text-sm text-[var(--text-muted)]">{t("Create a plan (e.g. Push / Pull / Legs) so you can start a workout in one tap.")}</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {data.workoutPlans.map((p) => (
+              <div key={p.id} className="rounded-xl border border-[var(--border)] p-3">
+                <div className="flex items-start justify-between">
+                  <div className="font-medium">{p.name}</div>
+                  <div className="flex gap-1">
+                    <button onClick={() => { setEditing(p); setModal(true); }} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">{t("Edit")}</button>
+                    <button onClick={() => removePlan(p.id)} className="rounded-lg p-1.5 text-[var(--text-faint)] hover:text-[var(--bad)]"><Trash2 size={14} /></button>
+                  </div>
+                </div>
+                <div className="mt-1 text-xs text-[var(--text-muted)]">
+                  {p.exercises.map((e) => e.name).join(" · ") || t("No exercises yet")}
+                </div>
+                <Button size="sm" className="mt-3" onClick={() => onStart(p)}>{t("Start workout")}</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>{t("Templates")}</SectionTitle>
+        <p className="mb-3 text-sm text-[var(--text-muted)]">{t("Add a ready-made split, then customise it.")}</p>
+        <div className="flex flex-wrap gap-2">
+          {PLAN_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.name}
+              disabled={existingNames.has(tpl.name.toLowerCase())}
+              onClick={() => savePlan({ id: "", name: tpl.name, exercises: tpl.exercises, createdAt: "" })}
+              className="rounded-full bg-[var(--surface-2)] px-3.5 py-1.5 text-sm font-medium text-[var(--text-muted)] enabled:hover:bg-[var(--surface-3)] disabled:opacity-40"
+            >
+              + {tpl.name}
+            </button>
+          ))}
+        </div>
+      </Card>
+
+      <PlanModal open={modal} onClose={() => setModal(false)} editing={editing} />
+    </>
+  );
+}
+
+/* ---------------- Progress tab ---------------- */
+
+function ProgressTab({ workouts }: { workouts: Workout[] }) {
+  const t = useT();
+  const names = useMemo(() => loggedExerciseNames(workouts), [workouts]);
+  const [exercise, setExercise] = useState<string>("");
+  const selected = exercise || names[0] || "";
+  const history = useMemo(() => (selected ? exerciseHistory(workouts, selected) : []), [workouts, selected]);
+  const muscles = useMemo(() => muscleVolume(workouts, 30), [workouts]);
+
+  const chart = history.map((p) => ({ date: p.date, value: p.best1RM || p.bestWeight }));
+  const first = history[0]?.best1RM || history[0]?.bestWeight || 0;
+  const last = history.length ? history[history.length - 1].best1RM || history[history.length - 1].bestWeight : 0;
+  const delta = last - first;
+
+  const maxVol = muscles.reduce((m, x) => Math.max(m, x.volume), 0) || 1;
+
+  if (workouts.length === 0) {
+    return (
+      <EmptyState
+        icon={<TrendingUp size={26} />}
+        title={t("No progress data yet")}
+        hint={t("Log a few workouts with weights and reps to see your strength trend per exercise and muscle group.")}
+      />
+    );
+  }
+
+  return (
+    <>
+      <Card>
+        <SectionTitle
+          right={
+            names.length > 0 ? (
+              <select className={`${inputCls} w-auto`} value={selected} onChange={(e) => setExercise(e.target.value)}>
+                {names.map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            ) : undefined
+          }
+        >
+          {t("Exercise progress")}
+        </SectionTitle>
+        {chart.length >= 2 ? (
+          <>
+            <div className="mb-2 flex items-baseline gap-2 text-sm">
+              <span className="text-[var(--text-muted)]">{t("Estimated 1RM")}:</span>
+              <span className="num text-lg font-bold">{last} kg</span>
+              {delta !== 0 && (
+                <span className={delta > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}>
+                  {delta > 0 ? "+" : ""}{delta} kg
+                </span>
+              )}
+            </div>
+            <TrendLine data={chart} color="var(--accent)" unit="kg" name={t("Estimated 1RM")} />
+          </>
+        ) : (
+          <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("Log this exercise on at least two days to see a trend.")}</p>
+        )}
+      </Card>
+
+      <Card>
+        <SectionTitle>{t("Volume by muscle group")} · {t("last 30 days")}</SectionTitle>
+        {muscles.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No sets logged in the last 30 days.")}</p>
+        ) : (
+          <div className="space-y-2.5">
+            {muscles.map((m) => (
+              <div key={m.muscle}>
+                <div className="mb-1 flex items-center justify-between text-xs">
+                  <span className="font-medium">{muscleLabel(m.muscle, t)}</span>
+                  <span className="text-[var(--text-faint)]">{m.sets} {t("sets")} · {m.volume.toLocaleString()} kg</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                  <div className="grad h-full rounded-full" style={{ width: `${Math.round((m.volume / maxVol) * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+    </>
+  );
+}
+
+function muscleLabel(m: string, t: (k: string) => string): string {
+  return m in MUSCLE_LABEL ? t(MUSCLE_LABEL[m as Muscle]) : t("Other");
 }
 
 function MiniStat({ label, value }: { label: string; value: string }) {
@@ -147,7 +355,111 @@ function MiniStat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () => void; editing?: Workout }) {
+/* ---------------- Plan editor ---------------- */
+
+function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => void; editing?: WorkoutPlan }) {
+  const { savePlan } = useStore();
+  const t = useT();
+  const blank: WorkoutPlan = { id: "", name: "", exercises: [], createdAt: "" };
+  const [draft, setDraft] = useState<WorkoutPlan>(editing ?? blank);
+  const key = editing?.id ?? "new";
+  const [lk, setLk] = useState(key);
+  if (open && key !== lk) {
+    setLk(key);
+    setDraft(editing ?? blank);
+  }
+  const set = (patch: Partial<WorkoutPlan>) => setDraft((d) => ({ ...d, ...patch }));
+
+  function addExercise() {
+    set({ exercises: [...draft.exercises, { name: "", sets: 3, targetReps: 10 }] });
+  }
+  function updateEx(i: number, patch: Partial<PlanExercise>) {
+    set({ exercises: draft.exercises.map((e, j) => (j === i ? { ...e, ...patch } : e)) });
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={editing ? t("Edit plan") : t("New plan")} wide>
+      <div className="space-y-4">
+        <Field label={t("Plan name")}>
+          <input className={inputCls} placeholder="Push" value={draft.name} onChange={(e) => set({ name: e.target.value })} />
+        </Field>
+        <ExerciseCatalog />
+        <div>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium">{t("Exercises")}</span>
+            <Button variant="soft" size="sm" onClick={addExercise}><Plus size={14} /> {t("Add exercise")}</Button>
+          </div>
+          <div className="space-y-2">
+            {draft.exercises.map((ex, i) => (
+              <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] p-2.5">
+                <input
+                  className={`${inputCls} min-w-[140px] flex-1`}
+                  list="ex-catalog"
+                  placeholder={t("Exercise name")}
+                  value={ex.name}
+                  onChange={(e) => updateEx(i, { name: e.target.value, muscle: muscleFor(e.target.value) })}
+                />
+                <div className="flex items-center gap-1 text-xs text-[var(--text-faint)]">
+                  <input type="number" className={`${inputCls} !py-1.5 w-14`} placeholder={t("Sets")} value={ex.sets ?? ""} onChange={(e) => updateEx(i, { sets: e.target.value ? Number(e.target.value) : undefined })} />
+                  ×
+                  <input type="number" className={`${inputCls} !py-1.5 w-14`} placeholder={t("Reps")} value={ex.targetReps ?? ""} onChange={(e) => updateEx(i, { targetReps: e.target.value ? Number(e.target.value) : undefined })} />
+                </div>
+                <button onClick={() => set({ exercises: draft.exercises.filter((_, j) => j !== i) })} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
+                  <Trash2 size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button onClick={() => { if (draft.name.trim()) { savePlan(draft); onClose(); } }} disabled={!draft.name.trim()}>
+            <Save size={16} /> {t("Save")}
+          </Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+/* ---------------- Workout editor ---------------- */
+
+/** Shared datalist of catalogue exercise names (rendered once per modal). */
+function ExerciseCatalog() {
+  return (
+    <datalist id="ex-catalog">
+      {EXERCISES.map((e) => (
+        <option key={e.name} value={e.name} />
+      ))}
+    </datalist>
+  );
+}
+
+function planToExercises(plan: WorkoutPlan): Exercise[] {
+  return plan.exercises.map((pe) => ({
+    id: uid("ex"),
+    name: pe.name,
+    muscle: pe.muscle ?? muscleFor(pe.name),
+    sets: Array.from({ length: Math.max(1, pe.sets ?? 3) }, () => ({
+      targetReps: pe.targetReps,
+      targetWeight: pe.targetWeight,
+      reps: undefined,
+      weight: undefined,
+    })),
+  }));
+}
+
+function WorkoutModal({
+  open,
+  onClose,
+  editing,
+  fromPlan,
+}: {
+  open: boolean;
+  onClose: () => void;
+  editing?: Workout;
+  fromPlan?: WorkoutPlan;
+}) {
   const { data, saveWorkout } = useStore();
   const t = useT();
   const sports = useMemo(() => {
@@ -155,25 +467,26 @@ function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () =
     return Array.from(new Set([...DEFAULT_SPORTS, ...custom]));
   }, [data.habits]);
 
-  const blank: Workout = {
+  const makeBlank = (): Workout => ({
     id: "",
     date: todayISO(),
-    sport: sports[0] ?? "Strength Training",
+    sport: fromPlan ? fromPlan.name : sports[0] ?? "Strength Training",
     durationMin: 60,
     intensity: 7,
     performance: 7,
     fun: 7,
     energyBefore: 6,
     energyAfter: 6,
-    exercises: [],
-  };
-  const [draft, setDraft] = useState<Workout>(editing ?? blank);
-  const key = editing?.id ?? "new";
-  const [lk, setLk] = useState(key);
+    exercises: fromPlan ? planToExercises(fromPlan) : [],
+  });
+  const [draft, setDraft] = useState<Workout>(editing ?? makeBlank());
+  const key = editing?.id ?? `new-${fromPlan?.id ?? ""}`;
+  const [lk, setLk] = useState<string | null>(null);
   if (open && key !== lk) {
     setLk(key);
-    setDraft(editing ?? blank);
+    setDraft(editing ?? makeBlank());
   }
+  if (!open && lk !== null) setLk(null);
 
   const set = (patch: Partial<Workout>) => setDraft((d) => ({ ...d, ...patch }));
 
@@ -185,8 +498,9 @@ function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () =
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={editing ? t("Edit") : t("New workout")} wide>
+    <Modal open={open} onClose={onClose} title={editing ? t("Edit workout") : t("New workout")} wide>
       <div className="space-y-4">
+        <ExerciseCatalog />
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Sport")}>
             <input className={inputCls} list="sports-list" value={draft.sport} onChange={(e) => set({ sport: e.target.value })} />
@@ -197,7 +511,7 @@ function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () =
             </datalist>
           </Field>
           <Field label={t("Date")}>
-            <input type="date" className={inputCls} value={draft.date} onChange={(e) => set({ date: e.target.value })} />
+            <input type="date" max={todayISO()} className={inputCls} value={draft.date} onChange={(e) => set({ date: e.target.value })} />
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
@@ -238,52 +552,7 @@ function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () =
           </div>
           <div className="space-y-2">
             {draft.exercises.map((ex) => (
-              <div key={ex.id} className="rounded-xl border border-[var(--border)] p-3">
-                <div className="mb-2 flex items-center gap-2">
-                  <input
-                    className={inputCls}
-                    placeholder={t("Exercise name")}
-                    value={ex.name}
-                    onChange={(e) => updateExercise(ex.id, { name: e.target.value })}
-                  />
-                  <button onClick={() => set({ exercises: draft.exercises.filter((x) => x.id !== ex.id) })} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
-                    <Trash2 size={15} />
-                  </button>
-                </div>
-                <div className="space-y-1.5">
-                  {ex.sets.map((st, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <span className="w-5 text-xs text-[var(--text-faint)]">{i + 1}</span>
-                      <input
-                        type="number"
-                        className={inputCls + " !py-1.5"}
-                        placeholder={t("Reps")}
-                        value={st.reps ?? ""}
-                        onChange={(e) => {
-                          const sets = ex.sets.map((s, j) => (j === i ? { ...s, reps: Number(e.target.value) } : s));
-                          updateExercise(ex.id, { sets });
-                        }}
-                      />
-                      <input
-                        type="number"
-                        className={inputCls + " !py-1.5"}
-                        placeholder={t("Weight (kg)")}
-                        value={st.weight ?? ""}
-                        onChange={(e) => {
-                          const sets = ex.sets.map((s, j) => (j === i ? { ...s, weight: Number(e.target.value) } : s));
-                          updateExercise(ex.id, { sets });
-                        }}
-                      />
-                    </div>
-                  ))}
-                  <button
-                    onClick={() => updateExercise(ex.id, { sets: [...ex.sets, { reps: 10, weight: ex.sets[ex.sets.length - 1]?.weight ?? 0 }] })}
-                    className="text-xs text-[var(--accent)]"
-                  >
-                    + {t("Add set")}
-                  </button>
-                </div>
-              </div>
+              <ExerciseEditor key={ex.id} ex={ex} onChange={(p) => updateExercise(ex.id, p)} onRemove={() => set({ exercises: draft.exercises.filter((x) => x.id !== ex.id) })} />
             ))}
           </div>
         </div>
@@ -294,16 +563,78 @@ function WorkoutModal({ open, onClose, editing }: { open: boolean; onClose: () =
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
-          <Button
-            onClick={() => {
-              saveWorkout(draft);
-              onClose();
-            }}
-          >
+          <Button onClick={() => { saveWorkout(draft); onClose(); }}>
             <Save size={16} /> {t("Save")}
           </Button>
         </div>
       </div>
     </Modal>
   );
+}
+
+function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p: Partial<Exercise>) => void; onRemove: () => void }) {
+  const t = useT();
+  const muscle = ex.muscle;
+  return (
+    <div className="rounded-xl border border-[var(--border)] p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <input
+          className={inputCls}
+          list="ex-catalog"
+          placeholder={t("Exercise name")}
+          value={ex.name}
+          onChange={(e) => onChange({ name: e.target.value, muscle: muscleFor(e.target.value) })}
+        />
+        {muscle && <Badge>{t(MUSCLE_LABEL[muscle as Muscle] ?? "Other")}</Badge>}
+        <button onClick={onRemove} className="shrink-0 text-[var(--text-faint)] hover:text-[var(--bad)]">
+          <Trash2 size={15} />
+        </button>
+      </div>
+      <div className="mb-1 grid grid-cols-[1.2rem_1fr_1fr] items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-faint)]">
+        <span />
+        <span className="text-center">{t("Target")} ({t("reps")}×kg)</span>
+        <span className="text-center">{t("Actual")} ({t("reps")}×kg)</span>
+      </div>
+      <div className="space-y-1.5">
+        {ex.sets.map((st, i) => (
+          <div key={i} className="grid grid-cols-[1.2rem_1fr_1fr] items-center gap-2">
+            <span className="text-xs text-[var(--text-faint)]">{i + 1}</span>
+            <div className="flex items-center gap-1">
+              <input type="number" className={`${inputCls} !py-1.5`} placeholder="—" value={st.targetReps ?? ""} onChange={(e) => setSet(ex, onChange, i, { targetReps: numOrU(e.target.value) })} />
+              <span className="text-[var(--text-faint)]">×</span>
+              <input type="number" className={`${inputCls} !py-1.5`} placeholder="—" value={st.targetWeight ?? ""} onChange={(e) => setSet(ex, onChange, i, { targetWeight: numOrU(e.target.value) })} />
+            </div>
+            <div className="flex items-center gap-1">
+              <input type="number" inputMode="numeric" className={`${inputCls} !py-1.5`} placeholder={String(st.targetReps ?? "")} value={st.reps ?? ""} onChange={(e) => setSet(ex, onChange, i, { reps: numOrU(e.target.value) })} />
+              <span className="text-[var(--text-faint)]">×</span>
+              <input type="number" inputMode="decimal" className={`${inputCls} !py-1.5`} placeholder={String(st.targetWeight ?? "")} value={st.weight ?? ""} onChange={(e) => setSet(ex, onChange, i, { weight: numOrU(e.target.value) })} />
+            </div>
+          </div>
+        ))}
+        <div className="flex gap-3 pt-0.5">
+          <button
+            onClick={() => {
+              const last = ex.sets[ex.sets.length - 1];
+              onChange({ sets: [...ex.sets, { targetReps: last?.targetReps, targetWeight: last?.targetWeight, weight: last?.weight }] });
+            }}
+            className="text-xs text-[var(--accent)]"
+          >
+            + {t("Add set")}
+          </button>
+          {ex.sets.length > 1 && (
+            <button onClick={() => onChange({ sets: ex.sets.slice(0, -1) })} className="text-xs text-[var(--text-faint)]">
+              − {t("Remove set")}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function numOrU(v: string): number | undefined {
+  return v === "" ? undefined : Number(v);
+}
+function setSet(ex: Exercise, onChange: (p: Partial<Exercise>) => void, i: number, patch: Partial<Exercise["sets"][number]>) {
+  onChange({ sets: ex.sets.map((s, j) => (j === i ? { ...s, ...patch } : s)) });
 }

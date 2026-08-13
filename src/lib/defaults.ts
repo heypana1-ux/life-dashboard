@@ -98,6 +98,7 @@ export function emptyData(): AppData {
     weight: [],
     finances: emptyFinances(),
     workouts: [],
+    workoutPlans: [],
     projects: [],
     experiments: [],
   };
