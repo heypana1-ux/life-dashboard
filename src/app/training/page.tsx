@@ -6,7 +6,8 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { DEFAULT_SPORTS, uid } from "@/lib/defaults";
-import { EXERCISES, MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
+import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
+import { ExerciseSelect } from "@/components/ExercisePicker";
 import { exerciseHistory, loggedExerciseNames, muscleVolume } from "@/lib/trainingStats";
 import { fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
 import {
@@ -383,7 +384,6 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
         <Field label={t("Plan name")}>
           <input className={inputCls} placeholder="Push" value={draft.name} onChange={(e) => set({ name: e.target.value })} />
         </Field>
-        <ExerciseCatalog />
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium">{t("Exercises")}</span>
@@ -392,13 +392,13 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
           <div className="space-y-2">
             {draft.exercises.map((ex, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] p-2.5">
-                <input
-                  className={`${inputCls} min-w-[140px] flex-1`}
-                  list="ex-catalog"
-                  placeholder={t("Exercise name")}
-                  value={ex.name}
-                  onChange={(e) => updateEx(i, { name: e.target.value, muscle: muscleFor(e.target.value) })}
-                />
+                <div className="min-w-[140px] flex-1">
+                  <ExerciseSelect
+                    value={ex.name}
+                    placeholder={t("Exercise name")}
+                    onChange={(name, muscle) => updateEx(i, { name, muscle })}
+                  />
+                </div>
                 <div className="flex items-center gap-1 text-xs text-[var(--text-faint)]">
                   <input type="number" className={`${inputCls} !py-1.5 w-14`} placeholder={t("Sets")} value={ex.sets ?? ""} onChange={(e) => updateEx(i, { sets: e.target.value ? Number(e.target.value) : undefined })} />
                   ×
@@ -423,17 +423,6 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
 }
 
 /* ---------------- Workout editor ---------------- */
-
-/** Shared datalist of catalogue exercise names (rendered once per modal). */
-function ExerciseCatalog() {
-  return (
-    <datalist id="ex-catalog">
-      {EXERCISES.map((e) => (
-        <option key={e.name} value={e.name} />
-      ))}
-    </datalist>
-  );
-}
 
 function planToExercises(plan: WorkoutPlan): Exercise[] {
   return plan.exercises.map((pe) => ({
@@ -500,7 +489,6 @@ function WorkoutModal({
   return (
     <Modal open={open} onClose={onClose} title={editing ? t("Edit workout") : t("New workout")} wide>
       <div className="space-y-4">
-        <ExerciseCatalog />
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Sport")}>
             <input className={inputCls} list="sports-list" value={draft.sport} onChange={(e) => set({ sport: e.target.value })} />
@@ -578,13 +566,13 @@ function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p
   return (
     <div className="rounded-xl border border-[var(--border)] p-3">
       <div className="mb-2 flex items-center gap-2">
-        <input
-          className={inputCls}
-          list="ex-catalog"
-          placeholder={t("Exercise name")}
-          value={ex.name}
-          onChange={(e) => onChange({ name: e.target.value, muscle: muscleFor(e.target.value) })}
-        />
+        <div className="flex-1">
+          <ExerciseSelect
+            value={ex.name}
+            placeholder={t("Exercise name")}
+            onChange={(name, m) => onChange({ name, muscle: m })}
+          />
+        </div>
         {muscle && <Badge>{t(MUSCLE_LABEL[muscle as Muscle] ?? "Other")}</Badge>}
         <button onClick={onRemove} className="shrink-0 text-[var(--text-faint)] hover:text-[var(--bad)]">
           <Trash2 size={15} />

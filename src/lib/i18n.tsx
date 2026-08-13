@@ -692,6 +692,12 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Exercise picker ---
+  "Choose exercise": "Übung wählen",
+  "Search exercises…": "Übungen suchen…",
+  "Start typing to search.": "Tippe, um zu suchen.",
+  Use: "Nutze",
+
   // --- Training module ---
   "Plan workouts, log sets and track strength progress.":
     "Plane Workouts, tracke Sätze und deinen Kraftfortschritt.",
