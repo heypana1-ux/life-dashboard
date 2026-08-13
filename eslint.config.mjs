@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Design handoff prototype (reference only, not app code).
     "design_handoff_life_dashboard_redesign/**",
+    // Supabase Edge Functions run on Deno, not the Next.js toolchain.
+    "supabase/**",
   ]),
 ]);
 

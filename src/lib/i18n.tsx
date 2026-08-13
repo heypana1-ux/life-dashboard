@@ -692,6 +692,19 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Strava ---
+  "Connect Strava to import your runs, rides and workouts automatically.":
+    "Verbinde Strava, um deine Läufe, Radtouren und Workouts automatisch zu importieren.",
+  "Connect Strava": "Strava verbinden",
+  Connected: "Verbunden",
+  "Your Strava activities show up as workouts.": "Deine Strava-Aktivitäten erscheinen als Workouts.",
+  "Last activity synced": "Letzte synchronisierte Aktivität",
+  Disconnect: "Trennen",
+  "Connected. Imported {n} activities.": "Verbunden. {n} Aktivitäten importiert.",
+  "Synced. {n} new activities ({skipped} already imported).":
+    "Synchronisiert. {n} neue Aktivitäten ({skipped} schon importiert).",
+  "Strava connection was cancelled.": "Strava-Verbindung wurde abgebrochen.",
+
   // --- Apple Health import ---
   "Apple Health import": "Apple-Health-Import",
   "Bring in sleep, weight and workouts from Apple Health. On your iPhone: Health app → your photo → “Export All Health Data”, unzip it, then upload the export.xml here.":

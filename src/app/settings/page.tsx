@@ -1,9 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Activity, BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Accent, AreaKey, Language, Profile } from "@/lib/types";
+import {
+  isStravaConfigured,
+  authorizeUrl,
+  exchangeCode,
+  syncStrava,
+  loadStrava,
+  saveStrava,
+  type StravaState,
+} from "@/lib/strava";
 
 const ACCENTS: { key: Accent; label: string; a: string; b: string }[] = [
   { key: "calm", label: "Calm", a: "#4f46e5", b: "#6366f1" },
@@ -199,6 +208,9 @@ export default function SettingsPage() {
       {/* Apple Health import */}
       <HealthImportCard />
 
+      {/* Strava (only when configured) */}
+      <StravaCard />
+
       {/* Data */}
       <Card>
         <SectionTitle
@@ -386,6 +398,126 @@ function HealthImportCard() {
         />
       </label>
       {result && <p className="mt-3 text-sm text-[var(--good)]">{result}</p>}
+      {err && <p className="mt-3 text-sm text-[var(--bad)]">{err}</p>}
+    </Card>
+  );
+}
+
+function StravaCard() {
+  const { data, replaceAll } = useStore();
+  const t = useT();
+  const [state, setState] = useState<StravaState | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [loaded, setLoaded] = useState(false);
+
+  // Load stored tokens + finish the OAuth redirect (if we came back with ?code=).
+  useEffect(() => {
+    let cancelled = false;
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const oauthError = params.get("error");
+    const existing = loadStrava();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState(existing);
+    setLoaded(true);
+
+    if (oauthError) {
+      window.history.replaceState({}, "", "/settings");
+      setErr(t("Strava connection was cancelled."));
+      return;
+    }
+    if (code && !existing) {
+      setBusy(true);
+      exchangeCode(code)
+        .then(async (s) => {
+          if (cancelled) return;
+          window.history.replaceState({}, "", "/settings");
+          const res = await syncStrava(s, data);
+          if (cancelled) return;
+          replaceAll(res.next);
+          setState(res.state);
+          setMsg(t("Connected. Imported {n} activities.", { n: res.imported }));
+        })
+        .catch((e) => !cancelled && setErr(String(e instanceof Error ? e.message : e)))
+        .finally(() => !cancelled && setBusy(false));
+    }
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (!isStravaConfigured || !loaded) return null;
+
+  async function sync() {
+    if (!state) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await syncStrava(state, data);
+      replaceAll(res.next);
+      setState(res.state);
+      setMsg(t("Synced. {n} new activities ({skipped} already imported).", { n: res.imported, skipped: res.skipped }));
+    } catch (e) {
+      setErr(String(e instanceof Error ? e.message : e));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function disconnect() {
+    saveStrava(null);
+    setState(null);
+    setMsg(null);
+    setErr(null);
+  }
+
+  const name = state?.athlete
+    ? [state.athlete.firstname, state.athlete.lastname].filter(Boolean).join(" ")
+    : null;
+
+  return (
+    <Card>
+      <SectionTitle right={<Activity size={16} className="text-[var(--text-faint)]" />}>Strava</SectionTitle>
+      {state ? (
+        <div className="space-y-3">
+          <p className="text-sm">
+            {t("Connected")}
+            {name ? (
+              <>
+                {" · "}
+                <span className="font-semibold">{name}</span>
+              </>
+            ) : null}
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {state.lastSync
+              ? `${t("Last activity synced")}: ${new Date(state.lastSync * 1000).toLocaleDateString()}`
+              : t("Your Strava activities show up as workouts.")}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="soft" size="sm" onClick={sync} disabled={busy}>
+              <RefreshCw size={15} /> {busy ? t("Syncing…") : t("Sync now")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}>
+              {t("Disconnect")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-muted)]">
+            {t("Connect Strava to import your runs, rides and workouts automatically.")}
+          </p>
+          <Button size="sm" onClick={() => (window.location.href = authorizeUrl())} disabled={busy}>
+            <Activity size={15} /> {t("Connect Strava")}
+          </Button>
+        </div>
+      )}
+      {msg && <p className="mt-3 text-sm text-[var(--good)]">{msg}</p>}
       {err && <p className="mt-3 text-sm text-[var(--bad)]">{err}</p>}
     </Card>
   );
