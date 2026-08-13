@@ -21,6 +21,7 @@ import {
   Medal,
   Menu,
   Moon,
+  Search,
   ShieldCheck,
   Sunrise,
   Target,
@@ -69,6 +70,14 @@ const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
   (href) => NAV.find((n) => n.href === href)!,
 );
 
+// Grouping for the mobile "More" sheet (keeps it scannable as features grow).
+const SECTIONS: { label: string; hrefs: string[] }[] = [
+  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/journal", "/calendar"] },
+  { label: "Insights", hrefs: ["/statistics", "/analysis", "/reports", "/achievements", "/scoreboard"] },
+  { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
+  { label: "System", hrefs: ["/settings"] },
+];
+
 /** Apply the user's saved sidebar order, keeping any new items at the end. */
 function orderNav(order?: string[]): NavItem[] {
   if (!order?.length) return NAV;
@@ -92,8 +101,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [moreOpen, setMoreOpen] = useState(false);
   const [dragHref, setDragHref] = useState<string | null>(null);
   const [overHref, setOverHref] = useState<string | null>(null);
+  const [navQuery, setNavQuery] = useState("");
+  const [moreQuery, setMoreQuery] = useState("");
 
   const orderedNav = useMemo(() => orderNav(data.settings.navOrder), [data.settings.navOrder]);
+  const matches = (item: NavItem, q: string) => t(item.label).toLowerCase().includes(q.trim().toLowerCase());
+  const sidebarNav = navQuery ? orderedNav.filter((n) => matches(n, navQuery)) : orderedNav;
 
   function reorder(targetHref: string) {
     if (!dragHref || dragHref === targetHref) return;
@@ -128,13 +141,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <span className="text-[15px] font-semibold tracking-[-0.02em]">{t("Life Dashboard")}</span>
         </div>
+        <label className="relative mb-2 flex items-center">
+          <Search size={14} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
+          <input
+            value={navQuery}
+            onChange={(e) => setNavQuery(e.target.value)}
+            placeholder={t("Jump to…")}
+            className="w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] py-1.5 pl-8 pr-2 text-[13px] outline-none focus:border-[var(--accent)]"
+          />
+        </label>
         <nav className="-mx-1 flex flex-1 flex-col gap-[2px] overflow-y-auto px-1 hide-scrollbar">
-          {orderedNav.map((item) => (
+          {sidebarNav.map((item) => (
             <NavLink
               key={item.href}
               item={item}
               label={t(item.label)}
               active={isActive(pathname, item.href)}
+              draggable={!navQuery}
               dragging={dragHref === item.href}
               isOver={overHref === item.href && dragHref !== null && dragHref !== item.href}
               onDragStart={() => setDragHref(item.href)}
@@ -150,6 +173,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               }}
             />
           ))}
+          {sidebarNav.length === 0 && (
+            <p className="px-2 py-3 text-xs text-[var(--text-faint)]">{t("Nothing found.")}</p>
+          )}
         </nav>
         <div className="flex items-center gap-2 px-2 pt-3 text-[11px] text-[var(--text-faint)]">
           <ShieldCheck size={13} />
@@ -192,35 +218,68 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </button>
       </nav>
 
-      {/* Mobile "More" sheet */}
+      {/* Mobile "More" sheet — searchable + grouped */}
       {moreOpen && (
         <div
           className="fixed inset-0 z-40 bg-black/40 md:hidden"
-          onClick={() => setMoreOpen(false)}
+          onClick={() => {
+            setMoreOpen(false);
+            setMoreQuery("");
+          }}
         >
           <div
-            className="absolute bottom-16 left-3 right-3 grid max-h-[70vh] grid-cols-3 gap-2 overflow-y-auto rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
+            className="absolute bottom-16 left-3 right-3 flex max-h-[74vh] flex-col gap-3 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {NAV.filter((n) => !BOTTOM.includes(n)).map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMoreOpen(false)}
-                  className={clsx(
-                    "flex flex-col items-center gap-1.5 rounded-xl p-3 text-xs",
-                    isActive(pathname, item.href)
-                      ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                      : "text-[var(--text-muted)] hover:bg-[var(--surface-2)]",
-                  )}
-                >
-                  <Icon size={20} />
-                  {t(item.label)}
-                </Link>
-              );
-            })}
+            <label className="relative flex items-center">
+              <Search size={15} className="pointer-events-none absolute left-3 text-[var(--text-faint)]" />
+              <input
+                value={moreQuery}
+                onChange={(e) => setMoreQuery(e.target.value)}
+                placeholder={t("Search pages…")}
+                autoFocus
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--accent)]"
+              />
+            </label>
+            <div className="space-y-3 overflow-y-auto">
+              {SECTIONS.map((sec) => {
+                const items = sec.hrefs
+                  .map((h) => NAV.find((n) => n.href === h))
+                  .filter((n): n is NavItem => !!n && matches(n, moreQuery));
+                if (items.length === 0) return null;
+                return (
+                  <div key={sec.label}>
+                    <div className="mb-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">
+                      {t(sec.label)}
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {items.map((item) => {
+                        const Icon = item.icon;
+                        return (
+                          <Link
+                            key={item.href}
+                            href={item.href}
+                            onClick={() => {
+                              setMoreOpen(false);
+                              setMoreQuery("");
+                            }}
+                            className={clsx(
+                              "flex flex-col items-center gap-1.5 rounded-xl p-3 text-center text-xs",
+                              isActive(pathname, item.href)
+                                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                : "text-[var(--text-muted)] hover:bg-[var(--surface-2)]",
+                            )}
+                          >
+                            <Icon size={20} />
+                            {t(item.label)}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </div>
       )}
@@ -237,6 +296,7 @@ function NavLink({
   item,
   label,
   active,
+  draggable = true,
   dragging,
   isOver,
   onDragStart,
@@ -247,6 +307,7 @@ function NavLink({
   item: NavItem;
   label: string;
   active: boolean;
+  draggable?: boolean;
   dragging?: boolean;
   isOver?: boolean;
   onDragStart?: () => void;
@@ -258,20 +319,20 @@ function NavLink({
   return (
     <Link
       href={item.href}
-      draggable
-      onDragStart={(e) => {
-        e.dataTransfer.effectAllowed = "move";
-        // Some browsers need data set for the drag to start.
-        e.dataTransfer.setData("text/plain", item.href);
-        onDragStart?.();
-      }}
-      onDragEnter={onDragEnter}
-      onDragOver={(e) => e.preventDefault()}
-      onDrop={(e) => {
-        e.preventDefault();
-        onDrop?.();
-      }}
-      onDragEnd={onDragEnd}
+      draggable={draggable}
+      onDragStart={
+        draggable
+          ? (e) => {
+              e.dataTransfer.effectAllowed = "move";
+              e.dataTransfer.setData("text/plain", item.href);
+              onDragStart?.();
+            }
+          : undefined
+      }
+      onDragEnter={draggable ? onDragEnter : undefined}
+      onDragOver={draggable ? (e) => e.preventDefault() : undefined}
+      onDrop={draggable ? (e) => { e.preventDefault(); onDrop?.(); } : undefined}
+      onDragEnd={draggable ? onDragEnd : undefined}
       className={clsx(
         "group flex items-center gap-[11px] rounded-[10px] px-[11px] py-[9px] text-[13.5px] transition",
         dragging && "opacity-40",
@@ -283,10 +344,12 @@ function NavLink({
     >
       <Icon size={18} />
       <span className="flex-1">{label}</span>
-      <GripVertical
-        size={14}
-        className="shrink-0 cursor-grab text-[var(--text-faint)] opacity-0 transition group-hover:opacity-100"
-      />
+      {draggable && (
+        <GripVertical
+          size={14}
+          className="shrink-0 cursor-grab text-[var(--text-faint)] opacity-0 transition group-hover:opacity-100"
+        />
+      )}
     </Link>
   );
 }

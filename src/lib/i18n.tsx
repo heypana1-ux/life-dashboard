@@ -816,6 +816,12 @@ const DE: Record<string, string> = {
   "{day}s show your reduce-habits about {pct}% above your average — plan a countermeasure for that day.":
     "An {day}en liegen deine Reduzier-Gewohnheiten rund {pct}% über deinem Schnitt — plane für den Tag eine Gegenmaßnahme.",
 
+  // --- Navigation / search ---
+  "Jump to…": "Springe zu…",
+  "Search pages…": "Seiten suchen…",
+  "Nothing found.": "Nichts gefunden.",
+  Areas: "Bereiche",
+
   // --- Analysis: drivers + more generators + recap highlights ---
   "What drives your score": "Was deinen Score treibt",
   "Average Life-Score difference on days with vs. without each factor.":
