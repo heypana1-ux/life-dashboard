@@ -692,6 +692,78 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Analysis ---
+  Analysis: "Analyse",
+  "Everything you log, cross-analysed — patterns, connections and suggestions.":
+    "Alles, was du einträgst, kategorienübergreifend ausgewertet — Muster, Zusammenhänge und Vorschläge.",
+  "Overall read": "Gesamtbild",
+  "vs last week": "ggü. letzter Woche",
+  Recommendations: "Empfehlungen",
+  "What's working": "Was gut läuft",
+  Connections: "Zusammenhänge",
+  "Watch-outs": "Worauf achten",
+  "Not enough to analyse yet": "Noch zu wenig zum Auswerten",
+  "Keep logging days, sleep and workouts — connections appear after a week or two.":
+    "Trage weiter Tage, Schlaf und Workouts ein — Zusammenhänge zeigen sich nach ein bis zwei Wochen.",
+  "Observations from your own data — associations, not medical or causal advice.":
+    "Beobachtungen aus deinen eigenen Daten — Zusammenhänge, keine medizinische oder kausale Beratung.",
+  Steady: "Solide",
+  Building: "Im Aufbau",
+  "Sleep ↔ productivity": "Schlaf ↔ Produktivität",
+  "More sleep isn't lifting your productivity in this window — the link is weak so far.":
+    "Mehr Schlaf hebt deine Produktivität in diesem Zeitraum nicht — der Zusammenhang ist bisher schwach.",
+  "Sleep ↔ mood": "Schlaf ↔ Stimmung",
+  "Your mood averages {diff} points higher (out of 10) after hitting your sleep target.":
+    "Deine Stimmung ist im Schnitt {diff} Punkte höher (von 10), wenn du dein Schlafziel erreichst.",
+  "Training ↔ Life Score": "Training ↔ Life Score",
+  "On days you train, your Life Score is on average {diff} points higher.":
+    "An Tagen, an denen du trainierst, ist dein Life Score im Schnitt {diff} Punkte höher.",
+  "Training ↔ mood": "Training ↔ Stimmung",
+  "Your mood runs {diff}/10 higher on training days.":
+    "Deine Stimmung ist an Trainingstagen {diff}/10 höher.",
+  "Slip days ↔ mood": "Ausrutscher ↔ Stimmung",
+  "On days you slip on a reduce-habit, your mood is about {diff}/10 lower.":
+    "An Tagen mit einem Ausrutscher bei einer Reduzier-Gewohnheit ist deine Stimmung rund {diff}/10 niedriger.",
+  "Journaling ↔ mood": "Tagebuch ↔ Stimmung",
+  "Days you journal tend to come with a {diff}/10 higher mood.":
+    "Tage mit Tagebuch-Eintrag gehen mit einer {diff}/10 höheren Stimmung einher.",
+  "Your biggest lever": "Dein größter Hebel",
+  "Days you do “{name}” average {diff} Life-Score points higher than days you don't — protect this one.":
+    "Tage mit „{name}“ haben im Schnitt {diff} Life-Score-Punkte mehr als Tage ohne — halt daran fest.",
+  "Strongest area": "Stärkster Bereich",
+  "{area} is your strongest area lately, averaging {m}/100.":
+    "{area} ist zuletzt dein stärkster Bereich mit Ø {m}/100.",
+  "Area to lift": "Bereich mit Potenzial",
+  "{area} is trailing at {m}/100 — a small, specific habit here would move your overall score most.":
+    "{area} hinkt bei {m}/100 hinterher — eine kleine, konkrete Gewohnheit hier würde deinen Gesamt-Score am meisten heben.",
+  "{area} is climbing": "{area} steigt",
+  "{area} is up {d} points versus the previous week.": "{area} ist {d} Punkte höher als in der Vorwoche.",
+  "{area} is slipping": "{area} fällt",
+  "{area} dropped {d} points versus the previous week.": "{area} ist {d} Punkte niedriger als in der Vorwoche.",
+  "Low adherence": "Niedrige Einhaltung",
+  "“{name}” is only at {pct}% lately. Either shrink the goal so it's easy to win, or schedule a fixed time for it.":
+    "„{name}“ liegt zuletzt nur bei {pct}%. Verkleinere entweder das Ziel, damit es leicht zu schaffen ist, oder plane eine feste Zeit dafür ein.",
+  "Sleep is short": "Schlaf ist knapp",
+  "You're averaging {avg} vs your {target} target — about {debt} min short a night. Going to bed {debt} min earlier is the easiest fix.":
+    "Du liegst im Schnitt bei {avg} statt deinem Ziel von {target} — etwa {debt} Min pro Nacht zu wenig. {debt} Min früher ins Bett ist die einfachste Lösung.",
+  "Irregular bedtime": "Unregelmäßige Schlafenszeit",
+  "Your bedtime swings by ±{sd} min. A more regular schedule usually improves sleep quality more than total hours.":
+    "Deine Schlafenszeit schwankt um ±{sd} Min. Ein regelmäßigerer Rhythmus verbessert die Schlafqualität meist mehr als die reine Stundenzahl.",
+  "Weekday rhythm": "Wochen-Rhythmus",
+  "{best} are your strongest days and {worst} your weakest ({gap} points apart). Plan demanding things for {best}.":
+    "{best} sind deine stärksten und {worst} deine schwächsten Tage ({gap} Punkte Unterschied). Plane Anspruchsvolles für {best}.",
+  "Consistent logging": "Konstantes Eintragen",
+  "You've logged {n} days in a row — consistency is what makes all of this analysis sharper.":
+    "Du hast {n} Tage in Folge eingetragen — Konstanz macht diese ganze Analyse schärfer.",
+  "Log a week or two of days and this analysis fills in with cross-connections and suggestions.":
+    "Trage ein bis zwei Wochen ein, dann füllt sich diese Analyse mit Querverbindungen und Vorschlägen.",
+  "trending up": "steigend",
+  "trending down": "fallend",
+  "holding steady": "stabil",
+  "Your 7-day score is {score} ({trend}).": "Dein 7-Tage-Score liegt bei {score} ({trend}).",
+  "Working for you: {s}": "Das läuft für dich: {s}",
+  "Focus next: {w}": "Als Nächstes im Fokus: {w}",
+
   // --- Exercise picker ---
   "Choose exercise": "Übung wählen",
   "Search exercises…": "Übungen suchen…",

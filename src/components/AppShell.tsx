@@ -7,6 +7,7 @@ import clsx from "clsx";
 import {
   BarChart3,
   BookOpen,
+  Brain,
   CalendarCheck,
   CalendarDays,
   Dumbbell,
@@ -55,6 +56,7 @@ const NAV: NavItem[] = [
   { href: "/experiments", label: "Experiments", icon: FlaskConical },
   { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
+  { href: "/analysis", label: "Analysis", icon: Brain },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/scoreboard", label: "Scoreboard", icon: Medal },
