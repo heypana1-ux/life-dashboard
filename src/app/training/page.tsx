@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Dumbbell, Plus, Save, Trash2, TrendingUp } from "lucide-react";
+import { Dumbbell, Plus, Save, Trash2, TrendingUp, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { DEFAULT_SPORTS, uid } from "@/lib/defaults";
 import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
-import { exerciseHistory, loggedExerciseNames, muscleVolume } from "@/lib/trainingStats";
+import { exerciseHistory, loggedExerciseNames, muscleVolume, personalRecords } from "@/lib/trainingStats";
 import { fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
 import {
   Card,
@@ -267,6 +267,7 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
   const selected = exercise || names[0] || "";
   const history = useMemo(() => (selected ? exerciseHistory(workouts, selected) : []), [workouts, selected]);
   const muscles = useMemo(() => muscleVolume(workouts, 30), [workouts]);
+  const records = useMemo(() => personalRecords(workouts), [workouts]);
 
   const chart = history.map((p) => ({ date: p.date, value: p.best1RM || p.bestWeight }));
   const first = history[0]?.best1RM || history[0]?.bestWeight || 0;
@@ -318,6 +319,23 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
           <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("Log this exercise on at least two days to see a trend.")}</p>
         )}
       </Card>
+
+      {records.length > 0 && (
+        <Card>
+          <SectionTitle right={<Trophy size={16} className="text-[var(--text-faint)]" />}>{t("Personal records")}</SectionTitle>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Best estimated one-rep max per exercise.")}</p>
+          <div className="space-y-1.5">
+            {records.slice(0, 8).map((r) => (
+              <div key={r.name} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--surface-2)]">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.name}</span>
+                {r.isNew && <Badge tone="good">{t("New PR")}</Badge>}
+                <span className="text-xs text-[var(--text-faint)]">{r.weight}kg × {r.reps}</span>
+                <span className="num w-16 text-right text-sm font-bold">{r.best1RM} kg</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       <Card>
         <SectionTitle>{t("Volume by muscle group")} · {t("last 30 days")}</SectionTitle>

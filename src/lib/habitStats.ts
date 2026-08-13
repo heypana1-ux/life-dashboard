@@ -2,6 +2,7 @@ import { AppData, Habit } from "./types";
 import { isDueOn } from "./score";
 import { addDays, isoRange, parseISO, todayISO } from "./date";
 import { logOf } from "./habitView";
+import { isRestDay } from "./streak";
 
 /*
   Per-habit statistics for motivation: streaks and a GitHub-style heatmap.
@@ -18,6 +19,7 @@ function metWeeklyTarget(data: AppData, habit: Habit, dateISO: string): boolean 
 }
 
 export function onTrack(data: AppData, habit: Habit, dateISO: string): boolean {
+  if (isRestDay(data.settings, dateISO)) return true; // vacation / planned rest
   if (habit.kind === "reduce") return !logOf(data, habit.id, dateISO)?.done;
   if (habit.schedule.type === "weekly") return metWeeklyTarget(data, habit, dateISO);
   if (!isDueOn(habit, dateISO)) return true; // rest day
@@ -33,7 +35,10 @@ export function habitCurrentStreak(data: AppData, habit: Habit): number {
     if (onTrack(data, habit, cur)) {
       // only count days that actually "matter" (due days / weekly / reduce) toward the number,
       // but never break on a legitimate rest day
-      if (habit.kind === "reduce" || habit.schedule.type === "weekly" || isDueOn(habit, cur)) {
+      if (
+        !isRestDay(data.settings, cur) &&
+        (habit.kind === "reduce" || habit.schedule.type === "weekly" || isDueOn(habit, cur))
+      ) {
         streak++;
       }
       cur = addDays(cur, -1);
@@ -52,7 +57,8 @@ export function habitLongestStreak(data: AppData, habit: Habit): number {
   let cur = start;
   for (let i = 0; i < 1000; i++) {
     const counts =
-      habit.kind === "reduce" || habit.schedule.type === "weekly" || isDueOn(habit, cur);
+      !isRestDay(data.settings, cur) &&
+      (habit.kind === "reduce" || habit.schedule.type === "weekly" || isDueOn(habit, cur));
     if (onTrack(data, habit, cur)) {
       if (counts) run++;
       best = Math.max(best, run);

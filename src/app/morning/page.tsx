@@ -1,13 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { Flame, Moon, Trophy } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Check, Flame, ListTodo, Moon, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { uid } from "@/lib/defaults";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { habitsForToday } from "@/lib/habitView";
 import { sleepScore } from "@/lib/score";
+import { activityStreak } from "@/lib/streak";
 import { fmtDuration, fmtLong, sleepDurationMinutes, todayISO } from "@/lib/date";
 import { Card, PageHeader, SectionTitle } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
@@ -28,14 +30,7 @@ export default function MorningPage() {
   const goals = habitsForToday(data, date).filter((g) => g.habit.kind === "build");
   const elo = d.todayScore?.elo ?? data.settings.eloStart;
 
-  const streak = useMemo(() => {
-    let s = 0;
-    for (let i = d.history.length - 1; i >= 0; i--) {
-      if (d.history[i].lifeScore > 0) s++;
-      else break;
-    }
-    return s;
-  }, [d.history]);
+  const streak = useMemo(() => activityStreak(d.history, data.settings), [d.history, data.settings]);
 
   const hour = new Date().getHours();
   const greeting = hour < 11 ? t("Good morning") : hour < 18 ? t("Good afternoon") : t("Good evening");
@@ -95,6 +90,9 @@ export default function MorningPage() {
           </div>
         </div>
 
+        {/* Optional top-3 focus for the day */}
+        <FocusCard />
+
         {/* Focus */}
         <Card>
           <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
@@ -112,5 +110,71 @@ export default function MorningPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+type FocusItem = { id: string; text: string; done: boolean };
+
+function FocusCard() {
+  const { data, setFocus } = useStore();
+  const t = useT();
+  const date = todayISO();
+  const existing = data.focus.find((f) => f.date === date);
+
+  const seed = (): FocusItem[] => {
+    const base = existing?.items.map((i) => ({ ...i })) ?? [];
+    while (base.length < 3) base.push({ id: uid("foc"), text: "", done: false });
+    return base.slice(0, 3);
+  };
+  const [items, setItems] = useState<FocusItem[]>(seed);
+
+  function persist(next: FocusItem[]) {
+    setItems(next);
+    setFocus(date, next.filter((i) => i.text.trim()));
+  }
+  const doneCount = items.filter((i) => i.text.trim() && i.done).length;
+  const setCount = items.filter((i) => i.text.trim()).length;
+
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          setCount > 0 ? (
+            <span className="text-xs text-[var(--text-faint)]">
+              {doneCount}/{setCount} · {t("up to +2 score")}
+            </span>
+          ) : (
+            <span className="text-xs text-[var(--text-faint)]">{t("optional")}</span>
+          )
+        }
+      >
+        <span className="inline-flex items-center gap-1.5">
+          <ListTodo size={16} /> {t("Today's focus")}
+        </span>
+      </SectionTitle>
+      <p className="mb-2 text-xs text-[var(--text-muted)]">{t("Pick up to three things that would make today a win.")}</p>
+      <div className="space-y-2">
+        {items.map((it, i) => (
+          <div key={it.id} className="flex items-center gap-2.5">
+            <button
+              onClick={() => persist(items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
+              disabled={!it.text.trim()}
+              aria-label={t("Mark done")}
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition disabled:opacity-40 ${
+                it.done && it.text.trim() ? "border-[var(--good)] bg-[var(--good)] text-white" : "border-[var(--border)] text-transparent"
+              }`}
+            >
+              <Check size={13} strokeWidth={3} />
+            </button>
+            <input
+              value={it.text}
+              onChange={(e) => persist(items.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))}
+              placeholder={`${t("Focus")} ${i + 1}`}
+              className={`flex-1 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)] ${it.done && it.text.trim() ? "text-[var(--text-muted)] line-through" : ""}`}
+            />
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }

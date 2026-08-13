@@ -21,7 +21,7 @@ const ACCENTS: { key: Accent; label: string; a: string; b: string }[] = [
 ];
 import { generateDemo, clearDemo } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
-import { todayISO, fmtShort, ageFrom } from "@/lib/date";
+import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
@@ -205,6 +205,9 @@ export default function SettingsPage() {
       {/* Guided day-flow overlays */}
       <DayFlowCard />
 
+      {/* Streak protection & rest days */}
+      <StreakCard />
+
       {/* Apple Health import */}
       <HealthImportCard />
 
@@ -341,6 +344,76 @@ function DayFlowCard() {
           </div>
           <Toggle checked={df.recapsEnabled ?? true} onChange={(v) => set({ recapsEnabled: v })} />
         </div>
+      </div>
+    </Card>
+  );
+}
+
+function StreakCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const rest = [...(data.settings.restDays ?? [])].sort();
+  const grace = data.settings.streakGrace ?? 0;
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+
+  function addRange() {
+    if (!from) return;
+    const end = to && to >= from ? to : from;
+    const set = new Set(rest);
+    for (let d = from; d <= end; d = addDays(d, 1)) set.add(d);
+    updateSettings({ restDays: [...set].sort() });
+    setFrom("");
+    setTo("");
+  }
+  function removeDay(d: string) {
+    updateSettings({ restDays: rest.filter((x) => x !== d) });
+  }
+
+  return (
+    <Card>
+      <SectionTitle>{t("Streak protection")}</SectionTitle>
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
+        {t("Rest days and a grace window keep a good streak alive when you take a break or forget to log.")}
+      </p>
+
+      <Field label={`${t("Grace days")}: ${grace}`} hint={t("Missed days a streak tolerates before it breaks.")}>
+        <input
+          type="range"
+          min={0}
+          max={5}
+          value={grace}
+          onChange={(e) => updateSettings({ streakGrace: Number(e.target.value) })}
+          className="w-full accent-[var(--accent)]"
+        />
+      </Field>
+
+      <div className="mt-4">
+        <div className="mb-1.5 text-sm font-medium">{t("Rest days (e.g. vacation)")}</div>
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label={t("From")}>
+            <input type="date" className={inputCls} value={from} onChange={(e) => setFrom(e.target.value)} />
+          </Field>
+          <Field label={t("Until (optional)")}>
+            <input type="date" className={inputCls} value={to} onChange={(e) => setTo(e.target.value)} />
+          </Field>
+          <Button variant="soft" size="sm" onClick={addRange} disabled={!from}>
+            {t("Add")}
+          </Button>
+        </div>
+        {rest.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {rest.map((d) => (
+              <button
+                key={d}
+                onClick={() => removeDay(d)}
+                className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+              >
+                {fmtShort(d)} <span className="text-[var(--text-faint)]">✕</span>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
     </Card>
   );

@@ -2,6 +2,7 @@ import { AppData, AreaKey, DayScore, Language } from "./types";
 import { AREA_LABELS } from "./defaults";
 import { habitsForToday } from "./habitView";
 import { symptomCount } from "./health";
+import { activityStreak } from "./streak";
 import { sleepDurationMinutes, weekdayLabel, weekdayOf, addDays } from "./date";
 import { translate } from "./i18n";
 
@@ -626,11 +627,7 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
   };
 
   // ---------- Streak ----------
-  let streak = 0;
-  for (let i = history.length - 1; i >= 0; i--) {
-    if (history[i].lifeScore > 0) streak++;
-    else break;
-  }
+  const streak = activityStreak(history, data.settings);
   if (streak >= 5) F.push({ id: "streak", kind: "strength", title: t("Consistent logging"), detail: t("You've logged {n} days in a row — consistency is what makes all of this analysis sharper.", { n: streak }), weight: 35 + streak });
 
   // ---------- Verdict ----------

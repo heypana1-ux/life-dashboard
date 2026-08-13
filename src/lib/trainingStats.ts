@@ -59,6 +59,56 @@ export function exerciseHistory(workouts: Workout[], name: string): ExercisePoin
   return points.sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
+export interface PersonalRecord {
+  name: string;
+  best1RM: number;
+  weight: number;
+  reps: number;
+  date: string;
+  isNew: boolean; // set on the most recent session and beats the prior best
+}
+
+/** Best estimated 1RM per exercise, flagging records set in the latest session. */
+export function personalRecords(workouts: Workout[]): PersonalRecord[] {
+  const acc = new Map<string, { best1RM: number; weight: number; reps: number; date: string; perDate: Map<string, number> }>();
+  for (const w of workouts) {
+    for (const ex of w.exercises) {
+      const name = ex.name.trim();
+      if (!name) continue;
+      let dayMax = 0;
+      for (const s of ex.sets) {
+        const weight = s.weight ?? 0;
+        const reps = s.reps ?? 0;
+        if (weight <= 0 || reps <= 0) continue;
+        const r = est1RM(weight, reps);
+        const cur = acc.get(name) ?? { best1RM: 0, weight: 0, reps: 0, date: w.date, perDate: new Map<string, number>() };
+        if (r > cur.best1RM) {
+          cur.best1RM = r;
+          cur.weight = weight;
+          cur.reps = reps;
+          cur.date = w.date;
+        }
+        dayMax = Math.max(dayMax, r);
+        acc.set(name, cur);
+      }
+      if (dayMax > 0) {
+        const cur = acc.get(name)!;
+        cur.perDate.set(w.date, Math.max(cur.perDate.get(w.date) ?? 0, dayMax));
+      }
+    }
+  }
+  const out: PersonalRecord[] = [];
+  for (const [name, v] of acc) {
+    if (v.best1RM <= 0) continue;
+    const dates = [...v.perDate.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1));
+    const last = dates[dates.length - 1];
+    const prior = Math.max(0, ...dates.slice(0, -1).map((d) => d[1]));
+    const isNew = dates.length >= 2 && last[1] > prior && last[1] === v.best1RM;
+    out.push({ name, best1RM: v.best1RM, weight: v.weight, reps: v.reps, date: v.date, isNew });
+  }
+  return out.sort((a, b) => b.best1RM - a.best1RM);
+}
+
 export interface MuscleVolume {
   muscle: string;
   volume: number; // tonnage

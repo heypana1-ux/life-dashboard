@@ -864,6 +864,61 @@ const DE: Record<string, string> = {
     "Nach Nächten mit erreichtem Schlafziel trägst du im Schnitt weniger Beschwerden ein.",
   "Feeling well": "Gutes Wohlbefinden",
 
+  // --- Streak protection / rest days ---
+  "Streak protection": "Streak-Schutz",
+  "Rest days and a grace window keep a good streak alive when you take a break or forget to log.":
+    "Ruhetage und ein Kulanzfenster halten eine gute Serie am Leben, wenn du pausierst oder das Eintragen vergisst.",
+  "Grace days": "Kulanztage",
+  "Missed days a streak tolerates before it breaks.": "Verpasste Tage, die eine Serie verkraftet, bevor sie reißt.",
+  "Rest days (e.g. vacation)": "Ruhetage (z. B. Urlaub)",
+  "Until (optional)": "Bis (optional)",
+
+  // --- Morning focus ---
+  "Today's focus": "Fokus für heute",
+  "Pick up to three things that would make today a win.": "Wähle bis zu drei Dinge, die den Tag zum Erfolg machen.",
+  Focus: "Fokus",
+  "up to +2 score": "bis zu +2 Punkte",
+  optional: "optional",
+
+  // --- Correlation explorer ---
+  "Correlation explorer": "Korrelations-Explorer",
+  "Pick any two things you track and see how they move together.":
+    "Wähle zwei beliebige Werte und sieh, wie sie zusammenhängen.",
+  Horizontal: "Horizontal",
+  Vertical: "Vertikal",
+  "Not enough overlapping days for these two yet.": "Noch zu wenige gemeinsame Tage für diese beiden.",
+  "Sleep (h)": "Schlaf (h)",
+  "Sleep quality": "Schlafqualität",
+  weak: "schwacher",
+  "little to no": "kaum ein",
+  "Little to no relationship between {a} and {b}.": "Kaum ein Zusammenhang zwischen {a} und {b}.",
+  "{strength} positive link — higher {a} tends to go with higher {b}.":
+    "{strength} positiver Zusammenhang — höheres {a} geht meist mit höherem {b} einher.",
+  "{strength} inverse link — higher {a} tends to go with lower {b}.":
+    "{strength} gegenläufiger Zusammenhang — höheres {a} geht meist mit niedrigerem {b} einher.",
+
+  // --- Suggested experiments ---
+  "Suggested for you": "Für dich vorgeschlagen",
+  "Based on what you already track — start one with a tap.": "Basierend auf dem, was du schon trackst — mit einem Tipp starten.",
+  Start: "Starten",
+  "Before midnight = more productive?": "Vor Mitternacht = produktiver?",
+  "More sleep = better mood?": "Mehr Schlaf = bessere Stimmung?",
+  "Training lifts my day": "Training hebt meinen Tag",
+  "Going to bed before 00:00 makes me more productive.": "Vor 00:00 ins Bett macht mich produktiver.",
+  "≥7:30 of sleep lifts my mood.": "≥7:30 Schlaf hebt meine Stimmung.",
+  "My Life Score is higher on days I train.": "Mein Life Score ist an Trainingstagen höher.",
+  "Training ↔ my sleep": "Training ↔ mein Schlaf",
+  "I sleep better on days I train.": "Ich schlafe an Trainingstagen besser.",
+
+  // --- Training records ---
+  "Best estimated one-rep max per exercise.": "Bester geschätzter 1RM pro Übung.",
+  "New PR": "Neuer Rekord",
+
+  // --- Goal deadlines ---
+  overdue: "überfällig",
+  "due today": "heute fällig",
+  "{n} days left": "noch {n} Tage",
+
   // --- Navigation / search ---
   "Jump to…": "Springe zu…",
   "Search pages…": "Seiten suchen…",

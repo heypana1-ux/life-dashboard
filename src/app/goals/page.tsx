@@ -128,8 +128,16 @@ export default function GoalsPage() {
               </div>
 
               {g.deadline && (
-                <p className="mt-2 flex items-center gap-1 text-xs text-[var(--text-faint)]">
+                <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
                   <Flag size={12} /> {t("Deadline")} {fmtShort(g.deadline)}
+                  {(() => {
+                    const days = daysUntil(g.deadline);
+                    if (g.progress >= 100) return null;
+                    if (days < 0) return <Badge tone="bad">{t("overdue")}</Badge>;
+                    if (days === 0) return <Badge tone="bad">{t("due today")}</Badge>;
+                    if (days <= 14) return <Badge tone={days <= 3 ? "bad" : "accent"}>{t("{n} days left", { n: days })}</Badge>;
+                    return null;
+                  })()}
                 </p>
               )}
 
@@ -356,4 +364,12 @@ function GoalModal({
       </div>
     </Modal>
   );
+}
+
+/** Whole days from today until an ISO date (negative = past). */
+function daysUntil(iso: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const d = new Date(`${iso}T00:00:00`);
+  return Math.round((d.getTime() - today.getTime()) / 86400000);
 }

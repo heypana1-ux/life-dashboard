@@ -62,6 +62,9 @@ function logFor(logs: HabitLog[], habitId: string, dateISO: string): HabitLog | 
 /** Max bonus for exceeding a habit's target (e.g. 2h vs a 1h goal → up to +15%). */
 const OVERFILL_CAP = 0.15;
 
+/** Max Life-Score bonus for completing the optional morning "top 3" focus. */
+const FOCUS_BONUS = 2;
+
 /**
  * Credit for a single completed occurrence: 1.0 normally, slightly more when the logged
  * amount (minutes or value) exceeds the habit's target. The bonus is small and capped, so
@@ -211,6 +214,12 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
   let lifeScore: number | null = null;
   if (weightSum > 0) {
     lifeScore = Math.round(clamp(weighted / weightSum));
+    // Optional morning "top 3" focus: a small, capped bonus for finishing what you set out to do.
+    const focus = data.focus?.find((f) => f.date === dateISO);
+    if (focus && focus.items.length > 0) {
+      const doneFrac = focus.items.filter((i) => i.done).length / focus.items.length;
+      lifeScore = Math.round(clamp(lifeScore + doneFrac * FOCUS_BONUS));
+    }
   }
 
   return { lifeScore, categories, slips, hasData };

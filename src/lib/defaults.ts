@@ -66,6 +66,7 @@ export function defaultSettings(): Settings {
     demoDataLoaded: false,
     profile: {},
     healthMode: "form",
+    streakGrace: 2,
     reminders: { enabled: false, checkinTime: "21:00", habitReminders: true, firedToday: [] },
     dayFlow: {
       eveningEnabled: false,
@@ -102,6 +103,7 @@ export function emptyData(): AppData {
     goals: [],
     weight: [],
     health: [],
+    focus: [],
     finances: emptyFinances(),
     workouts: [],
     workoutPlans: [],

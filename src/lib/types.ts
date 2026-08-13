@@ -395,6 +395,16 @@ export interface Settings {
   dayFlow?: DayFlowSettings;
   /** How the Health screen collects data: a guided Q&A or a plain form. */
   healthMode?: "questions" | "form";
+  /** Dates that shouldn't break streaks (vacation / planned rest). */
+  restDays?: string[];
+  /** How many missed days a streak tolerates before breaking (streak protection). */
+  streakGrace?: number;
+}
+
+/** Optional "top 3 for today" focus items shown on the morning screen. */
+export interface FocusDay {
+  date: string; // YYYY-MM-DD
+  items: { id: string; text: string; done: boolean }[];
 }
 
 export interface AppData {
@@ -408,6 +418,7 @@ export interface AppData {
   goals: Goal[];
   weight: WeightLog[];
   health: HealthLog[];
+  focus: FocusDay[];
   finances: Finances;
   workouts: Workout[];
   workoutPlans: WorkoutPlan[];

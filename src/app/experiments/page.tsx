@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import { FlaskConical, Plus, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
-import { Experiment, ExperimentCondition, ExperimentMetric } from "@/lib/types";
+import { AppData, Experiment, ExperimentCondition, ExperimentMetric } from "@/lib/types";
 import { evaluateExperiment } from "@/lib/experiments";
 import { addDays, fmtDuration, todayISO, fmtShort } from "@/lib/date";
-import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
 const METRICS: ExperimentMetric[] = ["lifeScore", "productivity", "mood", "energy", "sleep"];
 const CONDITIONS: ExperimentCondition[] = ["manual", "bedtimeBefore", "sleepAtLeast", "trained", "habitDone"];
@@ -36,6 +36,7 @@ export default function ExperimentsPage() {
     () => [...data.experiments].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)),
     [data.experiments],
   );
+  const suggestions = useMemo(() => suggestExperiments(data), [data]);
 
   return (
     <div className="space-y-6">
@@ -48,6 +49,30 @@ export default function ExperimentsPage() {
           </Button>
         }
       />
+
+      {suggestions.length > 0 && (
+        <Card>
+          <SectionTitle>{t("Suggested for you")}</SectionTitle>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Based on what you already track — start one with a tap.")}</p>
+          <div className="space-y-2">
+            {suggestions.map((s) => (
+              <div key={s.title} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] p-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium">{t(s.title)}</div>
+                  {s.hypothesis && <div className="truncate text-xs text-[var(--text-muted)]">{t(s.hypothesis)}</div>}
+                </div>
+                <Button
+                  size="sm"
+                  variant="soft"
+                  onClick={() => saveExperiment({ ...s, title: t(s.title), hypothesis: s.hypothesis ? t(s.hypothesis) : "" })}
+                >
+                  <Plus size={14} /> {t("Start")}
+                </Button>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {experiments.length === 0 ? (
         <EmptyState
@@ -207,6 +232,44 @@ function conditionText(exp: Experiment, t: (k: string, v?: Record<string, string
   if (exp.condition === "trained") return t("On days I train");
   if (exp.condition === "manual") return exp.conditionLabel?.trim() || t("My own condition");
   return t("A specific habit is done");
+}
+
+/** Data-driven experiment suggestions based on what the user already tracks. */
+function suggestExperiments(data: AppData): Experiment[] {
+  const out: Experiment[] = [];
+  const has = (pred: (e: Experiment) => boolean) => data.experiments.some(pred);
+  const base = { id: "", createdAt: "", days: 30 };
+
+  if (data.sleep.length >= 6 && data.reviews.length >= 6) {
+    if (!has((e) => e.condition === "bedtimeBefore"))
+      out.push({ ...base, title: "Before midnight = more productive?", hypothesis: "Going to bed before 00:00 makes me more productive.", metric: "productivity", condition: "bedtimeBefore", threshold: 24 * 60 });
+    if (!has((e) => e.condition === "sleepAtLeast"))
+      out.push({ ...base, title: "More sleep = better mood?", hypothesis: "≥7:30 of sleep lifts my mood.", metric: "mood", condition: "sleepAtLeast", threshold: 7 * 60 + 30 });
+  }
+
+  const hasSport = data.workouts.length >= 4 || data.habits.some((h) => h.area === "sport" && h.kind === "build");
+  if (hasSport && !has((e) => e.condition === "trained"))
+    out.push({ ...base, title: "Training lifts my day", hypothesis: "My Life Score is higher on days I train.", metric: "lifeScore", condition: "trained" });
+
+  // Top-used build habit → does it move the score?
+  const doneCounts = new Map<string, number>();
+  for (const l of data.habitLogs) if (l.done) doneCounts.set(l.habitId, (doneCounts.get(l.habitId) ?? 0) + 1);
+  let topHabit: { id: string; name: string } | null = null;
+  let topN = 5;
+  for (const h of data.habits.filter((x) => x.kind === "build" && !x.archived)) {
+    const n = doneCounts.get(h.id) ?? 0;
+    if (n > topN) {
+      topN = n;
+      topHabit = { id: h.id, name: h.name };
+    }
+  }
+  if (topHabit && !has((e) => e.condition === "habitDone" && e.habitId === topHabit!.id))
+    out.push({ ...base, title: topHabit.name, hypothesis: "", metric: "lifeScore", condition: "habitDone", habitId: topHabit.id });
+
+  if (data.settings.areas.some((a) => a.key === "health" && a.enabled) && data.health.some((h) => h.wellbeing != null) && !has((e) => e.condition === "trained" && e.metric === "sleep"))
+    out.push({ ...base, title: "Training ↔ my sleep", hypothesis: "I sleep better on days I train.", metric: "sleep", condition: "trained" });
+
+  return out.slice(0, 3);
 }
 
 const TEMPLATES: { title: string; hypothesis: string; metric: ExperimentMetric; condition: ExperimentCondition; threshold?: number }[] = [

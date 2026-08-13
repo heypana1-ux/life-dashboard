@@ -23,6 +23,7 @@ import {
   Profile,
   Project,
   HealthLog,
+  FocusDay,
   SleepLog,
   Settings,
   Transaction,
@@ -96,6 +97,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     goals: parsed.goals ?? [],
     weight: parsed.weight ?? [],
     health: parsed.health ?? [],
+    focus: parsed.focus ?? [],
     finances: { ...base.finances, ...parsed.finances },
     workouts: parsed.workouts ?? [],
     workoutPlans: parsed.workoutPlans ?? [],
@@ -143,6 +145,8 @@ interface StoreCtx {
   removeWeight: (date: string) => void;
   /* health */
   saveHealth: (h: HealthLog) => void;
+  /* focus (morning top 3) */
+  setFocus: (date: string, items: FocusDay["items"]) => void;
   /* finances */
   setCurrency: (c: string) => void;
   saveAccount: (a: FinanceAccount) => void;
@@ -465,6 +469,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         mutate((d) => {
           const others = d.health.filter((x) => x.date !== h.date);
           return { ...d, health: [...others, h].sort((a, b) => (a.date < b.date ? -1 : 1)) };
+        }),
+
+      /* focus */
+      setFocus: (date, items) =>
+        mutate((d) => {
+          const others = d.focus.filter((x) => x.date !== date);
+          const clean = items.filter((i) => i.text.trim());
+          return { ...d, focus: clean.length ? [...others, { date, items: clean }] : others };
         }),
 
       /* finances */
