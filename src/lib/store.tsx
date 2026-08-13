@@ -31,6 +31,8 @@ import {
 } from "./types";
 import { emptyData, uid } from "./defaults";
 import { todayISO } from "./date";
+import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
+import type { Session } from "@supabase/supabase-js";
 
 /** Net worth = assets + investment value − liabilities. */
 export function computeNetWorth(f: AppData["finances"]): number {
@@ -52,6 +54,7 @@ function withNetWorthSnapshot(f: AppData["finances"]): AppData["finances"] {
 
 const STORAGE_KEY = "life-dashboard:v1";
 const BACKUP_KEY = "life-dashboard:last-good";
+const UPDATED_KEY = "life-dashboard:updatedAt";
 
 /*
   Persistence layer. Everything is kept in one JSON blob in localStorage. The public API
@@ -59,37 +62,40 @@ const BACKUP_KEY = "life-dashboard:last-good";
   swapped (e.g. Supabase) by reimplementing these methods without touching the UI.
 */
 
+/** Merge any (possibly older) blob onto a fresh base so new collections/fields exist. */
+export function normalizeData(parsed: Partial<AppData> | null | undefined): AppData {
+  const base = emptyData();
+  if (!parsed || !parsed.schemaVersion || parsed.schemaVersion > SCHEMA_VERSION) return base;
+  return {
+    ...base,
+    ...parsed,
+    schemaVersion: SCHEMA_VERSION,
+    settings: {
+      ...base.settings,
+      ...parsed.settings,
+      profile: { ...base.settings.profile, ...parsed.settings?.profile },
+      reminders: { ...base.settings.reminders, ...parsed.settings?.reminders },
+    },
+    habits: parsed.habits ?? [],
+    habitLogs: parsed.habitLogs ?? [],
+    reviews: parsed.reviews ?? [],
+    sleep: parsed.sleep ?? [],
+    journal: parsed.journal ?? [],
+    goals: parsed.goals ?? [],
+    weight: parsed.weight ?? [],
+    finances: { ...base.finances, ...parsed.finances },
+    workouts: parsed.workouts ?? [],
+    projects: parsed.projects ?? [],
+    experiments: parsed.experiments ?? [],
+  };
+}
+
 function loadData(): AppData {
   if (typeof window === "undefined") return emptyData();
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return emptyData();
-    const parsed = JSON.parse(raw) as AppData;
-    if (!parsed.schemaVersion || parsed.schemaVersion > SCHEMA_VERSION) return emptyData();
-    // shallow-merge to tolerate older blobs missing newer collections
-    const base = emptyData();
-    return {
-      ...base,
-      ...parsed,
-      schemaVersion: SCHEMA_VERSION,
-      settings: {
-        ...base.settings,
-        ...parsed.settings,
-        profile: { ...base.settings.profile, ...parsed.settings?.profile },
-        reminders: { ...base.settings.reminders, ...parsed.settings?.reminders },
-      },
-      habits: parsed.habits ?? [],
-      habitLogs: parsed.habitLogs ?? [],
-      reviews: parsed.reviews ?? [],
-      sleep: parsed.sleep ?? [],
-      journal: parsed.journal ?? [],
-      goals: parsed.goals ?? [],
-      weight: parsed.weight ?? [],
-      finances: { ...base.finances, ...parsed.finances },
-      workouts: parsed.workouts ?? [],
-      projects: parsed.projects ?? [],
-      experiments: parsed.experiments ?? [],
-    };
+    return normalizeData(JSON.parse(raw) as AppData);
   } catch {
     return emptyData();
   }
@@ -141,9 +147,27 @@ interface StoreCtx {
   /* experiments */
   saveExperiment: (e: Experiment) => Experiment;
   removeExperiment: (id: string) => void;
+  /* cloud sync */
+  sync: SyncState;
   /* bulk */
   replaceAll: (d: AppData) => void;
   resetAll: () => void;
+}
+
+export type SyncStatus = "idle" | "syncing" | "synced" | "error";
+
+export interface SyncState {
+  /** Whether Supabase env vars are configured at all. */
+  configured: boolean;
+  /** Signed-in user's email, or null. */
+  email: string | null;
+  status: SyncStatus;
+  error: string | null;
+  lastSyncedAt: number | null;
+  signIn: (email: string, password: string) => Promise<{ error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ error?: string }>;
+  signOut: () => Promise<void>;
+  syncNow: () => Promise<void>;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -172,6 +196,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEY, json);
       // Keep a rolling "last good" copy as a corruption safety net.
       localStorage.setItem(BACKUP_KEY, json);
+      localStorage.setItem(UPDATED_KEY, String(Date.now()));
     } catch {
       /* ignore quota errors */
     }
@@ -180,6 +205,135 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const mutate = useCallback((fn: (d: AppData) => AppData) => {
     setData((prev) => fn(structuredCloneSafe(prev)));
   }, []);
+
+  /* ---------------- Cloud sync (optional, Supabase) ---------------- */
+  const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
+
+  const [session, setSession] = useState<Session | null>(null);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const reconciled = useRef(false);
+  const syncedJson = useRef<string | null>(null);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const pushRemote = useCallback(async (userId: string, d: AppData) => {
+    if (!supabase) return;
+    setSyncStatus("syncing");
+    const nowIso = new Date().toISOString();
+    const { error } = await supabase.from(SYNC_TABLE).upsert({ user_id: userId, data: d, updated_at: nowIso });
+    if (error) {
+      setSyncStatus("error");
+      setSyncError(error.message);
+      return;
+    }
+    syncedJson.current = JSON.stringify(d);
+    try {
+      localStorage.setItem(UPDATED_KEY, String(Date.parse(nowIso)));
+    } catch {}
+    setSyncStatus("synced");
+    setSyncError(null);
+    setLastSyncedAt(Date.now());
+  }, []);
+
+  const reconcile = useCallback(
+    async (userId: string) => {
+      if (!supabase) return;
+      setSyncStatus("syncing");
+      const { data: row, error } = await supabase
+        .from(SYNC_TABLE)
+        .select("data, updated_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) {
+        setSyncStatus("error");
+        setSyncError(error.message);
+        return;
+      }
+      if (!row) {
+        await pushRemote(userId, dataRef.current);
+      } else {
+        const remoteMs = Date.parse(row.updated_at);
+        const localMs = Number(localStorage.getItem(UPDATED_KEY) || "0");
+        if (remoteMs >= localMs) {
+          const remote = normalizeData(row.data as AppData);
+          syncedJson.current = JSON.stringify(remote);
+          setData(remote);
+          try {
+            localStorage.setItem(UPDATED_KEY, String(remoteMs));
+          } catch {}
+          setSyncStatus("synced");
+          setSyncError(null);
+          setLastSyncedAt(Date.now());
+        } else {
+          await pushRemote(userId, dataRef.current);
+        }
+      }
+      reconciled.current = true;
+    },
+    [pushRemote],
+  );
+
+  // Track the auth session.
+  useEffect(() => {
+    if (!supabase) return;
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (active) setSession(data.session);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      reconciled.current = false;
+      syncedJson.current = null;
+      setSession(s);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, []);
+
+  // On login: pull-or-push once.
+  useEffect(() => {
+    if (!supabase || !ready || !session || reconciled.current) return;
+    reconcile(session.user.id);
+  }, [session, ready, reconcile]);
+
+  // Push local changes (debounced) once reconciled.
+  useEffect(() => {
+    if (!supabase || !session || !reconciled.current) return;
+    if (JSON.stringify(data) === syncedJson.current) return;
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => pushRemote(session.user.id, dataRef.current), 1500);
+    return () => {
+      if (pushTimer.current) clearTimeout(pushTimer.current);
+    };
+  }, [data, session, pushRemote]);
+
+  const signIn = useCallback(async (email: string, password: string) => {
+    if (!supabase) return { error: "not configured" };
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error ? { error: error.message } : {};
+  }, []);
+  const signUp = useCallback(async (email: string, password: string) => {
+    if (!supabase) return { error: "not configured" };
+    const { error } = await supabase.auth.signUp({ email, password });
+    return error ? { error: error.message } : {};
+  }, []);
+  const signOut = useCallback(async () => {
+    if (!supabase) return;
+    await supabase.auth.signOut();
+    reconciled.current = false;
+    syncedJson.current = null;
+    setSyncStatus("idle");
+    setLastSyncedAt(null);
+  }, []);
+  const syncNow = useCallback(async () => {
+    if (!supabase || !session) return;
+    await pushRemote(session.user.id, dataRef.current);
+  }, [session, pushRemote]);
 
   const api: StoreCtx = useMemo(
     () => ({
@@ -395,10 +549,34 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       removeExperiment: (id) =>
         mutate((d) => ({ ...d, experiments: d.experiments.filter((x) => x.id !== id) })),
 
+      sync: {
+        configured: isSyncConfigured,
+        email: session?.user?.email ?? null,
+        status: syncStatus,
+        error: syncError,
+        lastSyncedAt,
+        signIn,
+        signUp,
+        signOut,
+        syncNow,
+      },
+
       replaceAll: (d) => setData(d),
       resetAll: () => setData(emptyData()),
     }),
-    [data, ready, mutate],
+    [
+      data,
+      ready,
+      mutate,
+      session,
+      syncStatus,
+      syncError,
+      lastSyncedAt,
+      signIn,
+      signUp,
+      signOut,
+      syncNow,
+    ],
   );
 
   return <Ctx.Provider value={api}>{children}</Ctx.Provider>;

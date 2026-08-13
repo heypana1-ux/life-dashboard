@@ -289,6 +289,22 @@ const DE: Record<string, string> = {
   // --- Settings ---
   "Tune what you track and how your score is computed.":
     "Passe an, was du trackst und wie dein Score berechnet wird.",
+  "Account & sync": "Konto & Sync",
+  "Sign in to keep the same data on your phone and PC.":
+    "Melde dich an, um auf Handy und PC denselben Datenstand zu haben.",
+  "Same data on all your devices.": "Gleicher Datenstand auf allen Geräten.",
+  "Signed in as": "Angemeldet als",
+  "Sign in": "Anmelden",
+  "Sign out": "Abmelden",
+  "Create account": "Konto erstellen",
+  "Have an account? Sign in": "Schon ein Konto? Anmelden",
+  "Account created — you can sign in now.": "Konto erstellt — du kannst dich jetzt anmelden.",
+  Email: "E-Mail",
+  Password: "Passwort",
+  "Sync now": "Jetzt synchronisieren",
+  "Syncing…": "Synchronisiere…",
+  Synced: "Synchronisiert",
+  "Sync error": "Sync-Fehler",
   Appearance: "Darstellung",
   Accent: "Akzentfarbe",
   Calm: "Calm",

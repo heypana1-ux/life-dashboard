@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing, Download, Monitor, Moon, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
+import { BellRing, Download, Monitor, Moon, RefreshCw, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Accent, AreaKey, Language, Profile } from "@/lib/types";
 
@@ -62,6 +62,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
+
+      {/* Account & cloud sync (only when Supabase is configured) */}
+      <AccountCard />
 
       {/* Profile */}
       <ProfileCard />
@@ -257,6 +260,94 @@ function backupAgeLabel(iso: string, t: (k: string, v?: Record<string, string | 
   if (d <= 0) return t("today");
   if (d === 1) return t("1 day ago");
   return t("{n} days ago", { n: d });
+}
+
+function AccountCard() {
+  const { sync } = useStore();
+  const t = useT();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState<"in" | "up">("in");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  if (!sync.configured) return null;
+
+  async function submit() {
+    setBusy(true);
+    setErr(null);
+    const res = mode === "in" ? await sync.signIn(email, password) : await sync.signUp(email, password);
+    setBusy(false);
+    if (res.error) setErr(res.error);
+    else if (mode === "up") setErr(t("Account created — you can sign in now."));
+  }
+
+  return (
+    <Card>
+      <SectionTitle right={<RefreshCw size={16} className="text-[var(--text-faint)]" />}>
+        {t("Account & sync")}
+      </SectionTitle>
+
+      {sync.email ? (
+        <div className="space-y-3">
+          <p className="text-sm">
+            {t("Signed in as")} <span className="font-semibold">{sync.email}</span>
+          </p>
+          <p className="text-xs text-[var(--text-muted)]">
+            {sync.status === "syncing"
+              ? t("Syncing…")
+              : sync.status === "error"
+                ? `${t("Sync error")}: ${sync.error ?? ""}`
+                : sync.lastSyncedAt
+                  ? `${t("Synced")} · ${new Date(sync.lastSyncedAt).toLocaleTimeString()}`
+                  : t("Same data on all your devices.")}
+          </p>
+          <div className="flex gap-2">
+            <Button variant="soft" size="sm" onClick={() => sync.syncNow()}>
+              <RefreshCw size={15} /> {t("Sync now")}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => sync.signOut()}>
+              {t("Sign out")}
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-muted)]">
+            {t("Sign in to keep the same data on your phone and PC.")}
+          </p>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <input
+              className={inputCls}
+              type="email"
+              placeholder={t("Email")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              className={inputCls}
+              type="password"
+              placeholder={t("Password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+          </div>
+          {err && <p className="text-xs text-[var(--bad)]">{err}</p>}
+          <div className="flex items-center gap-2">
+            <Button size="sm" onClick={submit} disabled={busy || !email || !password}>
+              {mode === "in" ? t("Sign in") : t("Create account")}
+            </Button>
+            <button
+              onClick={() => { setMode(mode === "in" ? "up" : "in"); setErr(null); }}
+              className="text-xs font-medium text-[var(--accent)]"
+            >
+              {mode === "in" ? t("Create account") : t("Have an account? Sign in")}
+            </button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
 }
 
 function RemindersCard() {
