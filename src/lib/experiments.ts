@@ -9,7 +9,7 @@ import { addDays, sleepDurationMinutes, todayISO } from "./date";
   group before reporting anything.
 */
 
-const MIN_PER_GROUP = 4;
+const MIN_PER_GROUP = 3;
 
 export interface ExperimentResult {
   enough: boolean;
@@ -68,9 +68,13 @@ function metricValue(data: AppData, exp: Experiment, date: string): number | nul
 
 export function evaluateExperiment(data: AppData, exp: Experiment): ExperimentResult {
   const today = todayISO();
-  const endExclusive = addDays(exp.startDate, exp.days);
-  const cappedEnd = endExclusive > today ? today : addDays(endExclusive, -1);
-  const window = daysBetween(exp.startDate, cappedEnd);
+  // Retrospective analysis: look back over the last `days` days (ending today) and
+  // classify each day into "condition met" vs. not. This uses the history you already
+  // have, so an experiment produces a result immediately instead of only counting
+  // forward from its creation date.
+  const span = Math.max(1, exp.days);
+  const start = addDays(today, -(span - 1));
+  const window = daysBetween(start, today);
 
   const met: number[] = [];
   const not: number[] = [];

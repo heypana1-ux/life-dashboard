@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Experiment, ExperimentCondition, ExperimentMetric } from "@/lib/types";
 import { evaluateExperiment } from "@/lib/experiments";
-import { fmtDuration, todayISO } from "@/lib/date";
+import { fmtDuration } from "@/lib/date";
 import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
 const METRICS: ExperimentMetric[] = ["lifeScore", "productivity", "mood", "energy", "sleep"];
@@ -95,9 +95,7 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
       <div className="mt-2 flex flex-wrap gap-1.5">
         <Badge tone="accent">{metricName}</Badge>
         <Badge>{condName}</Badge>
-        <Badge>
-          {res.daysElapsed}/{exp.days} {t("days")}
-        </Badge>
+        <Badge>{t("last {n} days", { n: exp.days })}</Badge>
       </div>
 
       <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3">
@@ -137,6 +135,11 @@ function fmtMetric(m: ExperimentMetric, v: number): string {
   return String(v);
 }
 
+/** A readable fallback title when the user leaves the title blank. */
+function autoTitle(exp: Experiment, t: (k: string, v?: Record<string, string | number>) => string): string {
+  return `${t(METRIC_LABEL[exp.metric])} · ${conditionText(exp, t)}`;
+}
+
 function conditionText(exp: Experiment, t: (k: string, v?: Record<string, string | number>) => string): string {
   if (exp.condition === "bedtimeBefore") {
     const mins = exp.threshold ?? 24 * 60;
@@ -166,7 +169,6 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
     metric: "productivity",
     condition: "bedtimeBefore",
     threshold: 24 * 60,
-    startDate: todayISO(),
     days: 30,
     createdAt: "",
   };
@@ -201,8 +203,13 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
           </div>
         </div>
 
-        <Field label={t("Title")}>
-          <input className={inputCls} value={draft.title} onChange={(e) => set({ title: e.target.value })} autoFocus />
+        <Field label={t("Title")} hint={t("Optional — a name is generated if you leave this empty.")}>
+          <input
+            className={inputCls}
+            value={draft.title}
+            placeholder={t("e.g. Sleep vs. productivity")}
+            onChange={(e) => set({ title: e.target.value })}
+          />
         </Field>
         <Field label={t("Hypothesis")}>
           <textarea className={inputCls} rows={2} value={draft.hypothesis ?? ""} onChange={(e) => set({ hypothesis: e.target.value })} />
@@ -259,18 +266,21 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
           </Field>
         )}
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t("Start date")}>
-            <input type="date" className={inputCls} value={draft.startDate} onChange={(e) => set({ startDate: e.target.value })} />
-          </Field>
-          <Field label={t("Duration (days)")}>
-            <input type="number" min={7} className={inputCls} value={draft.days} onChange={(e) => set({ days: Number(e.target.value) })} />
-          </Field>
-        </div>
+        <Field label={t("Analyze the last N days")} hint={t("Looks back over your existing history, so results appear right away.")}>
+          <select
+            className={inputCls}
+            value={draft.days}
+            onChange={(e) => set({ days: Number(e.target.value) })}
+          >
+            {[14, 30, 60, 90, 180, 365].map((n) => (
+              <option key={n} value={n}>{t("last {n} days", { n })}</option>
+            ))}
+          </select>
+        </Field>
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
-          <Button onClick={() => draft.title.trim() && onSave(draft)} disabled={!draft.title.trim()}>{t("Create")}</Button>
+          <Button onClick={() => onSave({ ...draft, title: draft.title.trim() || autoTitle(draft, t) })}>{t("Create")}</Button>
         </div>
       </div>
     </Modal>

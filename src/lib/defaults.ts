@@ -63,6 +63,14 @@ export function defaultSettings(): Settings {
     demoDataLoaded: false,
     profile: {},
     reminders: { enabled: false, checkinTime: "21:00", habitReminders: true, firedToday: [] },
+    dayFlow: {
+      eveningEnabled: false,
+      eveningFrom: "20:00",
+      eveningTo: "03:00",
+      morningEnabled: false,
+      morningFrom: "04:00",
+      morningTo: "11:00",
+    },
   };
 }
 

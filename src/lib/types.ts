@@ -289,8 +289,9 @@ export interface Experiment {
   threshold?: number;
   /** For habitDone. */
   habitId?: string;
-  startDate: string; // YYYY-MM-DD
-  days: number; // observation window length
+  /** Legacy: forward-looking start date. Evaluation is now a retrospective lookback. */
+  startDate?: string; // YYYY-MM-DD
+  days: number; // lookback window length (last N days ending today)
   createdAt: string;
 }
 
@@ -307,6 +308,20 @@ export interface ReminderSettings {
 }
 
 export type Accent = "calm" | "aurora" | "mono";
+
+/** Optional guided day-flow overlays (evening wrap-up + morning sleep prompt). */
+export interface DayFlowSettings {
+  eveningEnabled: boolean;
+  /** Evening window "HH:MM" — may wrap past midnight (e.g. 20:00 → 03:00). */
+  eveningFrom: string;
+  eveningTo: string;
+  morningEnabled: boolean;
+  morningFrom: string;
+  morningTo: string;
+  /** YYYY-MM-DD the evening / morning flow was last shown (once-per-day debounce). */
+  lastEvening?: string;
+  lastMorning?: string;
+}
 
 export interface Settings {
   onboardingComplete: boolean;
@@ -325,6 +340,10 @@ export interface Settings {
   lastMorningShown?: string;
   /** Last data export/backup (ISO date). */
   lastBackupAt?: string;
+  /** Custom ordering of the sidebar/navigation by href. Missing items fall back to default order. */
+  navOrder?: string[];
+  /** Guided day-flow overlays. */
+  dayFlow?: DayFlowSettings;
 }
 
 export interface AppData {

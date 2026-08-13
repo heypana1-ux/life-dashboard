@@ -636,6 +636,67 @@ const DE: Record<string, string> = {
     "Dein 7-Tage-Life-Score ist {diff} Punkte niedriger als in der Vorwoche.",
   "Not enough data yet for reliable insights. Keep logging — patterns appear after a couple of weeks.":
     "Noch nicht genug Daten für verlässliche Insights. Trage weiter ein — Muster zeigen sich nach ein paar Wochen.",
+
+  // --- Experiments (retrospective) ---
+  "last {n} days": "letzte {n} Tage",
+  "Optional — a name is generated if you leave this empty.":
+    "Optional — wenn leer, wird automatisch ein Name erzeugt.",
+  "e.g. Sleep vs. productivity": "z. B. Schlaf vs. Produktivität",
+  "Analyze the last N days": "Die letzten N Tage auswerten",
+  "Looks back over your existing history, so results appear right away.":
+    "Wertet deine bestehende Historie aus, dadurch erscheinen Ergebnisse sofort.",
+
+  // --- Day-flow overlays ---
+  "End of day": "Tagesabschluss",
+  Skip: "Überspringen",
+  "Did you reach today's goals?": "Hast du deine heutigen Ziele erreicht?",
+  "Bad habits kept in check?": "Schlechte Gewohnheiten im Griff?",
+  "How was your day?": "Wie war dein Tag?",
+  "Your day at a glance": "Dein Tag auf einen Blick",
+  "Compared to yesterday": "Vergleich zum Vortag",
+  "One more journal note?": "Noch ein Tagebuch-Eintrag?",
+  "Tick what you actually did. Nothing here overwrites earlier entries.":
+    "Hak ab, was du wirklich gemacht hast. Nichts hier überschreibt frühere Einträge.",
+  "No score for yesterday to compare against yet.":
+    "Noch kein Score von gestern zum Vergleichen.",
+  Yesterday: "Gestern",
+  points: "Punkte",
+  "Right on par with yesterday.": "Genau auf dem Niveau von gestern.",
+  "A stronger day than yesterday — nice work.":
+    "Ein stärkerer Tag als gestern — stark gemacht.",
+  "A quieter day than yesterday. Tomorrow's a fresh start.":
+    "Ein ruhigerer Tag als gestern. Morgen ist ein neuer Anfang.",
+  "Optional — a sentence about today. Existing journal entries are untouched.":
+    "Optional — ein Satz zum heutigen Tag. Bestehende Tagebuch-Einträge bleiben unangetastet.",
+  "What's worth remembering about today?": "Was ist an heute erinnerungswürdig?",
+  "Log last night's sleep, {name}.": "Trag den Schlaf der letzten Nacht ein, {name}.",
+  "Log last night's sleep.": "Trag den Schlaf der letzten Nacht ein.",
+
+  // --- Settings: daily routines & feedback ---
+  "Daily routines": "Tägliche Abläufe",
+  "Short guided screens that pop up once a day to help you log quickly. They never remove anything you already entered.":
+    "Kurze geführte Screens, die einmal am Tag erscheinen, damit du schnell einträgst. Sie löschen nie etwas, das du schon eingetragen hast.",
+  "End-of-day wrap-up": "Tagesabschluss",
+  "Goals, check-in, day recap & journal.": "Ziele, Check-in, Tagesrückblick & Tagebuch.",
+  From: "Von",
+  Until: "Bis",
+  "Good-morning sleep prompt": "Guten-Morgen-Schlaf-Abfrage",
+  "Just logs last night's sleep.": "Trägt nur den Schlaf der letzten Nacht ein.",
+  "Bugs & feedback": "Fehler & Feedback",
+  "Hit a bug or have an idea? Send it straight to the developer — this opens your email app.":
+    "Fehler entdeckt oder eine Idee? Schick es direkt an den Entwickler — das öffnet deine E-Mail-App.",
+  "Idea / feedback": "Idee / Feedback",
+  "Bug report": "Fehlerbericht",
+  "What happened? What did you expect?": "Was ist passiert? Was hast du erwartet?",
+  "What would make this better?": "Was würde es besser machen?",
+  "Send email": "E-Mail senden",
+  "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
+
+  // --- Onboarding account step ---
+  "Sync across your devices": "Über deine Geräte synchronisieren",
+  "Create an account to keep the same data on your phone and PC. Optional — you can also do this later in Settings.":
+    "Erstelle ein Konto, um dieselben Daten auf Handy und PC zu haben. Optional — du kannst das auch später in den Einstellungen machen.",
+  "Skip for now": "Erstmal überspringen",
 };
 
 const DICTS: Record<Language, Record<string, string>> = { en: {}, de: DE };

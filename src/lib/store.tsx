@@ -75,6 +75,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
       ...parsed.settings,
       profile: { ...base.settings.profile, ...parsed.settings?.profile },
       reminders: { ...base.settings.reminders, ...parsed.settings?.reminders },
+      dayFlow: { ...base.settings.dayFlow!, ...parsed.settings?.dayFlow },
     },
     habits: parsed.habits ?? [],
     habitLogs: parsed.habitLogs ?? [],
@@ -219,6 +220,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const reconciled = useRef(false);
   const syncedJson = useRef<string | null>(null);
   const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Set right before an explicit sign-in: on a fresh device the account's cloud
+  // data must win over the just-seeded local data, regardless of timestamps.
+  const forceRemote = useRef(false);
 
   const pushRemote = useCallback(async (userId: string, d: AppData) => {
     if (!supabase) return;
@@ -258,7 +262,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       } else {
         const remoteMs = Date.parse(row.updated_at);
         const localMs = Number(localStorage.getItem(UPDATED_KEY) || "0");
-        if (remoteMs >= localMs) {
+        if (forceRemote.current || remoteMs >= localMs) {
           const remote = normalizeData(row.data as AppData);
           syncedJson.current = JSON.stringify(remote);
           setData(remote);
@@ -272,6 +276,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           await pushRemote(userId, dataRef.current);
         }
       }
+      forceRemote.current = false;
       reconciled.current = true;
     },
     [pushRemote],
@@ -314,7 +319,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) return { error: "not configured" };
+    // Signing into an existing account means "bring my cloud data here" — let the
+    // remote copy win this first reconcile even if local was just seeded.
+    forceRemote.current = true;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) forceRemote.current = false;
     return error ? { error: error.message } : {};
   }, []);
   const signUp = useCallback(async (email: string, password: string) => {
@@ -327,6 +336,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
     reconciled.current = false;
     syncedJson.current = null;
+    forceRemote.current = false;
     setSyncStatus("idle");
     setLastSyncedAt(null);
   }, []);

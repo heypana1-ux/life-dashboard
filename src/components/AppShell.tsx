@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import clsx from "clsx";
 import {
   BarChart3,
@@ -13,6 +13,7 @@ import {
   FileText,
   FlaskConical,
   Gauge,
+  GripVertical,
   KanbanSquare,
   ListChecks,
   type LucideIcon,
@@ -31,6 +32,7 @@ import { useT } from "@/lib/i18n";
 import { Onboarding } from "@/components/Onboarding";
 import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
+import { DayFlow } from "@/components/DayFlow";
 
 interface NavItem {
   href: string;
@@ -62,11 +64,42 @@ const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
   (href) => NAV.find((n) => n.href === href)!,
 );
 
+/** Apply the user's saved sidebar order, keeping any new items at the end. */
+function orderNav(order?: string[]): NavItem[] {
+  if (!order?.length) return NAV;
+  const byHref = new Map(NAV.map((n) => [n.href, n] as const));
+  const out: NavItem[] = [];
+  for (const href of order) {
+    const n = byHref.get(href);
+    if (n) {
+      out.push(n);
+      byHref.delete(href);
+    }
+  }
+  for (const n of NAV) if (byHref.has(n.href)) out.push(n);
+  return out;
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
-  const { data, ready } = useStore();
+  const { data, ready, updateSettings } = useStore();
   const pathname = usePathname();
   const t = useT();
   const [moreOpen, setMoreOpen] = useState(false);
+  const [dragHref, setDragHref] = useState<string | null>(null);
+  const [overHref, setOverHref] = useState<string | null>(null);
+
+  const orderedNav = useMemo(() => orderNav(data.settings.navOrder), [data.settings.navOrder]);
+
+  function reorder(targetHref: string) {
+    if (!dragHref || dragHref === targetHref) return;
+    const hrefs = orderedNav.map((n) => n.href);
+    const from = hrefs.indexOf(dragHref);
+    const to = hrefs.indexOf(targetHref);
+    if (from < 0 || to < 0) return;
+    hrefs.splice(from, 1);
+    hrefs.splice(to, 0, dragHref);
+    updateSettings({ navOrder: hrefs });
+  }
 
   if (!ready) {
     return (
@@ -91,12 +124,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-[15px] font-semibold tracking-[-0.02em]">{t("Life Dashboard")}</span>
         </div>
         <nav className="-mx-1 flex flex-1 flex-col gap-[2px] overflow-y-auto px-1 hide-scrollbar">
-          {NAV.map((item) => (
+          {orderedNav.map((item) => (
             <NavLink
               key={item.href}
               item={item}
               label={t(item.label)}
               active={isActive(pathname, item.href)}
+              dragging={dragHref === item.href}
+              isOver={overHref === item.href && dragHref !== null && dragHref !== item.href}
+              onDragStart={() => setDragHref(item.href)}
+              onDragEnter={() => setOverHref(item.href)}
+              onDrop={() => {
+                reorder(item.href);
+                setDragHref(null);
+                setOverHref(null);
+              }}
+              onDragEnd={() => {
+                setDragHref(null);
+                setOverHref(null);
+              }}
             />
           ))}
         </nav>
@@ -110,6 +156,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1">
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
           <Reminders />
+          <DayFlow />
           <div className="animate-in">
             <BackupReminder />
             {children}
@@ -180,20 +227,60 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
-function NavLink({ item, label, active }: { item: NavItem; label: string; active: boolean }) {
+function NavLink({
+  item,
+  label,
+  active,
+  dragging,
+  isOver,
+  onDragStart,
+  onDragEnter,
+  onDrop,
+  onDragEnd,
+}: {
+  item: NavItem;
+  label: string;
+  active: boolean;
+  dragging?: boolean;
+  isOver?: boolean;
+  onDragStart?: () => void;
+  onDragEnter?: () => void;
+  onDrop?: () => void;
+  onDragEnd?: () => void;
+}) {
   const Icon = item.icon;
   return (
     <Link
       href={item.href}
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = "move";
+        // Some browsers need data set for the drag to start.
+        e.dataTransfer.setData("text/plain", item.href);
+        onDragStart?.();
+      }}
+      onDragEnter={onDragEnter}
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => {
+        e.preventDefault();
+        onDrop?.();
+      }}
+      onDragEnd={onDragEnd}
       className={clsx(
-        "flex items-center gap-[11px] rounded-[10px] px-[11px] py-[9px] text-[13.5px] transition",
+        "group flex items-center gap-[11px] rounded-[10px] px-[11px] py-[9px] text-[13.5px] transition",
+        dragging && "opacity-40",
+        isOver && "ring-2 ring-inset ring-[var(--accent)]",
         active
           ? "bg-[var(--accent-soft)] font-semibold text-[var(--accent)]"
           : "font-medium text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
       )}
     >
       <Icon size={18} />
-      {label}
+      <span className="flex-1">{label}</span>
+      <GripVertical
+        size={14}
+        className="shrink-0 cursor-grab text-[var(--text-faint)] opacity-0 transition group-hover:opacity-100"
+      />
     </Link>
   );
 }

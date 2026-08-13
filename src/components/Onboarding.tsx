@@ -34,10 +34,11 @@ const SELECTABLE: AreaKey[] = [
 ];
 
 export function Onboarding() {
-  const { data, replaceAll, updateSettings } = useStore();
+  const { data, replaceAll, updateSettings, sync } = useStore();
   const t = useT();
   const lang = data.settings.language;
   const [step, setStep] = useState(0);
+  const [demoChoice, setDemoChoice] = useState<boolean | null>(null);
   const [selected, setSelected] = useState<Set<AreaKey>>(
     new Set(["sport", "sleep", "habits", "reflection", "productivity"]),
   );
@@ -97,6 +98,16 @@ export function Onboarding() {
       next = { ...next, habits };
     }
     replaceAll(next);
+  }
+
+  // From the data step: if cloud sync is available, offer account setup before finishing.
+  function chooseData(withDemo: boolean) {
+    if (sync.configured) {
+      setDemoChoice(withDemo);
+      setStep(4);
+    } else {
+      finish(withDemo);
+    }
   }
 
   return (
@@ -284,7 +295,7 @@ export function Onboarding() {
           </p>
           <div className="mt-5 grid gap-3">
             <button
-              onClick={() => finish(true)}
+              onClick={() => chooseData(true)}
               className="flex items-center gap-3 rounded-xl border border-[var(--accent)] bg-[var(--accent-soft)] p-4 text-left"
             >
               <Moon className="text-[var(--accent)]" size={20} />
@@ -296,7 +307,7 @@ export function Onboarding() {
               </span>
             </button>
             <button
-              onClick={() => finish(false)}
+              onClick={() => chooseData(false)}
               className="flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4 text-left hover:border-[var(--text-faint)]"
             >
               <Check className="text-[var(--text-muted)]" size={20} />
@@ -316,9 +327,102 @@ export function Onboarding() {
         </Card>
       )}
 
+      {step === 4 && (
+        <AccountStep
+          onBack={() => setStep(3)}
+          onSkip={() => finish(demoChoice ?? false)}
+          onDone={() => finish(demoChoice ?? false)}
+          sync={sync}
+        />
+      )}
+
       <p className="mt-6 text-center text-xs text-[var(--text-faint)]">
         {t("Everything is stored locally in your browser. Nothing is sent anywhere.")}
       </p>
     </div>
+  );
+}
+
+function AccountStep({
+  onBack,
+  onSkip,
+  onDone,
+  sync,
+}: {
+  onBack: () => void;
+  onSkip: () => void;
+  onDone: () => void;
+  sync: ReturnType<typeof useStore>["sync"];
+}) {
+  const t = useT();
+  const [mode, setMode] = useState<"up" | "in">("up");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [err, setErr] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  async function submit() {
+    if (!email || !password) return;
+    setBusy(true);
+    setErr(null);
+    const res = mode === "in" ? await sync.signIn(email, password) : await sync.signUp(email, password);
+    setBusy(false);
+    if (res.error) {
+      setErr(res.error);
+      return;
+    }
+    // Signing in pulls existing cloud data; creating pushes this device's data up.
+    onDone();
+  }
+
+  return (
+    <Card className="animate-in">
+      <h1 className="text-2xl font-semibold tracking-tight">{t("Sync across your devices")}</h1>
+      <p className="mt-1 text-sm text-[var(--text-muted)]">
+        {t("Create an account to keep the same data on your phone and PC. Optional — you can also do this later in Settings.")}
+      </p>
+
+      <div className="mt-5 flex gap-1 rounded-xl bg-[var(--surface-2)] p-1">
+        {(["up", "in"] as const).map((m) => (
+          <button
+            key={m}
+            onClick={() => {
+              setMode(m);
+              setErr(null);
+            }}
+            className={clsx(
+              "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition",
+              mode === m ? "bg-[var(--surface)] text-[var(--text)] shadow-sm" : "text-[var(--text-muted)]",
+            )}
+          >
+            {m === "up" ? t("Create account") : t("Sign in")}
+          </button>
+        ))}
+      </div>
+
+      <div className="mt-4 space-y-2">
+        <Field label={t("Email")}>
+          <input className={inputCls} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        </Field>
+        <Field label={t("Password")}>
+          <input className={inputCls} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+        </Field>
+        {err && <p className="text-xs text-[var(--bad)]">{err}</p>}
+      </div>
+
+      <div className="mt-5 flex items-center justify-between gap-2">
+        <Button variant="ghost" onClick={onBack}>
+          {t("Back")}
+        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" onClick={onSkip}>
+            {t("Skip for now")}
+          </Button>
+          <Button onClick={submit} disabled={busy || !email || !password}>
+            {mode === "up" ? t("Create account") : t("Sign in")}
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }

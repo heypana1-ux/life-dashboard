@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing, Download, Monitor, Moon, RefreshCw, RotateCcw, Sun, Trash2, Upload, User } from "lucide-react";
+import { BellRing, Download, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Accent, AreaKey, Language, Profile } from "@/lib/types";
 
@@ -193,6 +193,9 @@ export default function SettingsPage() {
       {/* Reminders */}
       <RemindersCard />
 
+      {/* Guided day-flow overlays */}
+      <DayFlowCard />
+
       {/* Data */}
       <Card>
         <SectionTitle
@@ -242,10 +245,131 @@ export default function SettingsPage() {
         </div>
       </Card>
 
+      {/* Bugs & feedback */}
+      <FeedbackCard />
+
       <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
     </div>
+  );
+}
+
+function DayFlowCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const df = data.settings.dayFlow ?? {
+    eveningEnabled: false,
+    eveningFrom: "20:00",
+    eveningTo: "03:00",
+    morningEnabled: false,
+    morningFrom: "04:00",
+    morningTo: "11:00",
+  };
+  const set = (patch: Partial<typeof df>) => updateSettings({ dayFlow: { ...df, ...patch } });
+
+  return (
+    <Card>
+      <SectionTitle>{t("Daily routines")}</SectionTitle>
+      <p className="mb-4 text-sm text-[var(--text-muted)]">
+        {t("Short guided screens that pop up once a day to help you log quickly. They never remove anything you already entered.")}
+      </p>
+
+      <div className="space-y-4">
+        {/* Evening */}
+        <div className="rounded-xl border border-[var(--border)] p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">{t("End-of-day wrap-up")}</div>
+              <div className="text-xs text-[var(--text-muted)]">{t("Goals, check-in, day recap & journal.")}</div>
+            </div>
+            <Toggle checked={df.eveningEnabled} onChange={(v) => set({ eveningEnabled: v })} />
+          </div>
+          {df.eveningEnabled && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Field label={t("From")}>
+                <input type="time" className={inputCls} value={df.eveningFrom} onChange={(e) => set({ eveningFrom: e.target.value })} />
+              </Field>
+              <Field label={t("Until")}>
+                <input type="time" className={inputCls} value={df.eveningTo} onChange={(e) => set({ eveningTo: e.target.value })} />
+              </Field>
+            </div>
+          )}
+        </div>
+
+        {/* Morning */}
+        <div className="rounded-xl border border-[var(--border)] p-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-sm font-medium">{t("Good-morning sleep prompt")}</div>
+              <div className="text-xs text-[var(--text-muted)]">{t("Just logs last night's sleep.")}</div>
+            </div>
+            <Toggle checked={df.morningEnabled} onChange={(v) => set({ morningEnabled: v })} />
+          </div>
+          {df.morningEnabled && (
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Field label={t("From")}>
+                <input type="time" className={inputCls} value={df.morningFrom} onChange={(e) => set({ morningFrom: e.target.value })} />
+              </Field>
+              <Field label={t("Until")}>
+                <input type="time" className={inputCls} value={df.morningTo} onChange={(e) => set({ morningTo: e.target.value })} />
+              </Field>
+            </div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+const FEEDBACK_EMAIL = "heypana1@gmail.com";
+
+function FeedbackCard() {
+  const t = useT();
+  const [text, setText] = useState("");
+  const [kind, setKind] = useState<"bug" | "idea">("idea");
+
+  function send() {
+    const subjectTag = kind === "bug" ? "Bug" : "Feedback";
+    const subject = `Life Dashboard — ${subjectTag}`;
+    const body = `${text}\n\n—\n${t("Sent from Life Dashboard")}`;
+    window.location.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  return (
+    <Card>
+      <SectionTitle>{t("Bugs & feedback")}</SectionTitle>
+      <p className="mb-3 text-sm text-[var(--text-muted)]">
+        {t("Hit a bug or have an idea? Send it straight to the developer — this opens your email app.")}
+      </p>
+      <div className="mb-3 flex gap-2">
+        {(["idea", "bug"] as const).map((k) => (
+          <button
+            key={k}
+            onClick={() => setKind(k)}
+            className={clsx(
+              "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
+              kind === k ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
+            )}
+          >
+            {k === "idea" ? t("Idea / feedback") : t("Bug report")}
+          </button>
+        ))}
+      </div>
+      <textarea
+        className={inputCls}
+        rows={4}
+        placeholder={kind === "bug" ? t("What happened? What did you expect?") : t("What would make this better?")}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="mt-3 flex items-center gap-3">
+        <Button onClick={send} disabled={!text.trim()}>
+          <Send size={16} /> {t("Send email")}
+        </Button>
+        <span className="text-xs text-[var(--text-faint)]">{FEEDBACK_EMAIL}</span>
+      </div>
+    </Card>
   );
 }
 
