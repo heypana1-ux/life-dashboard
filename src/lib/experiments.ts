@@ -47,6 +47,9 @@ function conditionMet(data: AppData, exp: Experiment, date: string): boolean | n
     case "habitDone":
       if (!exp.habitId) return null;
       return data.habitLogs.some((l) => l.date === date && l.done && l.habitId === exp.habitId);
+    case "manual":
+      // The user marks the days the condition was true; unmarked days count as "not met".
+      return (exp.manualDates ?? []).includes(date);
     default:
       return null;
   }

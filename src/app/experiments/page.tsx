@@ -6,11 +6,11 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Experiment, ExperimentCondition, ExperimentMetric } from "@/lib/types";
 import { evaluateExperiment } from "@/lib/experiments";
-import { fmtDuration } from "@/lib/date";
+import { addDays, fmtDuration, todayISO, fmtShort } from "@/lib/date";
 import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
 const METRICS: ExperimentMetric[] = ["lifeScore", "productivity", "mood", "energy", "sleep"];
-const CONDITIONS: ExperimentCondition[] = ["bedtimeBefore", "sleepAtLeast", "trained", "habitDone"];
+const CONDITIONS: ExperimentCondition[] = ["manual", "bedtimeBefore", "sleepAtLeast", "trained", "habitDone"];
 
 const METRIC_LABEL: Record<ExperimentMetric, string> = {
   lifeScore: "Life Score",
@@ -20,6 +20,7 @@ const METRIC_LABEL: Record<ExperimentMetric, string> = {
   sleep: "Sleep",
 };
 const CONDITION_LABEL: Record<ExperimentCondition, string> = {
+  manual: "My own condition",
   bedtimeBefore: "Bedtime before…",
   sleepAtLeast: "Sleep at least…",
   trained: "On days I train",
@@ -123,6 +124,9 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
           </>
         )}
       </div>
+
+      {exp.condition === "manual" && <ManualMarker exp={exp} />}
+
       <p className="mt-2 text-[11px] text-[var(--text-faint)]">
         {t("Observation from your own data — a correlation, not causation.")}
       </p>
@@ -133,6 +137,58 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
 function fmtMetric(m: ExperimentMetric, v: number): string {
   if (m === "sleep") return fmtDuration(Math.round(v));
   return String(v);
+}
+
+/** For a manual/custom condition: mark the days it was true (backfill the last 3 weeks). */
+function ManualMarker({ exp }: { exp: Experiment }) {
+  const { saveExperiment } = useStore();
+  const t = useT();
+  const today = todayISO();
+  const marked = new Set(exp.manualDates ?? []);
+  const days = Array.from({ length: 21 }, (_, i) => addDays(today, -i)).reverse();
+
+  function toggle(date: string) {
+    const next = new Set(marked);
+    if (next.has(date)) next.delete(date);
+    else next.add(date);
+    saveExperiment({ ...exp, manualDates: [...next].sort() });
+  }
+
+  const label = exp.conditionLabel?.trim() || t("condition");
+  return (
+    <div className="mt-3 rounded-xl border border-[var(--border)] p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-xs font-medium text-[var(--text-muted)]">
+          {t("Days “{label}” was true", { label })}
+        </span>
+        <button
+          onClick={() => toggle(today)}
+          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
+            marked.has(today) ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+          }`}
+        >
+          {marked.has(today) ? t("Today ✓") : t("Mark today")}
+        </button>
+      </div>
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {days.map((d) => {
+          const on = marked.has(d);
+          return (
+            <button
+              key={d}
+              onClick={() => toggle(d)}
+              title={fmtShort(d)}
+              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold transition ${
+                on ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-faint)] hover:bg-[var(--surface-3)]"
+              }`}
+            >
+              {Number(d.slice(8, 10))}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 /** A readable fallback title when the user leaves the title blank. */
@@ -149,6 +205,7 @@ function conditionText(exp: Experiment, t: (k: string, v?: Record<string, string
   }
   if (exp.condition === "sleepAtLeast") return t("Sleep ≥ {dur}", { dur: fmtDuration(exp.threshold ?? 450) });
   if (exp.condition === "trained") return t("On days I train");
+  if (exp.condition === "manual") return exp.conditionLabel?.trim() || t("My own condition");
   return t("A specific habit is done");
 }
 
@@ -167,7 +224,8 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
     title: "",
     hypothesis: "",
     metric: "productivity",
-    condition: "bedtimeBefore",
+    condition: "manual",
+    conditionLabel: "",
     threshold: 24 * 60,
     days: 30,
     createdAt: "",
@@ -186,23 +244,6 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
   return (
     <Modal open={open} onClose={onClose} title={t("New experiment")} wide>
       <div className="space-y-4">
-        <div>
-          <div className="mb-1.5 text-sm font-medium text-[var(--text-muted)]">{t("Start from a template")}</div>
-          <div className="flex flex-wrap gap-1.5">
-            {TEMPLATES.map((tpl) => (
-              <button
-                key={tpl.title}
-                onClick={() =>
-                  set({ title: tpl.title, hypothesis: tpl.hypothesis, metric: tpl.metric, condition: tpl.condition, threshold: tpl.threshold })
-                }
-                className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
-              >
-                {tpl.title}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <Field label={t("Title")} hint={t("Optional — a name is generated if you leave this empty.")}>
           <input
             className={inputCls}
@@ -232,6 +273,19 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
           </Field>
         </div>
 
+        {draft.condition === "manual" && (
+          <Field
+            label={t("Name your condition")}
+            hint={t("You mark the days it was true — then compare your metric on those days vs. the rest.")}
+          >
+            <input
+              className={inputCls}
+              value={draft.conditionLabel ?? ""}
+              placeholder={t("e.g. Nose healed · Meditated · No coffee")}
+              onChange={(e) => set({ conditionLabel: e.target.value })}
+            />
+          </Field>
+        )}
         {draft.condition === "bedtimeBefore" && (
           <Field label={t("Bedtime before")}>
             <input
@@ -277,6 +331,25 @@ function ExperimentModal({ open, onClose, onSave }: { open: boolean; onClose: ()
             ))}
           </select>
         </Field>
+
+        <details className="rounded-xl border border-[var(--border)] px-3 py-2">
+          <summary className="cursor-pointer text-sm font-medium text-[var(--text-muted)]">
+            {t("Or start from a template")}
+          </summary>
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {TEMPLATES.map((tpl) => (
+              <button
+                key={tpl.title}
+                onClick={() =>
+                  set({ title: tpl.title, hypothesis: tpl.hypothesis, metric: tpl.metric, condition: tpl.condition, threshold: tpl.threshold })
+                }
+                className="rounded-full bg-[var(--surface-2)] px-3 py-1 text-xs font-medium text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+              >
+                {t(tpl.title)}
+              </button>
+            ))}
+          </div>
+        </details>
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>

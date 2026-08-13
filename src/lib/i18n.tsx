@@ -692,6 +692,18 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Custom experiments ---
+  "My own condition": "Eigene Bedingung",
+  "Or start from a template": "Oder mit einer Vorlage starten",
+  "Name your condition": "Benenne deine Bedingung",
+  "You mark the days it was true — then compare your metric on those days vs. the rest.":
+    "Du markierst die Tage, an denen sie zutraf — dann wird deine Metrik an diesen Tagen mit den übrigen verglichen.",
+  "e.g. Nose healed · Meditated · No coffee": "z. B. Nase geheilt · Meditiert · Kein Kaffee",
+  "Days “{label}” was true": "Tage, an denen „{label}“ zutraf",
+  "Today ✓": "Heute ✓",
+  "Mark today": "Heute markieren",
+  condition: "Bedingung",
+
   // --- Onboarding account step ---
   "Sync across your devices": "Über deine Geräte synchronisieren",
   "Create an account to keep the same data on your phone and PC. Optional — you can also do this later in Settings.":

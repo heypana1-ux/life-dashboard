@@ -277,7 +277,8 @@ export type ExperimentCondition =
   | "bedtimeBefore" // bedtime earlier than `threshold` (minutes from midnight, evening)
   | "sleepAtLeast" // sleep duration >= threshold minutes
   | "trained" // any workout / sport-habit that day
-  | "habitDone"; // a specific habit (habitId) was done
+  | "habitDone" // a specific habit (habitId) was done
+  | "manual"; // a free, user-defined condition the user marks per day
 
 export interface Experiment {
   id: string;
@@ -289,6 +290,10 @@ export interface Experiment {
   threshold?: number;
   /** For habitDone. */
   habitId?: string;
+  /** For manual conditions: the user's own condition name, e.g. "Nose healed". */
+  conditionLabel?: string;
+  /** For manual conditions: the dates the user marked the condition as true. */
+  manualDates?: string[];
   /** Legacy: forward-looking start date. Evaluation is now a retrospective lookback. */
   startDate?: string; // YYYY-MM-DD
   days: number; // lookback window length (last N days ending today)

@@ -252,7 +252,8 @@ export function Modal({
     >
       <div
         className={clsx(
-          "card max-h-[92vh] w-full overflow-y-auto rounded-b-none rounded-t-2xl sm:rounded-2xl",
+          // `dvh` shrinks with the on-screen keyboard, so text inputs in the sheet stay reachable on mobile.
+          "card max-h-[85dvh] w-full overflow-y-auto overscroll-contain rounded-b-none rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-2xl sm:pb-6",
           wide ? "sm:max-w-2xl" : "sm:max-w-md",
         )}
         onClick={(e) => e.stopPropagation()}
