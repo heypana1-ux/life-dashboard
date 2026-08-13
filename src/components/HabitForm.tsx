@@ -18,6 +18,7 @@ const AREAS: AreaKey[] = [
 ];
 
 type Draft = Omit<Habit, "id" | "createdAt" | "archived">;
+type TargetMode = "none" | "times" | "minutes" | "value";
 
 function blank(): Draft {
   return {
@@ -56,6 +57,21 @@ export function HabitForm({
   const set = (patch: Partial<Draft>) => setDraft((d) => ({ ...d, ...patch }));
   const setSchedule = (patch: Partial<Schedule>) =>
     setDraft((d) => ({ ...d, schedule: { ...d.schedule, ...patch } }));
+
+  const targetMode: TargetMode = draft.timesPerDay
+    ? "times"
+    : draft.targetMinutes
+      ? "minutes"
+      : draft.targetValue
+        ? "value"
+        : "none";
+  function setTargetMode(m: TargetMode) {
+    const base = { targetMinutes: undefined, targetValue: undefined, unit: undefined, timesPerDay: undefined };
+    if (m === "times") set({ ...base, timesPerDay: draft.timesPerDay ?? 2 });
+    else if (m === "minutes") set({ ...base, targetMinutes: draft.targetMinutes ?? 30 });
+    else if (m === "value") set({ ...base, targetValue: draft.targetValue ?? 100, unit: draft.unit ?? "" });
+    else set(base);
+  }
 
   function submit() {
     if (!draft.name.trim()) return;
@@ -166,39 +182,69 @@ export function HabitForm({
           )}
         </Field>
 
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t("Target minutes (optional)")}>
-            <input
-              type="number"
-              min={0}
-              className={inputCls}
-              value={draft.targetMinutes ?? ""}
-              onChange={(e) =>
-                set({ targetMinutes: e.target.value ? Number(e.target.value) : undefined })
-              }
-            />
-          </Field>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label={t("Target value")}>
+        {draft.kind === "build" && (
+          <Field label={t("Daily target (optional)")}>
+            <div className="mb-2 flex flex-wrap gap-2">
+              {(
+                [
+                  ["none", "No target"],
+                  ["times", "Times per day"],
+                  ["minutes", "Minutes"],
+                  ["value", "Custom value"],
+                ] as [TargetMode, string][]
+              ).map(([m, label]) => (
+                <Chip key={m} active={targetMode === m} onClick={() => setTargetMode(m)}>
+                  {t(label)}
+                </Chip>
+              ))}
+            </div>
+            {targetMode === "times" && (
+              <div>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={20}
+                  className={inputCls}
+                  value={draft.timesPerDay ?? 2}
+                  onChange={(e) => set({ timesPerDay: Math.max(1, Number(e.target.value) || 1) })}
+                />
+                <p className="mt-1 text-xs text-[var(--text-faint)]">
+                  {t("Fewer than the target counts partially; more gives a small bonus.")}
+                </p>
+              </div>
+            )}
+            {targetMode === "minutes" && (
               <input
                 type="number"
+                inputMode="numeric"
+                min={0}
                 className={inputCls}
-                value={draft.targetValue ?? ""}
-                onChange={(e) =>
-                  set({ targetValue: e.target.value ? Number(e.target.value) : undefined })
-                }
+                placeholder={t("e.g. 30")}
+                value={draft.targetMinutes ?? ""}
+                onChange={(e) => set({ targetMinutes: e.target.value ? Number(e.target.value) : undefined })}
               />
-            </Field>
-            <Field label={t("Unit")}>
-              <input
-                className={inputCls}
-                placeholder="steps"
-                value={draft.unit ?? ""}
-                onChange={(e) => set({ unit: e.target.value || undefined })}
-              />
-            </Field>
-          </div>
-        </div>
+            )}
+            {targetMode === "value" && (
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={inputCls}
+                  placeholder={t("Target value")}
+                  value={draft.targetValue ?? ""}
+                  onChange={(e) => set({ targetValue: e.target.value ? Number(e.target.value) : undefined })}
+                />
+                <input
+                  className={inputCls}
+                  placeholder="steps"
+                  value={draft.unit ?? ""}
+                  onChange={(e) => set({ unit: e.target.value || undefined })}
+                />
+              </div>
+            )}
+          </Field>
+        )}
 
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Priority")}>

@@ -187,6 +187,7 @@ function HabitCard({
         </div>
         <div className="mt-0.5 text-[12.5px] text-[var(--text-muted)]">
           {scheduleLabel} · {rate}% {t("adherence")}
+          {h.timesPerDay ? ` · ${h.timesPerDay}× ${t("per day")}` : ""}
           {h.targetMinutes ? ` · ${fmtDuration(h.targetMinutes)}` : ""}
         </div>
       </div>

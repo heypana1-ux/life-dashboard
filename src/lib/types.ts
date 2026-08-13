@@ -57,6 +57,9 @@ export interface Habit {
   /** Optional numeric target (e.g. 10000 steps) with a unit label. */
   targetValue?: number;
   unit?: string;
+  /** Optional target number of times to do this per day (graduated credit: less than
+   *  target → partial, more than target → a small capped bonus). */
+  timesPerDay?: number;
   priority: Priority;
   /** 1..5 subjective difficulty. */
   difficulty: number;
@@ -75,6 +78,8 @@ export interface HabitLog {
   done: boolean;
   minutes?: number;
   value?: number;
+  /** For habits with a per-day target: how many times it was done today. */
+  count?: number;
   notes?: string;
 }
 

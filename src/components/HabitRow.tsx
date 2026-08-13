@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Check, Minus, X } from "lucide-react";
+import { Check, Minus, Plus, X } from "lucide-react";
 import { Habit, HabitLog } from "@/lib/types";
 import { HabitToday } from "@/lib/habitView";
 import { useStore } from "@/lib/store";
@@ -31,9 +31,21 @@ export function HabitRow({
   const t = useT();
   const { habit, log } = item;
   const isReduce = habit.kind === "reduce";
-  const marked = !!log?.done;
+  const isCount = !isReduce && !!habit.timesPerDay;
+  const countTarget = habit.timesPerDay ?? 0;
+  const count = log?.count ?? 0;
+  const marked = isCount ? count > 0 : !!log?.done;
   // For build: marked = good (green). For reduce: marked = slip (red).
   const success = isReduce ? !marked : marked;
+
+  function setCount(n: number) {
+    const c = Math.max(0, n);
+    setHabitLog({ ...log, habitId: habit.id, date, count: c, done: c > 0 });
+  }
+  function onCircle() {
+    if (isCount) setCount(marked ? 0 : countTarget);
+    else toggleHabit(habit.id, date);
+  }
 
   const amountKind = habit.targetMinutes ? "minutes" : habit.targetValue ? "value" : null;
   const canEnterAmount = showAmount && !isReduce && amountKind !== null;
@@ -44,7 +56,7 @@ export function HabitRow({
   return (
     <div className="flex items-center gap-3 rounded-xl px-1 py-2">
       <button
-        onClick={() => toggleHabit(habit.id, date)}
+        onClick={onCircle}
         aria-label={isReduce ? "Record occurrence" : "Mark done"}
         className={clsx(
           "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition",
@@ -76,6 +88,7 @@ export function HabitRow({
         </div>
         <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-faint)]">
           <span>{t(areaLabel(habit.area))}</span>
+          {isCount && <span>· {countTarget}× {t("per day")}</span>}
           {habit.targetMinutes && <span>· {fmtDuration(habit.targetMinutes)}</span>}
           {habit.targetValue && (
             <span>
@@ -89,6 +102,34 @@ export function HabitRow({
           )}
         </div>
       </div>
+
+      {isCount && showAmount && (
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setCount(count - 1)}
+            disabled={count <= 0}
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] enabled:hover:bg-[var(--surface-3)] disabled:opacity-40"
+            aria-label={t("Less")}
+          >
+            <Minus size={14} />
+          </button>
+          <span
+            className={clsx(
+              "num min-w-[42px] text-center text-sm font-semibold tabular-nums",
+              count >= countTarget && count > 0 ? "text-[var(--good)]" : "text-[var(--text)]",
+            )}
+          >
+            {count}/{countTarget}
+          </span>
+          <button
+            onClick={() => setCount(count + 1)}
+            className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+            aria-label={t("More")}
+          >
+            <Plus size={14} />
+          </button>
+        </div>
+      )}
 
       {canEnterAmount && (
         <div className="flex items-center gap-1">
@@ -118,7 +159,9 @@ export function HabitRow({
           {marked ? t("Occurred") : t("Avoided")}
         </span>
       ) : (
-        marked && !canEnterAmount && <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
+        marked && !canEnterAmount && !(isCount && showAmount) && (
+          <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
+        )
       )}
     </div>
   );

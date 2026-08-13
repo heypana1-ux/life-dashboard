@@ -692,6 +692,18 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Habit daily target ---
+  "Daily target (optional)": "Tagesziel (optional)",
+  "No target": "Kein Ziel",
+  "Times per day": "Mal pro Tag",
+  Minutes: "Minuten",
+  "Custom value": "Eigener Wert",
+  "Fewer than the target counts partially; more gives a small bonus.":
+    "Weniger als das Ziel zählt anteilig; mehr gibt einen kleinen Bonus.",
+  "e.g. 30": "z. B. 30",
+  "per day": "pro Tag",
+  Less: "Weniger",
+
   // --- Strava ---
   "Connect Strava to import your runs, rides and workouts automatically.":
     "Verbinde Strava, um deine Läufe, Radtouren und Workouts automatisch zu importieren.",

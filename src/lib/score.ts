@@ -69,6 +69,14 @@ const OVERFILL_CAP = 0.15;
  */
 export function fulfillment(habit: Habit, log: HabitLog | undefined): number {
   if (!log?.done) return 0;
+  // Per-day count target: graduated credit — fewer than target gives partial credit,
+  // more than target a small capped bonus (never "double").
+  if (habit.timesPerDay && habit.timesPerDay > 0) {
+    const count = log.count ?? (log.done ? habit.timesPerDay : 0);
+    const frac = count / habit.timesPerDay;
+    if (frac <= 1) return Math.max(0, frac);
+    return 1 + Math.min(OVERFILL_CAP, (frac - 1) * 0.15);
+  }
   let amount: number | undefined;
   let target: number | undefined;
   if (habit.targetMinutes && log.minutes != null) {

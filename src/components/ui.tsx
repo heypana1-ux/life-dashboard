@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { ArrowDownRight, ArrowUpRight, Minus, X } from "lucide-react";
 
@@ -244,16 +245,25 @@ export function Modal({
   children: React.ReactNode;
   wide?: boolean;
 }) {
-  if (!open) return null;
-  return (
+  // Portal to <body>: modals must escape ancestors with a `transform` (e.g. the page's
+  // fade-in animation), which would otherwise make `position: fixed` anchor to that box
+  // instead of the viewport and push the sheet off-screen.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
+  if (!open || !mounted) return null;
+
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onClick={onClose}
     >
       <div
         className={clsx(
-          // `dvh` shrinks with the on-screen keyboard, so text inputs in the sheet stay reachable on mobile.
-          "card max-h-[85dvh] w-full overflow-y-auto overscroll-contain rounded-b-none rounded-t-2xl pb-[max(1rem,env(safe-area-inset-bottom))] sm:max-h-[90vh] sm:rounded-2xl sm:pb-6",
+          // `dvh` shrinks with the on-screen keyboard, so inputs stay reachable on mobile.
+          "card max-h-[88dvh] w-full overflow-y-auto overscroll-contain rounded-2xl",
           wide ? "sm:max-w-2xl" : "sm:max-w-md",
         )}
         onClick={(e) => e.stopPropagation()}
@@ -266,7 +276,8 @@ export function Modal({
         </div>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
