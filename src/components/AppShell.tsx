@@ -35,6 +35,7 @@ import { Onboarding } from "@/components/Onboarding";
 import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
 import { DayFlow } from "@/components/DayFlow";
+import { RecapGate } from "@/components/Recap";
 
 interface NavItem {
   href: string;
@@ -161,6 +162,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
           <Reminders />
           <DayFlow />
+          <RecapGate />
           <div className="animate-in">
             <BackupReminder />
             {children}

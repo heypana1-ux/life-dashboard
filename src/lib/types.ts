@@ -351,6 +351,11 @@ export interface DayFlowSettings {
   /** YYYY-MM-DD the evening / morning flow was last shown (once-per-day debounce). */
   lastEvening?: string;
   lastMorning?: string;
+  /** Show the weekly (Sunday) / monthly (1st) animated recap automatically. */
+  recapsEnabled?: boolean;
+  /** Debounce markers: the Sunday date the weekly recap last ran, and the YYYY-MM the monthly ran. */
+  lastWeekly?: string;
+  lastMonthly?: string;
 }
 
 export interface Settings {

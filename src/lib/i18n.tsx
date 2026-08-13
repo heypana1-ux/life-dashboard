@@ -692,6 +692,19 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Recap animations ---
+  "Weekly recap": "Wochenrückblick",
+  "Monthly recap": "Monatsrückblick",
+  "Average Life Score": "Durchschnittlicher Life Score",
+  "Days logged": "Tage eingetragen",
+  "Avg sleep": "Ø Schlaf",
+  "Top area": "Top-Bereich",
+  "Habit completion": "Gewohnheiten erfüllt",
+  "Nice!": "Stark!",
+  "Play recap": "Rückblick abspielen",
+  "Weekly & monthly recap": "Wochen- & Monatsrückblick",
+  "An animated summary on Sundays and the 1st.": "Eine animierte Zusammenfassung sonntags und am 1.",
+
   // --- Analysis ---
   Analysis: "Analyse",
   "Everything you log, cross-analysed — patterns, connections and suggestions.":

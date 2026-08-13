@@ -20,6 +20,7 @@ import { addDays, fmtDuration, sleepDurationMinutes, todayISO } from "@/lib/date
 import { DailyReview, SleepLog } from "@/lib/types";
 import { Button, ScaleInput, Field, inputCls } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
+import { AnimatedRing, RecapChecklist } from "@/components/Recap";
 
 /* ------------------------------------------------------------------ *
  * Guided day-flow overlays.
@@ -317,18 +318,14 @@ function EveningFlow({ onClose }: { onClose: () => void }) {
       )}
 
       {key === "overview" && (
-        <div className="space-y-4">
-          <div className="grad rounded-2xl p-5 text-center text-white">
-            <div className="text-xs font-semibold uppercase tracking-[0.06em] opacity-85">{t("Life Score")}</div>
-            <div className="num mt-1 text-[52px] font-bold leading-none">{score}</div>
-            <div className="mt-1 text-sm font-medium opacity-90">{score > 0 ? t(scoreLabel(score)) : t("No data yet")}</div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            <MiniTile label={t("goals done")} value={`${doneCount}/${build.length}`} />
-            <MiniTile label={t("Watch-list")} value={String(slipCount)} />
-            <MiniTile label={t("Sleep")} value={sleepText(data, date) ?? "—"} />
-          </div>
-        </div>
+        <EveningOverview
+          score={score}
+          builds={build.map((g) => ({ id: g.habit.id, name: g.habit.name, done: !!g.log?.done }))}
+          reduces={reduce.map((g) => ({ id: g.habit.id, name: g.habit.name, slipped: !!g.log?.done }))}
+          doneLabel={`${doneCount}/${build.length}`}
+          slipLabel={String(slipCount)}
+          sleepLabel={sleepText(data, date) ?? "—"}
+        />
       )}
 
       {key === "compare" && <CompareStep today={score} yesterday={yComp.lifeScore} t={t} />}
@@ -498,6 +495,43 @@ function MorningFlow({ onClose }: { onClose: () => void }) {
 }
 
 /* ---------------- small helpers ---------------- */
+
+function EveningOverview({
+  score,
+  builds,
+  reduces,
+  doneLabel,
+  slipLabel,
+  sleepLabel,
+}: {
+  score: number;
+  builds: { id: string; name: string; done: boolean }[];
+  reduces: { id: string; name: string; slipped: boolean }[];
+  doneLabel: string;
+  slipLabel: string;
+  sleepLabel: string;
+}) {
+  const t = useT();
+  const [play, setPlay] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setPlay(true), 80);
+    return () => clearTimeout(id);
+  }, []);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col items-center">
+        <AnimatedRing value={score} size={168} play={play} sublabel={score > 0 ? t(scoreLabel(score)) : t("No data yet")} />
+        <div className="mt-1 text-xs text-[var(--text-muted)]">{t("Life Score")}</div>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <MiniTile label={t("goals done")} value={doneLabel} />
+        <MiniTile label={t("Watch-list")} value={slipLabel} />
+        <MiniTile label={t("Sleep")} value={sleepLabel} />
+      </div>
+      <RecapChecklist builds={builds} reduces={reduces} play={play} />
+    </div>
+  );
+}
 
 function sleepText(data: ReturnType<typeof useStore>["data"], date: string): string | null {
   const s = data.sleep.find((x) => x.date === date);

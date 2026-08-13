@@ -332,6 +332,15 @@ function DayFlowCard() {
             </div>
           )}
         </div>
+
+        {/* Weekly / monthly recap */}
+        <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
+          <div>
+            <div className="text-sm font-medium">{t("Weekly & monthly recap")}</div>
+            <div className="text-xs text-[var(--text-muted)]">{t("An animated summary on Sundays and the 1st.")}</div>
+          </div>
+          <Toggle checked={df.recapsEnabled ?? true} onChange={(v) => set({ recapsEnabled: v })} />
+        </div>
       </div>
     </Card>
   );

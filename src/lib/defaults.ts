@@ -70,6 +70,7 @@ export function defaultSettings(): Settings {
       morningEnabled: false,
       morningFrom: "04:00",
       morningTo: "11:00",
+      recapsEnabled: true,
     },
   };
 }

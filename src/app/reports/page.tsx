@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ImageDown } from "lucide-react";
+import { ImageDown, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
@@ -13,6 +13,7 @@ import { translate } from "@/lib/i18n";
 import { downloadReportImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
+import { RecapOverlay } from "@/components/Recap";
 
 type Period = "week" | "month";
 
@@ -22,6 +23,7 @@ export default function ReportsPage() {
   const t = useT();
   const lang = useLang();
   const [period, setPeriod] = useState<Period>("week");
+  const [recap, setRecap] = useState(false);
 
   const report = useMemo(() => {
     const today = todayISO();
@@ -55,11 +57,16 @@ export default function ReportsPage() {
         title={t("Reports")}
         subtitle={t("Automatic summaries of your week and month.")}
         action={
-          report.hasData ? (
-            <Button variant="soft" onClick={() => shareImage(report, data.finances.currency, t)}>
-              <ImageDown size={16} /> {t("Share as image")}
+          <div className="flex items-center gap-2">
+            <Button variant="soft" onClick={() => setRecap(true)}>
+              <Sparkles size={16} /> {t("Play recap")}
             </Button>
-          ) : undefined
+            {report.hasData && (
+              <Button variant="soft" onClick={() => shareImage(report, data.finances.currency, t)}>
+                <ImageDown size={16} /> {t("Share as image")}
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -71,6 +78,8 @@ export default function ReportsPage() {
           {t("Monthly")}
         </Chip>
       </div>
+
+      {recap && <RecapOverlay mode={period} refDate={todayISO()} onClose={() => setRecap(false)} />}
 
       {!report.hasData ? (
         <Card>
