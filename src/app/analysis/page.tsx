@@ -5,7 +5,7 @@ import { AlertTriangle, Brain, Lightbulb, Link2, Sparkles, TrendingDown, Trendin
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
-import { analyze, Finding, FindingKind } from "@/lib/analysis";
+import { analyze, Driver, Finding, FindingKind } from "@/lib/analysis";
 import { Card, PageHeader, SectionTitle, EmptyState } from "@/components/ui";
 
 export default function AnalysisPage() {
@@ -15,7 +15,8 @@ export default function AnalysisPage() {
   const lang = data.settings.language;
 
   const report = useMemo(() => analyze(data, d.history, lang), [data, d.history, lang]);
-  const { verdict, findings } = report;
+  const { verdict, findings, drivers } = report;
+  const hasDrivers = drivers.positive.length > 0 || drivers.negative.length > 0;
 
   const groups: { kind: FindingKind; label: string }[] = [
     { kind: "tip", label: t("Recommendations") },
@@ -51,6 +52,17 @@ export default function AnalysisPage() {
         <p className="mt-3 max-w-[640px] text-[15px] leading-[1.55] opacity-95">{verdict.summary}</p>
       </div>
 
+      {hasDrivers && (
+        <Card>
+          <SectionTitle>{t("What drives your score")}</SectionTitle>
+          <p className="mb-3 text-xs text-[var(--text-faint)]">{t("Average Life-Score difference on days with vs. without each factor.")}</p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DriverList title={t("Lifts your score")} drivers={drivers.positive} positive />
+            <DriverList title={t("Weighs it down")} drivers={drivers.negative} positive={false} />
+          </div>
+        </Card>
+      )}
+
       {!hasFindings ? (
         <EmptyState
           icon={<Sparkles size={26} />}
@@ -77,6 +89,38 @@ export default function AnalysisPage() {
       <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
         {t("Observations from your own data — associations, not medical or causal advice.")}
       </p>
+    </div>
+  );
+}
+
+function DriverList({ title, drivers, positive }: { title: string; drivers: Driver[]; positive: boolean }) {
+  const color = positive ? "var(--good)" : "var(--bad)";
+  const max = Math.max(1, ...drivers.map((x) => Math.abs(x.delta)));
+  if (drivers.length === 0) {
+    return (
+      <div>
+        <div className="mb-2 text-sm font-semibold" style={{ color }}>{title}</div>
+        <p className="text-xs text-[var(--text-faint)]">—</p>
+      </div>
+    );
+  }
+  return (
+    <div>
+      <div className="mb-2 text-sm font-semibold" style={{ color }}>{title}</div>
+      <div className="space-y-1.5">
+        {drivers.map((dr, i) => (
+          <div key={dr.label} className="flex items-center gap-2">
+            <span className="num w-6 text-xs font-bold text-[var(--text-faint)]">{i + 1}</span>
+            <span className="min-w-0 flex-1 truncate text-sm">{dr.label}</span>
+            <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-[var(--ring-track)] sm:block">
+              <div className="h-full rounded-full" style={{ width: `${(Math.abs(dr.delta) / max) * 100}%`, background: color }} />
+            </div>
+            <span className="num w-9 text-right text-sm font-bold tabular-nums" style={{ color }}>
+              {dr.delta > 0 ? "+" : ""}{dr.delta}
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

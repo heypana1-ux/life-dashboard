@@ -1,5 +1,6 @@
 import { AppData, AreaKey, DayScore, Language } from "./types";
 import { AREA_LABELS } from "./defaults";
+import { habitsForToday } from "./habitView";
 import { sleepDurationMinutes, weekdayLabel, weekdayOf, addDays } from "./date";
 import { translate } from "./i18n";
 
@@ -23,9 +24,15 @@ export interface Finding {
   weight: number;
 }
 
+export interface Driver {
+  label: string;
+  delta: number;
+}
+
 export interface AnalysisReport {
   verdict: { score: number; trend: number; label: string; summary: string };
   findings: Finding[];
+  drivers: { positive: Driver[]; negative: Driver[] };
 }
 
 const MIN = 5; // min per group for a two-group comparison
@@ -100,6 +107,15 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     const dur = sleepDur(d);
     return dur == null ? false : dur >= target;
   };
+  const satisfaction = (d: string) => reviewOf.get(d)?.satisfaction ?? null;
+  const workoutOf = new Map(data.workouts.map((w) => [w.date, w] as const));
+  const earlyBed = (d: string) => {
+    const s = sleepOf.get(d);
+    return s ? bedMin(s.bedTime) < 24 * 60 + 30 : false;
+  };
+  const doneByHabit = new Map<string, Set<string>>();
+  for (const h of data.habits) doneByHabit.set(h.id, new Set());
+  for (const l of data.habitLogs) if (l.done) doneByHabit.get(l.habitId)?.add(l.date);
 
   function assoc(pred: (d: string) => boolean, metric: (d: string) => number | null, dates: string[]) {
     const A: number[] = [];
@@ -419,6 +435,177 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     }
   }
 
+  // ---------- Bedtime (independent of duration) → next-day productivity ----------
+  if (has("sleep") && refl) {
+    const bp = assoc(earlyBed, (d) => prod(addDays(d, 1)), sleepDates);
+    if (bp && bp.diff >= 0.6) F.push({ id: "bed-prod-next", kind: "insight", title: t("Early bedtime → next day"), detail: t("After an early night (before 00:30), your next-day productivity is about {pct}% higher — even at the same sleep length.", { pct: bp.pct }), weight: 58 + Math.min(28, bp.pct) });
+  }
+
+  // ---------- Sleep regularity → energy ----------
+  if (has("sleep") && refl && data.sleep.length >= 10) {
+    const beds = data.sleep.map((s) => bedMin(s.bedTime));
+    const med = [...beds].sort((a, b) => a - b)[Math.floor(beds.length / 2)];
+    const regular = (d: string) => {
+      const s = sleepOf.get(d);
+      return s ? Math.abs(bedMin(s.bedTime) - med) <= 45 : false;
+    };
+    const re = assoc(regular, energy, reviewDates.filter((d) => sleepOf.has(d)));
+    if (re && re.diff >= 0.5) F.push({ id: "sleep-reg-energy", kind: "insight", title: t("Sleep regularity ↔ energy"), detail: t("On nights close to your usual bedtime, your energy is {diff}/10 higher — regularity beats the odd long night.", { diff: re.diff.toFixed(1) }), weight: 54 + re.diff * 5 });
+  }
+
+  // ---------- Weekly training frequency → mood ----------
+  if (has("sport") && refl) {
+    const mondayOf = (d: string) => addDays(d, -((weekdayOf(d) + 6) % 7));
+    const wkCount = new Map<string, number>();
+    for (const w of data.workouts) {
+      const k = mondayOf(w.date);
+      wkCount.set(k, (wkCount.get(k) ?? 0) + 1);
+    }
+    const wt = assoc((d) => (wkCount.get(mondayOf(d)) ?? 0) >= 3, mood, reviewDates);
+    if (wt && wt.diff >= 0.5) F.push({ id: "weekly-train-mood", kind: "insight", title: t("Training rhythm ↔ mood"), detail: t("In weeks with 3+ workouts, your average mood is about {pct}% higher than in lighter weeks — the rhythm matters more than any single session.", { pct: wt.pct }), weight: 66 + wt.diff * 4 });
+  }
+
+  // ---------- Training energy lift, readiness, satisfaction, rest days, next-night sleep ----------
+  if (has("sport")) {
+    const wkE = data.workouts.filter((w) => w.energyBefore != null && w.energyAfter != null);
+    if (wkE.length >= MIN) {
+      const lift = mean(wkE.map((w) => w.energyAfter! - w.energyBefore!));
+      if (lift >= 0.6) F.push({ id: "train-energy-lift", kind: "strength", title: t("Training lifts your energy"), detail: t("Your energy rises {lift}/10 on average from before to after a workout.", { lift: lift.toFixed(1) }), weight: 50 + lift * 5 });
+    }
+    const wkP = data.workouts.filter((w) => w.energyBefore != null && w.performance != null);
+    const hiE = wkP.filter((w) => (w.energyBefore ?? 0) >= 7).map((w) => w.performance!);
+    const loE = wkP.filter((w) => (w.energyBefore ?? 0) < 7).map((w) => w.performance!);
+    if (hiE.length >= MIN && loE.length >= MIN) {
+      const dd = mean(hiE) - mean(loE);
+      if (dd >= 0.6) F.push({ id: "readiness-perf", kind: "insight", title: t("Readiness ↔ performance"), detail: t("When you feel ready (energy 7+ before training), your session performance is {d}/10 better.", { d: dd.toFixed(1) }), weight: 48 + dd * 5 });
+    }
+    if (refl) {
+      const perfSat = assoc((d) => (workoutOf.get(d)?.performance ?? 0) >= 8, satisfaction, reviewDates.filter((d) => workoutOf.has(d)));
+      if (perfSat && perfSat.diff >= 0.5) F.push({ id: "perf-sat", kind: "insight", title: t("A strong workout colours the day"), detail: t("After a strong training session (8+/10), you rate the whole day {diff}/10 more satisfying.", { diff: perfSat.diff.toFixed(1) }), weight: 46 + perfSat.diff * 4 });
+    }
+    const trainDates = new Set(data.workouts.map((w) => w.date));
+    const perfRested: number[] = [];
+    const perfBack: number[] = [];
+    for (const w of data.workouts) {
+      if (w.performance == null) continue;
+      (trainDates.has(addDays(w.date, -1)) ? perfBack : perfRested).push(w.performance);
+    }
+    if (perfRested.length >= MIN && perfBack.length >= MIN) {
+      const dd = mean(perfRested) - mean(perfBack);
+      if (Math.abs(dd) >= 0.6) F.push({ id: "restday-perf", kind: "insight", title: t("Rest days ↔ performance"), detail: dd > 0 ? t("Workouts after a rest day are {d}/10 stronger than back-to-back sessions.", { d: dd.toFixed(1) }) : t("Your back-to-back sessions actually outperform post-rest ones by {d}/10.", { d: Math.abs(dd).toFixed(1) }), weight: 44 + Math.abs(dd) * 5 });
+    }
+    if (has("sleep")) {
+      // Workout on day d; that night's sleep is logged the next morning (d+1).
+      const tq = assoc((d) => trained.has(d), (d) => sleepOf.get(addDays(d, 1))?.quality ?? null, [...trained]);
+      if (tq && Math.abs(tq.diff) >= 0.4) F.push({ id: "train-sleep", kind: "insight", title: t("Training ↔ that night's sleep"), detail: tq.diff > 0 ? t("On days you train, you rate that night's sleep {diff}/10 better.", { diff: tq.diff.toFixed(1) }) : t("On training days, that night's sleep quality is {diff}/10 lower — watch late or very intense sessions.", { diff: Math.abs(tq.diff).toFixed(1) }), weight: 46 + Math.abs(tq.diff) * 5 });
+    }
+  }
+
+  // ---------- Journaling → next-day mood ----------
+  if (refl) {
+    const jn = assoc((d) => journaled.has(d), (d) => mood(addDays(d, 1)), reviewDates);
+    if (jn && jn.diff >= 0.5) F.push({ id: "journal-mood-next", kind: "insight", title: t("Journaling → next day"), detail: t("The day after you journal, your mood tends to be {diff}/10 higher.", { diff: jn.diff.toFixed(1) }), weight: 44 + jn.diff * 4 });
+  }
+
+  // ---------- Planning load → completion rate ----------
+  {
+    const perDay = scoreDates
+      .map((d) => {
+        let due = 0;
+        let done = 0;
+        for (const g of habitsForToday(data, d)) {
+          if (g.habit.kind !== "build" || !has(g.habit.area)) continue;
+          due += 1;
+          if (g.log?.done) done += 1;
+        }
+        return { due, rate: due > 0 ? done / due : null };
+      })
+      .filter((x): x is { due: number; rate: number } => x.rate != null);
+    if (perDay.length >= 10) {
+      const dues = perDay.map((x) => x.due).sort((a, b) => a - b);
+      const medDue = dues[Math.floor(dues.length / 2)];
+      const many = perDay.filter((x) => x.due > medDue).map((x) => x.rate);
+      const few = perDay.filter((x) => x.due <= medDue).map((x) => x.rate);
+      if (many.length >= MIN && few.length >= MIN) {
+        const drop = Math.round((mean(few) - mean(many)) * 100);
+        if (drop >= 12) F.push({ id: "planning-load", kind: "tip", title: t("Plan fewer, finish more"), detail: t("On days you schedule more goals your completion falls to {many}% (vs {few}% on lighter days) — fewer, focused goals may serve you better.", { many: Math.round(mean(many) * 100), few: Math.round(mean(few) * 100) }), weight: 60 });
+      }
+    }
+  }
+
+  // ---------- Keystone habit (pulls up your other habits) ----------
+  {
+    const buildHabits = data.habits.filter((h) => h.kind === "build" && !h.archived && has(h.area));
+    if (buildHabits.length >= 3) {
+      let keystone: { name: string; diff: number } | null = null;
+      for (const h of buildHabits) {
+        const done = doneByHabit.get(h.id) ?? new Set<string>();
+        const on: number[] = [];
+        const off: number[] = [];
+        for (const d of scoreDates) {
+          let due = 0;
+          let dn = 0;
+          for (const g of habitsForToday(data, d)) {
+            if (g.habit.id === h.id || g.habit.kind !== "build" || !has(g.habit.area)) continue;
+            due += 1;
+            if (g.log?.done) dn += 1;
+          }
+          if (due === 0) continue;
+          (done.has(d) ? on : off).push(dn / due);
+        }
+        if (on.length >= MIN && off.length >= MIN) {
+          const dd = mean(on) - mean(off);
+          if (dd > (keystone?.diff ?? 0.12)) keystone = { name: h.name, diff: dd };
+        }
+      }
+      if (keystone) F.push({ id: "keystone", kind: "tip", title: t("Your keystone habit"), detail: t("On days you do “{name}”, you complete {pct}% more of your other habits too — it pulls the rest of your day up.", { name: keystone.name, pct: Math.round(keystone.diff * 100) }), weight: 80 + keystone.diff * 20 });
+    }
+  }
+
+  // ---------- A rough day → the next day (rebound vs. loop) ----------
+  if (withData.length >= 12) {
+    const avg = mean(withData.map((h) => h.lifeScore));
+    const afterBad: number[] = [];
+    for (const h of withData) {
+      if (h.lifeScore >= avg - 8) continue;
+      const next = byDate.get(addDays(h.date, 1));
+      if (next && next.lifeScore > 0) afterBad.push(next.lifeScore);
+    }
+    if (afterBad.length >= MIN) {
+      const dd = Math.round(mean(afterBad) - avg);
+      if (dd >= 4) F.push({ id: "rebound", kind: "strength", title: t("You bounce back"), detail: t("The day after a rough day, you tend to score {d} points above your average — a real rebound.", { d: dd }), weight: 52 });
+      else if (dd <= -4) F.push({ id: "loop", kind: "watch", title: t("Watch the downward pull"), detail: t("A rough day tends to be followed by another below-average one ({d} points). A small reset ritual could break the chain.", { d: Math.abs(dd) }), weight: 58 });
+    }
+  }
+
+  // ---------- "What drives my score?" — ranked positive & negative associations ----------
+  const driverFactors: { label: string; pred: (d: string) => boolean }[] = [];
+  if (has("sport")) driverFactors.push({ label: t("Training"), pred: (d) => trained.has(d) });
+  if (has("sleep")) {
+    driverFactors.push({ label: t("Sleep ≥ target"), pred: sleptEnough });
+    driverFactors.push({ label: t("Early bedtime"), pred: earlyBed });
+    driverFactors.push({ label: t("Good sleep quality"), pred: (d) => (sleepOf.get(d)?.quality ?? 0) >= 7 });
+  }
+  if (refl) driverFactors.push({ label: t("Journaling"), pred: (d) => journaled.has(d) });
+  for (const h of data.habits.filter((x) => !x.archived && has(x.area))) {
+    const done = doneByHabit.get(h.id) ?? new Set<string>();
+    driverFactors.push({ label: h.name, pred: (d) => done.has(d) });
+  }
+  const driverList: { label: string; delta: number }[] = [];
+  const seenLabels = new Set<string>();
+  for (const f of driverFactors) {
+    if (seenLabels.has(f.label)) continue;
+    seenLabels.add(f.label);
+    const e = assoc(f.pred, life, scoreDates);
+    if (!e) continue;
+    const delta = Math.round(e.diff);
+    if (Math.abs(delta) >= 2) driverList.push({ label: f.label, delta });
+  }
+  const drivers = {
+    positive: driverList.filter((x) => x.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 6),
+    negative: driverList.filter((x) => x.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 6),
+  };
+
   // ---------- Streak ----------
   let streak = 0;
   for (let i = history.length - 1; i >= 0; i--) {
@@ -447,7 +634,7 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
   }
 
   F.sort((a, b) => b.weight - a.weight);
-  return { verdict: { score, trend, label, summary }, findings: F };
+  return { verdict: { score, trend, label, summary }, findings: F, drivers };
 }
 
 function fmtH(min: number): string {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   BookOpen,
   Check,
@@ -21,6 +21,9 @@ import { DailyReview, SleepLog } from "@/lib/types";
 import { Button, ScaleInput, Field, inputCls } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { AnimatedRing, RecapChecklist } from "@/components/Recap";
+import { useDerived } from "@/lib/useDerived";
+import { analyze } from "@/lib/analysis";
+import { Lightbulb } from "lucide-react";
 
 /* ------------------------------------------------------------------ *
  * Guided day-flow overlays.
@@ -511,12 +514,18 @@ function EveningOverview({
   slipLabel: string;
   sleepLabel: string;
 }) {
+  const { data } = useStore();
+  const d = useDerived();
   const t = useT();
   const [play, setPlay] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => setPlay(true), 80);
     return () => clearTimeout(id);
   }, []);
+  const tip = useMemo(() => {
+    const r = analyze(data, d.history, data.settings.language);
+    return r.findings.find((f) => f.kind === "tip" || f.kind === "insight") ?? null;
+  }, [data, d.history]);
   return (
     <div className="space-y-4">
       <div className="flex flex-col items-center">
@@ -529,6 +538,12 @@ function EveningOverview({
         <MiniTile label={t("Sleep")} value={sleepLabel} />
       </div>
       <RecapChecklist builds={builds} reduces={reduces} play={play} />
+      {tip && (
+        <div className={play ? "recap-pop flex items-start gap-2.5 rounded-xl bg-[var(--accent-soft)] p-3" : "opacity-0"} style={play ? { animationDelay: "600ms" } : undefined}>
+          <Lightbulb size={16} className="mt-0.5 shrink-0 text-[var(--accent)]" />
+          <p className="text-[13px] leading-snug text-[var(--text)]">{tip.detail}</p>
+        </div>
+      )}
     </div>
   );
 }

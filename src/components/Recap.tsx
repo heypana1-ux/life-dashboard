@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useState } from "react";
-import { Check, Dumbbell, Flame, Moon, Sparkles, Target, TrendingDown, TrendingUp, Trophy, X } from "lucide-react";
+import { AlertTriangle, Check, Dumbbell, Flame, Lightbulb, Moon, Sparkles, Target, TrendingDown, TrendingUp, Trophy, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
@@ -9,6 +9,7 @@ import { AREA_LABELS } from "@/lib/defaults";
 import { scoreColor, scoreLabel } from "@/lib/score";
 import { addDays, fmtDuration, fmtShort, todayISO, weekdayOf } from "@/lib/date";
 import { periodRecap, weekRange, monthRange, PeriodRecap } from "@/lib/recap";
+import { analyze } from "@/lib/analysis";
 import { Button } from "@/components/ui";
 
 /* ---------------- Count-up hook ---------------- */
@@ -164,6 +165,23 @@ export function RecapOverlay({
 
   const rec: PeriodRecap = useMemo(() => periodRecap(data, d.byDate, range.start, range.end), [data, d.byDate, range]);
 
+  // Analysis-driven highlights: what went well / to watch + a couple of tips.
+  const highlights = useMemo(() => {
+    const good: string[] = [];
+    const watch: string[] = [];
+    if (rec.trend > 0) good.push(t("Score up {n} vs the previous period.", { n: rec.trend }));
+    else if (rec.trend < 0) watch.push(t("Score down {n} vs the previous period.", { n: Math.abs(rec.trend) }));
+    if (rec.habitRate >= 70) good.push(t("Habits strong at {p}%.", { p: rec.habitRate }));
+    else if (rec.habitRate > 0 && rec.habitRate < 45) watch.push(t("Habit completion dipped to {p}%.", { p: rec.habitRate }));
+    if (rec.workouts >= (mode === "week" ? 3 : 12)) good.push(t("{n} workouts logged.", { n: rec.workouts }));
+    if (rec.daysLogged === rec.totalDays && rec.totalDays > 0) good.push(t("Logged every single day."));
+    const targetMin = data.settings.sleepTargetMinutes;
+    if (rec.sleepAvgMin > 0 && targetMin - rec.sleepAvgMin >= 20) watch.push(t("Sleep ran short of your target."));
+    const report = analyze(data, d.history, data.settings.language);
+    const tips = report.findings.filter((f) => f.kind === "tip" || f.kind === "strength").slice(0, mode === "month" ? 4 : 2);
+    return { good, watch, tips };
+  }, [rec, mode, data, d.history, t]);
+
   const tiles = [
     { icon: Flame, label: t("Days logged"), value: `${rec.daysLogged}/${rec.totalDays}` },
     { icon: Trophy, label: t("Best day"), value: rec.bestDay ? `${rec.bestDay.score}` : "—", sub: rec.bestDay ? fmtShort(rec.bestDay.date) : undefined },
@@ -219,10 +237,33 @@ export function RecapOverlay({
           })}
         </div>
 
+        {(highlights.good.length > 0 || highlights.watch.length > 0 || highlights.tips.length > 0) && (
+          <div className="mt-5 space-y-2 px-1 text-left">
+            {highlights.good.map((g, i) => (
+              <HighlightRow key={`g${i}`} icon={<Check size={13} />} color="var(--good)" text={g} play={play} delay={700 + i * 80} />
+            ))}
+            {highlights.watch.map((w, i) => (
+              <HighlightRow key={`w${i}`} icon={<AlertTriangle size={13} />} color="var(--warn)" text={w} play={play} delay={780 + i * 80} />
+            ))}
+            {highlights.tips.map((tip, i) => (
+              <HighlightRow key={tip.id} icon={<Lightbulb size={13} />} color="var(--accent)" text={tip.detail} play={play} delay={860 + i * 80} />
+            ))}
+          </div>
+        )}
+
         <div className="mt-5 px-1 pb-1">
           <Button className="w-full !py-3" onClick={onClose}>{t("Nice!")}</Button>
         </div>
       </div>
+    </div>
+  );
+}
+
+function HighlightRow({ icon, color, text, play, delay }: { icon: React.ReactNode; color: string; text: string; play: boolean; delay: number }) {
+  return (
+    <div className={play ? "recap-pop flex items-start gap-2" : "flex items-start gap-2 opacity-0"} style={play ? { animationDelay: `${delay}ms` } : undefined}>
+      <span className="mt-0.5 shrink-0" style={{ color }}>{icon}</span>
+      <span className="text-[13px] leading-snug text-[var(--text-muted)]">{text}</span>
     </div>
   );
 }

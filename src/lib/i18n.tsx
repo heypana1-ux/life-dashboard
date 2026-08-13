@@ -816,6 +816,67 @@ const DE: Record<string, string> = {
   "{day}s show your reduce-habits about {pct}% above your average — plan a countermeasure for that day.":
     "An {day}en liegen deine Reduzier-Gewohnheiten rund {pct}% über deinem Schnitt — plane für den Tag eine Gegenmaßnahme.",
 
+  // --- Analysis: drivers + more generators + recap highlights ---
+  "What drives your score": "Was deinen Score treibt",
+  "Average Life-Score difference on days with vs. without each factor.":
+    "Durchschnittlicher Life-Score-Unterschied an Tagen mit vs. ohne den jeweiligen Faktor.",
+  "Lifts your score": "Hebt deinen Score",
+  "Weighs it down": "Zieht ihn runter",
+  "Sleep ≥ target": "Schlaf ≥ Ziel",
+  "Early bedtime": "Früh ins Bett",
+  "Good sleep quality": "Gute Schlafqualität",
+  Journaling: "Tagebuch",
+  "Early bedtime → next day": "Früh ins Bett → nächster Tag",
+  "After an early night (before 00:30), your next-day productivity is about {pct}% higher — even at the same sleep length.":
+    "Nach einer frühen Nacht (vor 00:30) ist deine Produktivität am Folgetag rund {pct}% höher — selbst bei gleicher Schlafdauer.",
+  "Sleep regularity ↔ energy": "Schlaf-Regelmäßigkeit ↔ Energie",
+  "On nights close to your usual bedtime, your energy is {diff}/10 higher — regularity beats the odd long night.":
+    "In Nächten nahe deiner üblichen Schlafenszeit ist deine Energie {diff}/10 höher — Regelmäßigkeit schlägt die einzelne lange Nacht.",
+  "Training rhythm ↔ mood": "Trainings-Rhythmus ↔ Stimmung",
+  "In weeks with 3+ workouts, your average mood is about {pct}% higher than in lighter weeks — the rhythm matters more than any single session.":
+    "In Wochen mit 3+ Workouts ist deine Ø-Stimmung rund {pct}% höher als in leichteren Wochen — der Rhythmus zählt mehr als die einzelne Einheit.",
+  "Training lifts your energy": "Training hebt deine Energie",
+  "Your energy rises {lift}/10 on average from before to after a workout.":
+    "Deine Energie steigt im Schnitt um {lift}/10 von vor zu nach dem Training.",
+  "Readiness ↔ performance": "Bereitschaft ↔ Leistung",
+  "When you feel ready (energy 7+ before training), your session performance is {d}/10 better.":
+    "Wenn du dich bereit fühlst (Energie 7+ vor dem Training), ist deine Leistung {d}/10 besser.",
+  "A strong workout colours the day": "Ein starkes Training färbt den Tag",
+  "After a strong training session (8+/10), you rate the whole day {diff}/10 more satisfying.":
+    "Nach einem starken Training (8+/10) bewertest du den ganzen Tag {diff}/10 zufriedener.",
+  "Rest days ↔ performance": "Ruhetage ↔ Leistung",
+  "Workouts after a rest day are {d}/10 stronger than back-to-back sessions.":
+    "Workouts nach einem Ruhetag sind {d}/10 stärker als Einheiten am Stück.",
+  "Your back-to-back sessions actually outperform post-rest ones by {d}/10.":
+    "Deine Einheiten am Stück sind sogar {d}/10 besser als die nach einem Ruhetag.",
+  "Training ↔ that night's sleep": "Training ↔ Schlaf der Nacht",
+  "On days you train, you rate that night's sleep {diff}/10 better.":
+    "An Tagen mit Training bewertest du den Schlaf der Nacht {diff}/10 besser.",
+  "On training days, that night's sleep quality is {diff}/10 lower — watch late or very intense sessions.":
+    "An Trainingstagen ist die Schlafqualität der Nacht {diff}/10 niedriger — achte auf späte oder sehr intensive Einheiten.",
+  "Journaling → next day": "Tagebuch → nächster Tag",
+  "The day after you journal, your mood tends to be {diff}/10 higher.":
+    "Am Tag nach einem Tagebuch-Eintrag ist deine Stimmung tendenziell {diff}/10 höher.",
+  "Plan fewer, finish more": "Weniger planen, mehr schaffen",
+  "On days you schedule more goals your completion falls to {many}% (vs {few}% on lighter days) — fewer, focused goals may serve you better.":
+    "An Tagen mit mehr geplanten Zielen fällt deine Erledigungsquote auf {many}% (ggü. {few}% an leichteren Tagen) — weniger, fokussierte Ziele könnten besser sein.",
+  "Your keystone habit": "Deine Schlüssel-Gewohnheit",
+  "On days you do “{name}”, you complete {pct}% more of your other habits too — it pulls the rest of your day up.":
+    "An Tagen mit „{name}“ erledigst du auch {pct}% mehr deiner anderen Gewohnheiten — sie zieht den Rest deines Tages mit hoch.",
+  "You bounce back": "Du kommst zurück",
+  "The day after a rough day, you tend to score {d} points above your average — a real rebound.":
+    "Am Tag nach einem schwachen Tag liegst du meist {d} Punkte über deinem Schnitt — ein echter Rebound.",
+  "Watch the downward pull": "Achte auf den Abwärtssog",
+  "A rough day tends to be followed by another below-average one ({d} points). A small reset ritual could break the chain.":
+    "Auf einen schwachen Tag folgt oft ein weiterer unterdurchschnittlicher ({d} Punkte). Ein kleines Reset-Ritual könnte die Kette brechen.",
+  "Score up {n} vs the previous period.": "Score {n} über der Vorperiode.",
+  "Score down {n} vs the previous period.": "Score {n} unter der Vorperiode.",
+  "Habits strong at {p}%.": "Gewohnheiten stark mit {p}%.",
+  "Habit completion dipped to {p}%.": "Gewohnheiten-Quote auf {p}% gefallen.",
+  "{n} workouts logged.": "{n} Workouts eingetragen.",
+  "Logged every single day.": "Jeden Tag eingetragen.",
+  "Sleep ran short of your target.": "Schlaf lag unter deinem Ziel.",
+
   // --- Exercise picker ---
   "Choose exercise": "Übung wählen",
   "Search exercises…": "Übungen suchen…",
