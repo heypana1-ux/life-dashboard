@@ -1,6 +1,7 @@
 import { AppData, AreaKey, DayScore, Language } from "./types";
 import { AREA_LABELS } from "./defaults";
 import { habitsForToday } from "./habitView";
+import { symptomCount } from "./health";
 import { sleepDurationMinutes, weekdayLabel, weekdayOf, addDays } from "./date";
 import { translate } from "./i18n";
 
@@ -116,6 +117,8 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
   const doneByHabit = new Map<string, Set<string>>();
   for (const h of data.habits) doneByHabit.set(h.id, new Set());
   for (const l of data.habitLogs) if (l.done) doneByHabit.get(l.habitId)?.add(l.date);
+  const healthOf = new Map(data.health.map((h) => [h.date, h] as const));
+  const wellDates = data.health.filter((h) => h.wellbeing != null).map((h) => h.date);
 
   function assoc(pred: (d: string) => boolean, metric: (d: string) => number | null, dates: string[]) {
     const A: number[] = [];
@@ -578,6 +581,21 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     }
   }
 
+  // ---------- Health correlations ----------
+  if (has("health")) {
+    const wb = assoc((d) => (healthOf.get(d)?.wellbeing ?? 0) >= 7, life, wellDates);
+    if (wb && wb.diff >= 3) F.push({ id: "wellbeing-life", kind: "insight", title: t("Wellbeing ↔ your day"), detail: t("On days you feel well (7+/10), your Life Score is about {diff} points higher.", { diff: Math.round(wb.diff) }), weight: 56 + wb.diff });
+    if (refl) {
+      const symDates = data.health.filter((h) => symptomCount(h.symptoms) >= 0).map((h) => h.date);
+      const sp = assoc((d) => symptomCount(healthOf.get(d)?.symptoms) >= 1, prod, symDates.filter((d) => reviewOf.has(d)));
+      if (sp && sp.diff <= -0.5) F.push({ id: "symptom-prod", kind: "watch", title: t("Symptoms ↔ productivity"), detail: t("On days with symptoms, your productivity runs about {pct}% lower.", { pct: sp.pct }), weight: 58 + Math.min(28, sp.pct) });
+    }
+    if (has("sleep")) {
+      const ss = assoc(sleptEnough, (d) => (healthOf.has(d) ? symptomCount(healthOf.get(d)?.symptoms) : null), wellDates.concat(data.health.map((h) => h.date)));
+      if (ss && ss.diff <= -0.3) F.push({ id: "sleep-symptoms", kind: "insight", title: t("Sleep ↔ symptoms"), detail: t("After nights you hit your sleep target, you log fewer symptoms on average."), weight: 52 });
+    }
+  }
+
   // ---------- "What drives my score?" — ranked positive & negative associations ----------
   const driverFactors: { label: string; pred: (d: string) => boolean }[] = [];
   if (has("sport")) driverFactors.push({ label: t("Training"), pred: (d) => trained.has(d) });
@@ -587,6 +605,7 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     driverFactors.push({ label: t("Good sleep quality"), pred: (d) => (sleepOf.get(d)?.quality ?? 0) >= 7 });
   }
   if (refl) driverFactors.push({ label: t("Journaling"), pred: (d) => journaled.has(d) });
+  if (has("health")) driverFactors.push({ label: t("Feeling well"), pred: (d) => (healthOf.get(d)?.wellbeing ?? 0) >= 7 });
   for (const h of data.habits.filter((x) => !x.archived && has(x.area))) {
     const done = doneByHabit.get(h.id) ?? new Set<string>();
     driverFactors.push({ label: h.name, pred: (d) => done.has(d) });

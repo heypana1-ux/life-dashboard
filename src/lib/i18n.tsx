@@ -816,6 +816,54 @@ const DE: Record<string, string> = {
   "{day}s show your reduce-habits about {pct}% above your average — plan a countermeasure for that day.":
     "An {day}en liegen deine Reduzier-Gewohnheiten rund {pct}% über deinem Schnitt — plane für den Tag eine Gegenmaßnahme.",
 
+  // --- Health area ---
+  "Wellbeing & symptoms": "Wohlbefinden & Beschwerden",
+  Form: "Formular",
+  Questions: "Fragen",
+  "Health is tracked and correlated with the rest of your data, but never counts toward your Life Score.":
+    "Gesundheit wird getrackt und mit deinen übrigen Daten verknüpft, zählt aber nie zum Life Score.",
+  "Daily health check": "Täglicher Gesundheits-Check",
+  Symptoms: "Beschwerden",
+  "Felt sick today": "Heute krank gefühlt",
+  "Water (glasses)": "Wasser (Gläser)",
+  "Overall wellbeing": "Allgemeines Wohlbefinden",
+  "Wellbeing · last 30 days": "Wohlbefinden · letzte 30 Tage",
+  Wellbeing: "Wohlbefinden",
+  "Log a few days to see your wellbeing trend.": "Trage ein paar Tage ein, um deinen Wohlbefinden-Trend zu sehen.",
+  "How do you feel today?": "Wie fühlst du dich heute?",
+  "Any symptoms?": "Irgendwelche Beschwerden?",
+  "Were you sick today?": "Warst du heute krank?",
+  "Anything to note?": "Etwas zu notieren?",
+  "Tap to add · tap again for stronger.": "Tippen zum Hinzufügen · nochmal tippen für stärker.",
+  "No, fine": "Nein, alles gut",
+  "Yes, sick": "Ja, krank",
+  // symptoms
+  Headache: "Kopfschmerzen",
+  "Stomach ache": "Bauchschmerzen",
+  "Sore throat": "Halsschmerzen",
+  Congestion: "Verstopfte Nase",
+  Nausea: "Übelkeit",
+  Dizziness: "Schwindel",
+  "Back pain": "Rückenschmerzen",
+  "Muscle soreness": "Muskelkater",
+  Fatigue: "Erschöpfung",
+  Cough: "Husten",
+  Fever: "Fieber",
+  Cramps: "Krämpfe",
+  Mild: "leicht",
+  Moderate: "mittel",
+  // health analysis
+  "Wellbeing ↔ your day": "Wohlbefinden ↔ dein Tag",
+  "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
+    "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
+  "Symptoms ↔ productivity": "Beschwerden ↔ Produktivität",
+  "On days with symptoms, your productivity runs about {pct}% lower.":
+    "An Tagen mit Beschwerden ist deine Produktivität rund {pct}% niedriger.",
+  "Sleep ↔ symptoms": "Schlaf ↔ Beschwerden",
+  "After nights you hit your sleep target, you log fewer symptoms on average.":
+    "Nach Nächten mit erreichtem Schlafziel trägst du im Schnitt weniger Beschwerden ein.",
+  "Feeling well": "Gutes Wohlbefinden",
+
   // --- Navigation / search ---
   "Jump to…": "Springe zu…",
   "Search pages…": "Seiten suchen…",

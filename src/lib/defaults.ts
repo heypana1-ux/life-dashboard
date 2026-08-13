@@ -10,6 +10,7 @@ export const AREA_LABELS: Record<AreaKey, string> = {
   creativity: "Creativity",
   reflection: "Reflection",
   finances: "Finances",
+  health: "Health",
 };
 
 /** Default weights (sum = 100). Finances off by default in MVP (manual, no logging engine yet). */
@@ -22,6 +23,8 @@ export const DEFAULT_AREAS: AreaConfig[] = [
   { key: "creativity", label: AREA_LABELS.creativity, enabled: true, weight: 10 },
   { key: "reflection", label: AREA_LABELS.reflection, enabled: true, weight: 10 },
   { key: "finances", label: AREA_LABELS.finances, enabled: false, weight: 0 },
+  // Health is tracked & correlated but never scored, so weight stays 0.
+  { key: "health", label: AREA_LABELS.health, enabled: false, weight: 0 },
 ];
 
 /** Common sports offered during onboarding / habit creation. Users can add their own. */
@@ -62,6 +65,7 @@ export function defaultSettings(): Settings {
     eloStart: 1000,
     demoDataLoaded: false,
     profile: {},
+    healthMode: "form",
     reminders: { enabled: false, checkinTime: "21:00", habitReminders: true, firedToday: [] },
     dayFlow: {
       eveningEnabled: false,
@@ -97,6 +101,7 @@ export function emptyData(): AppData {
     journal: [],
     goals: [],
     weight: [],
+    health: [],
     finances: emptyFinances(),
     workouts: [],
     workoutPlans: [],

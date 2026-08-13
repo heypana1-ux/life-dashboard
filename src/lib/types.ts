@@ -23,7 +23,8 @@ export type AreaKey =
   | "learning"
   | "creativity"
   | "reflection"
-  | "finances";
+  | "finances"
+  | "health";
 
 export interface AreaConfig {
   key: AreaKey;
@@ -160,6 +161,19 @@ export interface Profile {
 export interface WeightLog {
   date: string; // YYYY-MM-DD
   kg: number;
+}
+
+/** Daily health check — tracked and correlated, but never part of the Life Score. */
+export interface HealthLog {
+  date: string; // YYYY-MM-DD
+  /** Overall wellbeing 1..10. */
+  wellbeing?: number;
+  /** Symptom key -> severity 1..3 (mild/moderate/strong); absent = not present. */
+  symptoms?: Record<string, number>;
+  sick?: boolean;
+  /** Glasses of water (or similar hydration count). */
+  hydration?: number;
+  note?: string;
 }
 
 /* ---------------- Finances ---------------- */
@@ -379,6 +393,8 @@ export interface Settings {
   navOrder?: string[];
   /** Guided day-flow overlays. */
   dayFlow?: DayFlowSettings;
+  /** How the Health screen collects data: a guided Q&A or a plain form. */
+  healthMode?: "questions" | "form";
 }
 
 export interface AppData {
@@ -391,6 +407,7 @@ export interface AppData {
   journal: JournalEntry[];
   goals: Goal[];
   weight: WeightLog[];
+  health: HealthLog[];
   finances: Finances;
   workouts: Workout[];
   workoutPlans: WorkoutPlan[];

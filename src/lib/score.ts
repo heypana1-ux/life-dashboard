@@ -192,6 +192,8 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
       if (r) score = reviewScore(r);
     } else if (area.key === "finances") {
       score = null; // manual net-worth tracking exists, but no daily-scoring engine yet
+    } else if (area.key === "health") {
+      score = null; // tracked & correlated, but deliberately never part of the Life Score
     } else {
       score = habitAreaScore(area.key, dateISO, habits, habitLogs);
     }

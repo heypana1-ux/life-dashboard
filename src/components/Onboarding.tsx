@@ -20,6 +20,7 @@ const AREA_DESC_KEYS: Record<AreaKey, string> = {
   creativity: "Projects & making",
   reflection: "Daily check-ins & mood",
   finances: "Net worth & spending",
+  health: "Wellbeing & symptoms",
 };
 
 const SELECTABLE: AreaKey[] = [
@@ -31,6 +32,7 @@ const SELECTABLE: AreaKey[] = [
   "habits",
   "productivity",
   "finances",
+  "health",
 ];
 
 export function Onboarding() {

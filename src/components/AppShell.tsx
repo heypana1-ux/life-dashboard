@@ -15,6 +15,7 @@ import {
   FlaskConical,
   Gauge,
   GripVertical,
+  HeartPulse,
   KanbanSquare,
   ListChecks,
   type LucideIcon,
@@ -51,6 +52,7 @@ const NAV: NavItem[] = [
   { href: "/habits", label: "Habits", icon: ListChecks },
   { href: "/training", label: "Training", icon: Dumbbell },
   { href: "/sleep", label: "Sleep", icon: Moon },
+  { href: "/health", label: "Health", icon: HeartPulse },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/goals", label: "Goals", icon: Target },
@@ -72,7 +74,7 @@ const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
 
 // Grouping for the mobile "More" sheet (keeps it scannable as features grow).
 const SECTIONS: { label: string; hrefs: string[] }[] = [
-  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/journal", "/calendar"] },
+  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
   { label: "Insights", hrefs: ["/statistics", "/analysis", "/reports", "/achievements", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/settings"] },

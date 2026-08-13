@@ -22,6 +22,7 @@ import {
   Liability,
   Profile,
   Project,
+  HealthLog,
   SleepLog,
   Settings,
   Transaction,
@@ -30,7 +31,7 @@ import {
   WorkoutPlan,
   SCHEMA_VERSION,
 } from "./types";
-import { emptyData, uid } from "./defaults";
+import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
 import { todayISO } from "./date";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
 import type { Session } from "@supabase/supabase-js";
@@ -64,6 +65,13 @@ const UPDATED_KEY = "life-dashboard:updatedAt";
 */
 
 /** Merge any (possibly older) blob onto a fresh base so new collections/fields exist. */
+/** Keep a stored areas list but append any default areas it doesn't have yet. */
+function mergeAreas(stored: AppData["settings"]["areas"]): AppData["settings"]["areas"] {
+  const keys = new Set(stored.map((a) => a.key));
+  const extra = DEFAULT_AREAS.filter((d) => !keys.has(d.key)).map((d) => ({ ...d }));
+  return [...stored, ...extra];
+}
+
 export function normalizeData(parsed: Partial<AppData> | null | undefined): AppData {
   const base = emptyData();
   if (!parsed || !parsed.schemaVersion || parsed.schemaVersion > SCHEMA_VERSION) return base;
@@ -74,6 +82,8 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     settings: {
       ...base.settings,
       ...parsed.settings,
+      // Append any newer default areas (e.g. Health) that a stored profile predates.
+      areas: mergeAreas(parsed.settings?.areas ?? base.settings.areas),
       profile: { ...base.settings.profile, ...parsed.settings?.profile },
       reminders: { ...base.settings.reminders, ...parsed.settings?.reminders },
       dayFlow: { ...base.settings.dayFlow!, ...parsed.settings?.dayFlow },
@@ -85,6 +95,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     journal: parsed.journal ?? [],
     goals: parsed.goals ?? [],
     weight: parsed.weight ?? [],
+    health: parsed.health ?? [],
     finances: { ...base.finances, ...parsed.finances },
     workouts: parsed.workouts ?? [],
     workoutPlans: parsed.workoutPlans ?? [],
@@ -130,6 +141,8 @@ interface StoreCtx {
   updateProfile: (patch: Partial<Profile>) => void;
   saveWeight: (w: WeightLog) => void;
   removeWeight: (date: string) => void;
+  /* health */
+  saveHealth: (h: HealthLog) => void;
   /* finances */
   setCurrency: (c: string) => void;
   saveAccount: (a: FinanceAccount) => void;
@@ -446,6 +459,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }),
       removeWeight: (date) =>
         mutate((d) => ({ ...d, weight: d.weight.filter((x) => x.date !== date) })),
+
+      /* health */
+      saveHealth: (h) =>
+        mutate((d) => {
+          const others = d.health.filter((x) => x.date !== h.date);
+          return { ...d, health: [...others, h].sort((a, b) => (a.date < b.date ? -1 : 1)) };
+        }),
 
       /* finances */
       setCurrency: (c) =>
