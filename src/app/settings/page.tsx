@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { BellRing, Download, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
+import { BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Accent, AreaKey, Language, Profile } from "@/lib/types";
 
@@ -196,6 +196,9 @@ export default function SettingsPage() {
       {/* Guided day-flow overlays */}
       <DayFlowCard />
 
+      {/* Apple Health import */}
+      <HealthImportCard />
+
       {/* Data */}
       <Card>
         <SectionTitle
@@ -318,6 +321,72 @@ function DayFlowCard() {
           )}
         </div>
       </div>
+    </Card>
+  );
+}
+
+function HealthImportCard() {
+  const { data, replaceAll } = useStore();
+  const t = useT();
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function onFile(file: File) {
+    setErr(null);
+    setResult(null);
+    if (file.name.toLowerCase().endsWith(".zip")) {
+      setErr(t("Please unzip the export first and upload export.xml."));
+      return;
+    }
+    setBusy(true);
+    try {
+      const text = await file.text();
+      if (!text.includes("HealthData") && !text.includes("<Record")) {
+        setErr(t("That doesn't look like an Apple Health export.xml."));
+        return;
+      }
+      const { parseAppleHealth } = await import("@/lib/appleHealth");
+      const { next, summary } = parseAppleHealth(text, data);
+      replaceAll(next);
+      setResult(
+        t("Imported {sleep} nights, {weight} weigh-ins, {workouts} workouts ({skipped} already present).", {
+          sleep: summary.sleep,
+          weight: summary.weight,
+          workouts: summary.workouts,
+          skipped: summary.skipped,
+        }),
+      );
+    } catch {
+      setErr(t("Could not read that file. On very large exports, try again on a computer."));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle right={<HeartPulse size={16} className="text-[var(--text-faint)]" />}>
+        {t("Apple Health import")}
+      </SectionTitle>
+      <p className="mb-2 text-sm text-[var(--text-muted)]">
+        {t("Bring in sleep, weight and workouts from Apple Health. On your iPhone: Health app → your photo → “Export All Health Data”, unzip it, then upload the export.xml here.")}
+      </p>
+      <p className="mb-3 text-xs text-[var(--text-faint)]">
+        {t("Everything is parsed on your device. Existing days are never overwritten. (Apple has no live web sync — this is a manual import.)")}
+      </p>
+      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--surface-2)]">
+        <Upload size={16} /> {busy ? t("Importing…") : t("Choose export.xml")}
+        <input
+          type="file"
+          accept=".xml,text/xml,application/xml"
+          className="hidden"
+          disabled={busy}
+          onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+        />
+      </label>
+      {result && <p className="mt-3 text-sm text-[var(--good)]">{result}</p>}
+      {err && <p className="mt-3 text-sm text-[var(--bad)]">{err}</p>}
     </Card>
   );
 }

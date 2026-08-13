@@ -692,6 +692,23 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Apple Health import ---
+  "Apple Health import": "Apple-Health-Import",
+  "Bring in sleep, weight and workouts from Apple Health. On your iPhone: Health app → your photo → “Export All Health Data”, unzip it, then upload the export.xml here.":
+    "Hol dir Schlaf, Gewicht und Workouts aus Apple Health. Auf dem iPhone: Health-App → dein Foto → „Alle Gesundheitsdaten exportieren“, entpacken, dann die export.xml hier hochladen.",
+  "Everything is parsed on your device. Existing days are never overwritten. (Apple has no live web sync — this is a manual import.)":
+    "Alles wird auf deinem Gerät verarbeitet. Bestehende Tage werden nie überschrieben. (Apple bietet keinen Live-Web-Sync — das ist ein manueller Import.)",
+  "Choose export.xml": "export.xml auswählen",
+  "Importing…": "Importiere…",
+  "Please unzip the export first and upload export.xml.":
+    "Bitte entpacke den Export zuerst und lade die export.xml hoch.",
+  "That doesn't look like an Apple Health export.xml.":
+    "Das sieht nicht nach einer Apple-Health-export.xml aus.",
+  "Imported {sleep} nights, {weight} weigh-ins, {workouts} workouts ({skipped} already present).":
+    "{sleep} Nächte, {weight} Gewichtseinträge, {workouts} Workouts importiert ({skipped} schon vorhanden).",
+  "Could not read that file. On very large exports, try again on a computer.":
+    "Datei konnte nicht gelesen werden. Bei sehr großen Exporten versuch es an einem Computer.",
+
   // --- Custom experiments ---
   "My own condition": "Eigene Bedingung",
   "Or start from a template": "Oder mit einer Vorlage starten",
