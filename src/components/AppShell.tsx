@@ -17,6 +17,7 @@ import {
   KanbanSquare,
   ListChecks,
   type LucideIcon,
+  Medal,
   Menu,
   Moon,
   ShieldCheck,
@@ -56,6 +57,7 @@ const NAV: NavItem[] = [
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
+  { href: "/scoreboard", label: "Scoreboard", icon: Medal },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 

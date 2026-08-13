@@ -692,6 +692,45 @@ const DE: Record<string, string> = {
   "Send email": "E-Mail senden",
   "Sent from Life Dashboard": "Gesendet aus Life Dashboard",
 
+  // --- Scoreboard ---
+  Scoreboard: "Rangliste",
+  "Compare your Life Score with others.": "Vergleiche deinen Life Score mit anderen.",
+  "Cloud sync required": "Cloud-Sync erforderlich",
+  "The scoreboard needs the Supabase setup so scores can be shared. Set it up in Settings first.":
+    "Die Rangliste braucht das Supabase-Setup, damit Scores geteilt werden können. Richte es zuerst in den Einstellungen ein.",
+  "Open Settings": "Einstellungen öffnen",
+  "Sign in to compete": "Zum Mitmachen anmelden",
+  "Sign in with your account in Settings, then publish your scores here.":
+    "Melde dich mit deinem Konto in den Einstellungen an und veröffentliche dann hier deine Scores.",
+  "Your entry": "Dein Eintrag",
+  "Display name": "Anzeigename",
+  "How others see you": "Wie andere dich sehen",
+  "Global ranking": "Globale Rangliste",
+  "Update my scores": "Meine Scores aktualisieren",
+  "Publish my scores": "Meine Scores veröffentlichen",
+  "Publishing your current 7-day average": "Veröffentlicht deinen aktuellen 7-Tage-Schnitt",
+  Overall: "Gesamt",
+  "Your scores are live.": "Deine Scores sind live.",
+  Leagues: "Ligen",
+  "Create a league and share its code, or join one with a friend's code.":
+    "Erstelle eine Liga und teile ihren Code, oder tritt mit dem Code eines Freundes bei.",
+  "New league name": "Name der neuen Liga",
+  "Join code": "Beitritts-Code",
+  Join: "Beitreten",
+  "League created. Share the code: {code}": "Liga erstellt. Teile den Code: {code}",
+  "Joined {name}.": "„{name}“ beigetreten.",
+  "No league found for that code.": "Keine Liga für diesen Code gefunden.",
+  Global: "Global",
+  Refresh: "Aktualisieren",
+  "Loading…": "Lädt…",
+  "No one on the global board yet. Turn on “Global ranking” above and publish.":
+    "Noch niemand in der globalen Rangliste. Aktiviere oben „Globale Rangliste“ und veröffentliche.",
+  "No scores in this league yet. Share the code so friends can join and publish.":
+    "Noch keine Scores in dieser Liga. Teile den Code, damit Freunde beitreten und veröffentlichen.",
+  You: "Du",
+  "Your rank": "Dein Rang",
+  of: "von",
+
   // --- Habit daily target ---
   "Daily target (optional)": "Tagesziel (optional)",
   "No target": "Kein Ziel",
