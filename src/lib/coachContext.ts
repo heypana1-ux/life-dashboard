@@ -2,6 +2,13 @@ import { AppData, DayScore, Language } from "./types";
 import { analyze } from "./analysis";
 import { habitsForToday } from "./habitView";
 import { aboutSummary } from "./about";
+import { personalRecords } from "./trainingStats";
+import { analyzeCycle } from "./cycle";
+import { SYMPTOM_LABEL, Symptom } from "./health";
+import { computeLevel } from "./level";
+import { weeklyChallenges } from "./challenges";
+import { computeAchievements } from "./achievements";
+import { evaluateExperiment } from "./experiments";
 import { AREA_LABELS } from "./defaults";
 import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
 import { weekAnchor } from "./recap";
@@ -109,6 +116,80 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
     .filter((r) => r.weekOf <= weekAnchor(today))
     .sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0];
   if (lastReview?.focus) L.push(`The user's focus from their last weekly review: "${lastReview.focus}".`);
+
+  // Goals
+  const goals = data.goals.filter((g) => !g.archived);
+  if (goals.length) {
+    const gl = goals.slice(0, 6).map((g) => `${g.title} (${g.progress}%${g.deadline ? `, due ${g.deadline}` : ""})`);
+    L.push(`Active goals: ${gl.join("; ")}.`);
+  }
+
+  // Strength records
+  if (data.workouts.length) {
+    const prs = personalRecords(data.workouts).slice(0, 5).map((p) => `${p.name} ${p.weight}kg×${p.reps} (~1RM ${p.best1RM})`);
+    if (prs.length) L.push(`Strength records: ${prs.join("; ")}.`);
+  }
+
+  // Health details (symptoms, sick/recovery, meds, cycle)
+  if (data.health.length) {
+    const recent = data.health.filter((h) => h.date >= addDays(today, -14));
+    const symFreq = new Map<string, number>();
+    let sickDays = 0;
+    let recovDays = 0;
+    for (const h of recent) {
+      if (h.sick) sickDays += 1;
+      if (h.recovering) recovDays += 1;
+      for (const [k, v] of Object.entries(h.symptoms ?? {})) if (v > 0) symFreq.set(k, (symFreq.get(k) ?? 0) + 1);
+    }
+    const hp: string[] = [];
+    if (symFreq.size) {
+      const top = [...symFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${SYMPTOM_LABEL[k as Symptom] ?? k} ${n}×`);
+      hp.push(`symptoms (14d): ${top.join(", ")}`);
+    }
+    if (sickDays) hp.push(`${sickDays} sick day(s)`);
+    if (recovDays) hp.push(`${recovDays} recovery day(s)`);
+    if (hp.length) L.push(`Health: ${hp.join("; ")}.`);
+    const meds = data.settings.medications ?? [];
+    if (meds.length) {
+      const takenDays = recent.filter((h) => (h.meds?.length ?? 0) > 0).length;
+      L.push(`Medications/supplements tracked: ${meds.join(", ")}; taken on ${takenDays} of the last ${recent.length} logged days.`);
+    }
+    if (data.settings.cycleTracking) {
+      const c = analyzeCycle(data.health, today);
+      if (c.lastStart) L.push(`Cycle: day ${c.cycleDay ?? "?"}${c.avgLength ? `, avg length ${c.avgLength}d` : ""}${c.nextPredicted ? `, next around ${c.nextPredicted}` : ""}.`);
+    }
+  }
+
+  // Journal — mood & tags only, never the written contents
+  if (data.journal.length) {
+    const rj = data.journal.filter((j) => j.date >= addDays(today, -30));
+    if (rj.length) {
+      const moods = rj.map((j) => j.mood).filter((m): m is number => typeof m === "number");
+      const tagFreq = new Map<string, number>();
+      for (const j of rj) for (const tg of j.tags ?? []) tagFreq.set(tg, (tagFreq.get(tg) ?? 0) + 1);
+      const jp = [`${rj.length} entries in 30 days`];
+      if (moods.length) jp.push(`avg mood ${(moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1)}/10`);
+      if (tagFreq.size) jp.push(`common tags: ${[...tagFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => k).join(", ")}`);
+      L.push(`Journal: ${jp.join("; ")} (written contents kept private).`);
+    }
+  }
+
+  // Projects & experiments
+  if (data.projects.length) L.push(`Tracking ${data.projects.length} project(s) on the board.`);
+  for (const e of data.experiments.slice(0, 3)) {
+    const res = evaluateExperiment(data, e);
+    if (res.enough) {
+      L.push(`Experiment "${e.title}": on days meeting the condition, the target metric was ${res.diffPct >= 0 ? "+" : ""}${res.diffPct}% vs other days (n=${res.nMet} vs ${res.nNot}).`);
+    }
+  }
+
+  // Level, achievements, weekly challenges
+  const lvl = computeLevel(data, history);
+  const unlocked = computeAchievements(data, history).filter((a) => a.unlocked).length;
+  L.push(`Progress: Level ${lvl.level} (${lvl.title}), ${lvl.xp} total XP; ${unlocked} achievements unlocked.`);
+  const ch = weeklyChallenges(data, byDate, today);
+  const openCh = ch.filter((c) => !c.done);
+  L.push(line([`This week's challenges: ${ch.length - openCh.length}/${ch.length} done.`, openCh.length ? `Still open: ${openCh.map((c) => c.title).join(", ")}.` : ""]));
 
   // Analysis engine conclusions — the important part.
   L.push(`\nAnalysis engine summary: ${report.verdict.summary}`);
