@@ -811,6 +811,9 @@ const DE: Record<string, string> = {
   "What do you do (job, studies, field)?": "Was machst du (Beruf, Studium, Bereich)?",
   "e.g. Second-year CS student, part-time barista": "z. B. Informatik im 2. Jahr, nebenbei Barista",
   "How would you describe yourself in a few words?": "Wie würdest du dich in wenigen Worten beschreiben?",
+  "Anything going on right now the coach should factor in?": "Gibt es gerade etwas, das der Coach berücksichtigen sollte?",
+  "e.g. Recovering from surgery — no training for 2 weeks; big exam next Friday":
+    "z. B. Nach OP — 2 Wochen kein Training; große Prüfung nächsten Freitag",
   "What are you most trying to improve right now?": "Was möchtest du gerade am meisten verbessern?",
   "What does a great week look like for you?": "Wie sieht für dich eine großartige Woche aus?",
   "What tends to hold you back?": "Was hält dich oft zurück?",

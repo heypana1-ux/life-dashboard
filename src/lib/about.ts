@@ -25,6 +25,7 @@ export const ABOUT_GROUPS: AboutGroup[] = [
       { id: "situation", q: "What's your current situation?", options: ["Pupil", "Student", "Working", "Self-employed", "Between things", "Retired"] },
       { id: "work", q: "What do you do (job, studies, field)?", placeholder: "e.g. Second-year CS student, part-time barista" },
       { id: "describe", q: "How would you describe yourself in a few words?" },
+      { id: "current", q: "Anything going on right now the coach should factor in?", placeholder: "e.g. Recovering from surgery — no training for 2 weeks; big exam next Friday" },
     ],
   },
   {
