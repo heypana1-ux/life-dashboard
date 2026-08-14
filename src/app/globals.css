@@ -154,6 +154,22 @@ body {
   box-shadow: var(--shadow);
 }
 
+/* Compact density: tighter cards, tiles and section rhythm. */
+:root[data-density="compact"] .card {
+  padding: 14px !important;
+}
+@media (min-width: 640px) {
+  :root[data-density="compact"] .card {
+    padding: 16px !important;
+  }
+}
+:root[data-density="compact"] .tile {
+  padding: 12px !important;
+}
+:root[data-density="compact"] .slabel {
+  margin-bottom: 4px;
+}
+
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }

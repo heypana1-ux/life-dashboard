@@ -2,37 +2,23 @@
 
 import { useState } from "react";
 import {
-  Dumbbell,
   Flame,
-  GraduationCap,
   LayoutTemplate,
-  type LucideIcon,
-  Moon,
-  Palette,
   Pencil,
   Plus,
   Repeat,
   Trash2,
-  Zap,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { AreaKey, Habit } from "@/lib/types";
+import { Habit } from "@/lib/types";
 import { fmtDuration } from "@/lib/date";
 import { habitCurrentStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
+import { AREA_ICONS } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
 import { PageHeader, Button, Badge, EmptyState, Chip, Modal } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
-
-const AREA_ICON: Partial<Record<AreaKey, LucideIcon>> = {
-  sport: Dumbbell,
-  productivity: Zap,
-  learning: GraduationCap,
-  creativity: Palette,
-  sleep: Moon,
-  habits: Repeat,
-};
 
 export default function HabitsPage() {
   const { data, removeHabit, addHabit } = useStore();
@@ -221,7 +207,7 @@ function HabitCard({
   const t = useT();
   const { data } = useStore();
   const streak = habitCurrentStreak(data, h);
-  const Icon = AREA_ICON[h.area] ?? Repeat;
+  const Icon = AREA_ICONS[h.area] ?? Repeat;
   const dots = habitHeatmap(data, h).slice(-30);
   const heatColor = (lvl: string) =>
     lvl === "done" ? "var(--good)" : lvl === "missed" ? "var(--bad-soft)" : "var(--surface-3)";

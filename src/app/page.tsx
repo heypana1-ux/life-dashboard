@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useDerived, useTodayComputation } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
 import { habitsForToday } from "@/lib/habitView";
+import { areaColor } from "@/lib/areaStyle";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges } from "@/lib/challenges";
 import { fmtLong } from "@/lib/date";
@@ -228,16 +229,6 @@ function challengeShort(
   }
 }
 
-const AREA_COLORS: Partial<Record<AreaKey, string>> = {
-  productivity: "#4f46e5",
-  sport: "#16a34a",
-  sleep: "#0ea5e9",
-  habits: "#d97706",
-  learning: "#9333ea",
-  creativity: "#db2777",
-  reflection: "#0891b2",
-};
-
 function CategoryRow({
   area,
   derived,
@@ -248,7 +239,7 @@ function CategoryRow({
   live?: number;
 }) {
   const t = useT();
-  const color = AREA_COLORS[area] ?? "var(--accent)";
+  const color = areaColor(area);
   const spark = derived.history
     .slice(-14)
     .map((h) => ({ date: h.date, value: h.categories[area] ?? 0 }));

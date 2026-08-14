@@ -416,6 +416,8 @@ export interface DayFlowSettings {
 export interface Settings {
   onboardingComplete: boolean;
   theme: "light" | "dark" | "system";
+  /** UI density: cozy (default) or compact (tighter cards/spacing). */
+  density?: "cozy" | "compact";
   accent: Accent;
   language: Language;
   areas: AreaConfig[];

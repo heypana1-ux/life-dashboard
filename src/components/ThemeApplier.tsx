@@ -8,11 +8,17 @@ export function ThemeApplier() {
   const { data, ready } = useStore();
   const theme = data.settings.theme;
   const accent = data.settings.accent ?? "calm";
+  const density = data.settings.density ?? "cozy";
 
   useEffect(() => {
     if (!ready) return;
     document.documentElement.setAttribute("data-accent", accent);
   }, [accent, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    document.documentElement.setAttribute("data-density", density);
+  }, [density, ready]);
 
   useEffect(() => {
     if (!ready) return;

@@ -101,6 +101,28 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
+        <div className="mt-4">
+          <div className="mb-2 text-sm font-medium">{t("Density")}</div>
+          <div className="flex gap-2">
+            {[
+              { k: "cozy", label: t("Cozy") },
+              { k: "compact", label: t("Compact") },
+            ].map(({ k, label }) => (
+              <button
+                key={k}
+                onClick={() => updateSettings({ density: k as "cozy" | "compact" })}
+                className={clsx(
+                  "flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition",
+                  (s.density ?? "cozy") === k
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
       </Card>
 
       {/* Accent */}

@@ -846,6 +846,10 @@ const DE: Record<string, string> = {
   "Hit {n}% of your habits": "{n}% deiner Gewohnheiten schaffen",
   "Write 3 journal entries": "3 Tagebuch-Einträge schreiben",
   "Check in on 5 days": "An 5 Tagen einchecken",
+  // --- Density ---
+  Density: "Dichte",
+  Cozy: "Gemütlich",
+  Compact: "Kompakt",
   // --- Nav pinning ---
   "Pin to bar": "An Leiste anheften",
   Unpin: "Lösen",
