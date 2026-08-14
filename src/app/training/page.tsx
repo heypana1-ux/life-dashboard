@@ -27,6 +27,7 @@ import {
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
+import { WorkoutRunner } from "@/components/WorkoutRunner";
 
 type Tab = "workouts" | "plans" | "progress";
 
@@ -38,6 +39,7 @@ export default function TrainingPage() {
   const [editing, setEditing] = useState<Workout | undefined>();
   const [fromPlan, setFromPlan] = useState<WorkoutPlan | undefined>();
   const [quickSport, setQuickSport] = useState<string | undefined>();
+  const [runner, setRunner] = useState<{ plan?: WorkoutPlan } | null>(null);
 
   const workouts = useMemo(
     () => [...data.workouts].sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -51,9 +53,13 @@ export default function TrainingPage() {
     setModal(true);
   }
 
-  // Tap a sport to jump straight into logging it — the timer auto-starts for
-  // time-based sports, so the form doubles as the post-session recap.
+  // Tap a sport to jump straight into logging it. Strength opens the guided runner;
+  // time-based sports open the form with the timer already running (form = recap).
   function quickStart(sport: string) {
+    if (sportKind(sport) === "strength") {
+      setRunner({});
+      return;
+    }
     setEditing(undefined);
     setFromPlan(undefined);
     setQuickSport(sport);
@@ -92,10 +98,11 @@ export default function TrainingPage() {
           onQuickStart={quickStart}
         />
       )}
-      {tab === "plans" && <PlansTab onStart={(p) => newWorkout(p)} />}
+      {tab === "plans" && <PlansTab onStart={(p) => setRunner({ plan: p })} />}
       {tab === "progress" && <ProgressTab workouts={data.workouts} />}
 
       <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} fromPlan={fromPlan} quickSport={quickSport} />
+      {runner && <WorkoutRunner plan={runner.plan} onClose={() => setRunner(null)} />}
     </div>
   );
 }
