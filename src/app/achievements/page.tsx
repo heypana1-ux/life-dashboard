@@ -1,10 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
+import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { computeAchievements, computeRecords } from "@/lib/achievements";
+import { computeLevel } from "@/lib/level";
+import { weeklyChallenges, Challenge } from "@/lib/challenges";
+import { todayISO } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
 import clsx from "clsx";
 
@@ -15,7 +19,10 @@ export default function AchievementsPage() {
 
   const achievements = useMemo(() => computeAchievements(data, d.history), [data, d.history]);
   const records = useMemo(() => computeRecords(data, d.history), [data, d.history]);
+  const level = useMemo(() => computeLevel(data, d.history), [data, d.history]);
+  const challenges = useMemo(() => weeklyChallenges(data, d.byDate, todayISO()), [data, d.byDate]);
   const unlocked = achievements.filter((a) => a.unlocked).length;
+  const challengesDone = challenges.filter((c) => c.done).length;
 
   return (
     <div className="space-y-6">
@@ -23,6 +30,41 @@ export default function AchievementsPage() {
         title={t("Achievements")}
         subtitle={t("Milestones and personal records from your data.")}
       />
+
+      {/* Level / XP */}
+      <div className="grad relative overflow-hidden rounded-[22px] p-6 text-white shadow-[var(--shadow)]">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-medium opacity-85">{t("Level")}</div>
+            <div className="mt-1 flex items-baseline gap-2.5">
+              <span className="num text-[52px] font-bold leading-none">{level.level}</span>
+              <span className="text-lg font-semibold">{t(level.title)}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="num text-2xl font-bold">{level.xp.toLocaleString()}</div>
+            <div className="text-xs opacity-85">{t("total XP")}</div>
+          </div>
+        </div>
+        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/25">
+          <div className="h-full rounded-full bg-white" style={{ width: `${level.pct}%`, transition: "width .6s ease" }} />
+        </div>
+        <div className="mt-1.5 text-xs opacity-90">
+          {level.intoLevel.toLocaleString()} / {level.span.toLocaleString()} {t("XP to level {n}", { n: level.level + 1 })}
+        </div>
+      </div>
+
+      {/* Weekly challenges */}
+      <Card>
+        <SectionTitle right={<Badge tone="accent">{challengesDone}/{challenges.length} {t("done")}</Badge>}>
+          {t("This week's challenges")}
+        </SectionTitle>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {challenges.map((c) => (
+            <ChallengeRow key={c.id} c={c} />
+          ))}
+        </div>
+      </Card>
 
       <Card>
         <SectionTitle right={<Badge tone="accent">{unlocked}/{achievements.length} {t("Unlocked")}</Badge>}>
@@ -80,4 +122,55 @@ export default function AchievementsPage() {
       </Card>
     </div>
   );
+}
+
+function ChallengeRow({ c }: { c: Challenge }) {
+  const t = useT();
+  const label = challengeLabel(c, t);
+  const pct = Math.min(100, Math.round((c.current / c.target) * 100));
+  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(1));
+  return (
+    <div
+      className={clsx(
+        "flex items-center gap-3 rounded-xl border p-3 transition",
+        c.done ? "border-[var(--good)] bg-[var(--good)]/10" : "border-[var(--border)] bg-[var(--surface-2)]",
+      )}
+    >
+      <div className={clsx("text-2xl", !c.done && "opacity-70")}>{c.icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">{label}</span>
+          {c.done ? (
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--good)] text-white">
+              <Check size={12} strokeWidth={3} />
+            </span>
+          ) : (
+            <span className="shrink-0 text-xs tabular-nums text-[var(--text-faint)]">{fmt(c.current)}/{fmt(c.target)}</span>
+          )}
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.done ? "var(--good)" : "var(--accent)" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function challengeLabel(c: Challenge, t: (k: string, v?: Record<string, string | number>) => string): string {
+  switch (c.id) {
+    case "train":
+      return t("Train {n}× this week", { n: c.target });
+    case "logall":
+      return t("Log all 7 days");
+    case "sleep":
+      return t("Average {h}h sleep", { h: c.target });
+    case "habits":
+      return t("Hit {n}% of your habits", { n: c.target });
+    case "journal":
+      return t("Write 3 journal entries");
+    case "checkin":
+      return t("Check in on 5 days");
+    default:
+      return c.title;
+  }
 }
