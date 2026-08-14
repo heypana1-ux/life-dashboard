@@ -792,6 +792,10 @@ const DE: Record<string, string> = {
   "These answers stay on your device (and sync if you enabled it). They're only shared with the AI coach when it's turned on, so it can tailor its advice to you.":
     "Diese Antworten bleiben auf deinem Gerät (und synchronisieren, falls aktiviert). Sie werden nur an den KI-Coach weitergegeben, wenn er eingeschaltet ist, damit er seinen Rat auf dich zuschneiden kann.",
   "You can edit any of this any time.": "Du kannst all das jederzeit ändern.",
+  Later: "Später",
+  "Tell your coach about you": "Erzähl deinem Coach von dir",
+  "Optional — answer what you like now, or do it later under 'About you'. It helps the AI coach give advice that fits you.":
+    "Optional — beantworte jetzt, was du magst, oder später unter Über dich. Es hilft dem KI-Coach, dir passenden Rat zu geben.",
   "Your answer…": "Deine Antwort …",
   "Goals & motivation": "Ziele & Motivation",
   "Training & body": "Training & Körper",

@@ -4,8 +4,9 @@ import { useState } from "react";
 import { Moon, Sparkles, Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AREA_LABELS, DEFAULT_AREAS, starterHabits } from "@/lib/defaults";
+import { ABOUT_GROUPS, AboutQuestion } from "@/lib/about";
 import { generateDemo } from "@/lib/demo";
-import { AreaKey, Language, Profile } from "@/lib/types";
+import { AppData, AreaKey, Language, Profile } from "@/lib/types";
 import { todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { Button, Card, Field, inputCls } from "@/components/ui";
@@ -46,6 +47,7 @@ export function Onboarding() {
   );
   const [sleepH, setSleepH] = useState(8);
   const [trainPerWeek, setTrainPerWeek] = useState(3);
+  const [about, setAbout] = useState<Record<string, string>>({});
   const [profile, setProfile] = useState<{
     name: string;
     age: string;
@@ -74,13 +76,15 @@ export function Onboarding() {
     if (profile.heightCm) prof.heightCm = Number(profile.heightCm);
 
     // redistribute weight of disabled areas is handled at scoring time; keep base weights.
-    let next = {
+    const answered = Object.fromEntries(Object.entries(about).filter(([, v]) => v.trim()));
+    let next: AppData = {
       ...data,
       settings: {
         ...data.settings,
         areas,
         profile: prof,
         sleepTargetMinutes: Math.round(sleepH * 60),
+        about: Object.keys(answered).length ? answered : data.settings.about,
         onboardingComplete: true,
       },
     };
@@ -102,14 +106,17 @@ export function Onboarding() {
     replaceAll(next);
   }
 
-  // From the data step: if cloud sync is available, offer account setup before finishing.
+  // From the data step: collect the optional "About you" answers, then (optionally) the
+  // account step, before finishing.
   function chooseData(withDemo: boolean) {
-    if (sync.configured) {
-      setDemoChoice(withDemo);
-      setStep(4);
-    } else {
-      finish(withDemo);
-    }
+    setDemoChoice(withDemo);
+    setStep(5); // About-you questionnaire (skippable)
+  }
+
+  // After the questionnaire: account step if sync is available, else finish.
+  function afterAbout() {
+    if (sync.configured) setStep(4);
+    else finish(demoChoice ?? false);
   }
 
   return (
@@ -329,9 +336,48 @@ export function Onboarding() {
         </Card>
       )}
 
+      {step === 5 && (
+        <Card className="animate-in">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">{t("Tell your coach about you")}</h1>
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                {t("Optional — answer what you like now, or do it later under 'About you'. It helps the AI coach give advice that fits you.")}
+              </p>
+            </div>
+            <button onClick={afterAbout} className="shrink-0 whitespace-nowrap text-sm font-medium text-[var(--text-muted)] hover:text-[var(--text)]">
+              {t("Later")}
+            </button>
+          </div>
+
+          <div className="mt-4 max-h-[52vh] space-y-4 overflow-y-auto pr-1">
+            {ABOUT_GROUPS.map((g) => (
+              <div key={g.group}>
+                <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t(g.group)}</div>
+                <div className="space-y-3">
+                  {g.questions.map((q) => (
+                    <OnboardingAboutField
+                      key={q.id}
+                      q={q}
+                      value={about[q.id] ?? ""}
+                      onChange={(v) => setAbout((a) => ({ ...a, [q.id]: v }))}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-5 flex items-center justify-between gap-2">
+            <Button variant="ghost" onClick={() => setStep(3)}>{t("Back")}</Button>
+            <Button onClick={afterAbout}>{t("Continue")}</Button>
+          </div>
+        </Card>
+      )}
+
       {step === 4 && (
         <AccountStep
-          onBack={() => setStep(3)}
+          onBack={() => setStep(5)}
           onSkip={() => finish(demoChoice ?? false)}
           onDone={() => finish(demoChoice ?? false)}
           sync={sync}
@@ -341,6 +387,51 @@ export function Onboarding() {
       <p className="mt-6 text-center text-xs text-[var(--text-faint)]">
         {t("Everything is stored locally in your browser. Nothing is sent anywhere.")}
       </p>
+    </div>
+  );
+}
+
+function OnboardingAboutField({
+  q,
+  value,
+  onChange,
+}: {
+  q: AboutQuestion;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const t = useT();
+  return (
+    <div>
+      <div className="mb-1 text-[13px] font-medium">{t(q.q)}</div>
+      {q.options && (
+        <div className="mb-1.5 flex flex-wrap gap-1.5">
+          {q.options.map((opt) => {
+            const active = value.trim() === t(opt);
+            return (
+              <button
+                key={opt}
+                onClick={() => onChange(active ? "" : t(opt))}
+                className={clsx(
+                  "rounded-full border px-2.5 py-1 text-xs font-medium transition",
+                  active
+                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                    : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
+                )}
+              >
+                {t(opt)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      <textarea
+        rows={2}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={q.placeholder ? t(q.placeholder) : t("Your answer…")}
+        className={`${inputCls} resize-none`}
+      />
     </div>
   );
 }
