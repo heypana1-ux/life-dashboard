@@ -551,6 +551,7 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
   const t = useT();
   const blank: WorkoutPlan = { id: "", name: "", exercises: [], createdAt: "" };
   const [draft, setDraft] = useState<WorkoutPlan>(editing ?? blank);
+  const [defaultRest, setDefaultRest] = useState<number | undefined>(90);
   const key = editing?.id ?? "new";
   const [lk, setLk] = useState(key);
   if (open && key !== lk) {
@@ -572,11 +573,27 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
         <Field label={t("Plan name")}>
           <input className={inputCls} placeholder="Push" value={draft.name} onChange={(e) => set({ name: e.target.value })} />
         </Field>
+        <div className="flex items-end gap-2 rounded-xl bg-[var(--surface-2)] p-3">
+          <label className="flex-1 text-xs font-medium text-[var(--text-muted)]">
+            {t("Default rest (seconds)")}
+            <NumberInput
+              className={`${inputCls} mt-1`}
+              placeholder="90"
+              value={defaultRest}
+              onChange={setDefaultRest}
+            />
+          </label>
+          <Button variant="soft" size="sm" onClick={() => set({ exercises: draft.exercises.map((e) => ({ ...e, restSec: defaultRest })) })}>
+            {t("Apply to all")}
+          </Button>
+        </div>
+
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm font-medium">{t("Exercises")}</span>
             <Button variant="soft" size="sm" onClick={addExercise}><Plus size={14} /> {t("Add exercise")}</Button>
           </div>
+          <p className="mb-2 text-xs text-[var(--text-faint)]">{t("Leave a rest empty for no pause (supersets).")}</p>
           <div className="space-y-2">
             {draft.exercises.map((ex, i) => (
               <div key={i} className="flex flex-wrap items-center gap-2 rounded-xl border border-[var(--border)] p-2.5">
