@@ -63,7 +63,8 @@ export function HabitRow({
         onClick={onCircle}
         aria-label={isReduce ? "Record occurrence" : "Mark done"}
         className={clsx(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition",
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition active:scale-90",
+          marked && !isReduce && "pop",
           isReduce
             ? marked
               ? "border-[var(--bad)] bg-[var(--bad)] text-white"

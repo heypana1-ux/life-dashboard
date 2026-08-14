@@ -192,6 +192,16 @@ body {
   animation: fadeIn 0.35s ease both;
 }
 
+/* Tap feedback: a quick pop when something is marked done. */
+@keyframes checkPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.28); }
+  100% { transform: scale(1); }
+}
+.pop {
+  animation: checkPop 0.28s ease;
+}
+
 /* Mobile sheet: slide up from the bottom */
 @keyframes sheetUp {
   from {

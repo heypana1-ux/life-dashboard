@@ -846,6 +846,9 @@ const DE: Record<string, string> = {
   "Hit {n}% of your habits": "{n}% deiner Gewohnheiten schaffen",
   "Write 3 journal entries": "3 Tagebuch-Einträge schreiben",
   "Check in on 5 days": "An 5 Tagen einchecken",
+  // --- Dashboard activity ---
+  Activity: "Aktivität",
+  "Calendar →": "Kalender →",
   // --- Density ---
   Density: "Dichte",
   Cozy: "Gemütlich",

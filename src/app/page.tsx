@@ -19,6 +19,7 @@ import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing } from "@/components/Coach";
+import { MiniHeatmap } from "@/components/MiniHeatmap";
 
 export default function DashboardPage() {
   const { data } = useStore();
@@ -181,6 +182,14 @@ export default function DashboardPage() {
             </p>
           </Card>
         </div>
+
+        {/* Activity heatmap */}
+        <Card>
+          <SectionTitle right={<Link href="/calendar" className="text-xs text-[var(--accent)]">{t("Calendar →")}</Link>}>
+            {t("Activity")}
+          </SectionTitle>
+          <MiniHeatmap />
+        </Card>
 
         {/* Today's goals */}
         <Card>
