@@ -4,35 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import {
-  BarChart3,
-  BookOpen,
-  Brain,
-  CalendarCheck,
-  CalendarDays,
-  Dumbbell,
-  FileText,
-  FlaskConical,
-  Gauge,
-  GripVertical,
-  HeartPulse,
-  KanbanSquare,
-  ListChecks,
-  type LucideIcon,
-  Medal,
-  Menu,
-  Moon,
-  Search,
-  ShieldCheck,
-  Sunrise,
-  Target,
-  Settings as SettingsIcon,
-  Sparkles,
-  Trophy,
-  Wallet,
-} from "lucide-react";
+import { GripVertical, Menu, Plus, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { NAV, BOTTOM, SECTIONS, orderNav, type NavItem } from "@/lib/nav";
 import { Onboarding } from "@/components/Onboarding";
 import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
@@ -40,65 +15,8 @@ import { DayFlow } from "@/components/DayFlow";
 import { RecapGate } from "@/components/Recap";
 import { WeeklyReviewGate } from "@/components/WeeklyReview";
 import { CoachLauncher } from "@/components/Coach";
+import { CommandPalette, CommandPaletteButton, openCommandPalette } from "@/components/CommandPalette";
 import { Tour } from "@/components/Tour";
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-}
-
-const NAV: NavItem[] = [
-  { href: "/", label: "Dashboard", icon: Gauge },
-  { href: "/today", label: "Today", icon: CalendarCheck },
-  { href: "/morning", label: "Morning", icon: Sunrise },
-  { href: "/habits", label: "Habits", icon: ListChecks },
-  { href: "/training", label: "Training", icon: Dumbbell },
-  { href: "/sleep", label: "Sleep", icon: Moon },
-  { href: "/health", label: "Health", icon: HeartPulse },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/journal", label: "Journal", icon: BookOpen },
-  { href: "/goals", label: "Goals", icon: Target },
-  { href: "/projects", label: "Projects", icon: KanbanSquare },
-  { href: "/experiments", label: "Experiments", icon: FlaskConical },
-  { href: "/finances", label: "Finances", icon: Wallet },
-  { href: "/statistics", label: "Statistics", icon: BarChart3 },
-  { href: "/analysis", label: "Analysis", icon: Brain },
-  { href: "/coach", label: "Coach", icon: Sparkles },
-  { href: "/reports", label: "Reports", icon: FileText },
-  { href: "/achievements", label: "Achievements", icon: Trophy },
-  { href: "/scoreboard", label: "Scoreboard", icon: Medal },
-  { href: "/settings", label: "Settings", icon: SettingsIcon },
-];
-
-// Shown in the mobile bottom bar; the rest live under "More".
-const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
-  (href) => NAV.find((n) => n.href === href)!,
-);
-
-// Grouping for the mobile "More" sheet (keeps it scannable as features grow).
-const SECTIONS: { label: string; hrefs: string[] }[] = [
-  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/scoreboard"] },
-  { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
-  { label: "System", hrefs: ["/settings"] },
-];
-
-/** Apply the user's saved sidebar order, keeping any new items at the end. */
-function orderNav(order?: string[]): NavItem[] {
-  if (!order?.length) return NAV;
-  const byHref = new Map(NAV.map((n) => [n.href, n] as const));
-  const out: NavItem[] = [];
-  for (const href of order) {
-    const n = byHref.get(href);
-    if (n) {
-      out.push(n);
-      byHref.delete(href);
-    }
-  }
-  for (const n of NAV) if (byHref.has(n.href)) out.push(n);
-  return out;
-}
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
@@ -184,6 +102,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <span className="text-[15px] font-semibold tracking-[-0.02em]">{t("Life Dashboard")}</span>
         </div>
+        <button
+          onClick={openCommandPalette}
+          className="mb-2 flex items-center gap-2 rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1.5 text-[13px] text-[var(--text-muted)] hover:border-[var(--accent)]"
+        >
+          <Plus size={14} className="text-[var(--accent)]" />
+          {t("Quick add")}
+          <kbd className="ml-auto rounded border border-[var(--border)] px-1 py-0.5 text-[10px] text-[var(--text-faint)]">⌘K</kbd>
+        </button>
         <label className="relative mb-2 flex items-center">
           <Search size={14} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
           <input
@@ -234,6 +160,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DayFlow />
           <RecapGate />
           <WeeklyReviewGate />
+          <CommandPalette />
           {!isActive(pathname, "/coach") && <CoachLauncher />}
           <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             <BackupReminder />
@@ -277,6 +204,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             className="sheet-up absolute bottom-16 left-3 right-3 flex max-h-[74vh] flex-col gap-3 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
+            <div onClick={() => { setMoreOpen(false); setMoreQuery(""); }}>
+              <CommandPaletteButton />
+            </div>
             <label className="relative flex items-center">
               <Search size={15} className="pointer-events-none absolute left-3 text-[var(--text-faint)]" />
               <input

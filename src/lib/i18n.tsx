@@ -786,6 +786,13 @@ const DE: Record<string, string> = {
     "In Vercel → dein Projekt → Settings → Environment Variables GROQ_API_KEY mit diesem Wert hinzufügen.",
   "Redeploy the project, then tap Re-check below.": "Projekt neu deployen, dann unten auf Erneut prüfen tippen.",
   "Re-check": "Erneut prüfen",
+  // --- Command palette / quick add ---
+  "Quick add": "Schnell erfassen",
+  "Search or jump to…": "Suchen oder springen …",
+  "No matches.": "Keine Treffer.",
+  "Undo": "Rückgängig",
+  "Mark done": "Als erledigt markieren",
+  Go: "Öffnen",
   "Coach briefing": "Coach-Briefing",
   "Plan my day": "Meinen Tag planen",
   "Planning…": "Plane …",
