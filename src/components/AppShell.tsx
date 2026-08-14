@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useMemo, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import {
   BarChart3,
@@ -99,7 +99,17 @@ function orderNav(order?: string[]): NavItem[] {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
   const pathname = usePathname();
+  const router = useRouter();
   const t = useT();
+  const [slideDir, setSlideDir] = useState<"left" | "right" | null>(null);
+  const pendingDir = useRef<"left" | "right" | null>(null);
+  const touch = useRef<{ x: number; y: number } | null>(null);
+
+  // Apply a directional slide only when navigation came from a swipe; clicks fade.
+  useEffect(() => {
+    setSlideDir(pendingDir.current);
+    pendingDir.current = null;
+  }, [pathname]);
   const [moreOpen, setMoreOpen] = useState(false);
   const [dragHref, setDragHref] = useState<string | null>(null);
   const [overHref, setOverHref] = useState<string | null>(null);
@@ -119,6 +129,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     hrefs.splice(from, 1);
     hrefs.splice(to, 0, dragHref);
     updateSettings({ navOrder: hrefs });
+  }
+
+  // Swipe left/right to move to the next/previous page in the nav order (mobile).
+  function navBySwipe(delta: number) {
+    const idx = orderedNav.findIndex((n) => isActive(pathname, n.href));
+    if (idx < 0) return;
+    const next = idx + delta;
+    if (next < 0 || next >= orderedNav.length) return;
+    pendingDir.current = delta > 0 ? "left" : "right";
+    router.push(orderedNav[next].href);
+  }
+  function onTouchStart(e: React.TouchEvent) {
+    const el = e.target as HTMLElement;
+    if (el.closest('input,textarea,select,button,a,[role="slider"],.no-swipe')) {
+      touch.current = null;
+      return;
+    }
+    const p = e.touches[0];
+    touch.current = { x: p.clientX, y: p.clientY };
+  }
+  function onTouchEnd(e: React.TouchEvent) {
+    if (!touch.current) return;
+    const p = e.changedTouches[0];
+    const dx = p.clientX - touch.current.x;
+    const dy = p.clientY - touch.current.y;
+    touch.current = null;
+    if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.7) navBySwipe(dx < 0 ? 1 : -1);
   }
 
   if (!ready) {
@@ -186,12 +223,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main */}
-      <main className="min-w-0 flex-1">
+      <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
           <Reminders />
           <DayFlow />
           <RecapGate />
-          <div className="animate-in">
+          <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             <BackupReminder />
             {children}
           </div>
@@ -230,7 +267,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         >
           <div
-            className="absolute bottom-16 left-3 right-3 flex max-h-[74vh] flex-col gap-3 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
+            className="sheet-up absolute bottom-16 left-3 right-3 flex max-h-[74vh] flex-col gap-3 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <label className="relative flex items-center">
@@ -239,7 +276,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 value={moreQuery}
                 onChange={(e) => setMoreQuery(e.target.value)}
                 placeholder={t("Search pages…")}
-                autoFocus
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>

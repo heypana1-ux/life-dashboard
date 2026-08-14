@@ -919,6 +919,8 @@ const DE: Record<string, string> = {
   "due today": "heute fällig",
   "{n} days left": "noch {n} Tage",
 
+  "Showing one category — tap it again to show all.": "Zeigt eine Kategorie — nochmal tippen zeigt wieder alle.",
+
   // --- Navigation / search ---
   "Jump to…": "Springe zu…",
   "Search pages…": "Seiten suchen…",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { scoreColor } from "@/lib/score";
 
 /** Circular Life Score gauge (0..100) with an accent-gradient stroke. */
@@ -22,6 +22,12 @@ export function ScoreRing({
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, value)) / 100;
   const color = scoreColor(value);
+  // Re-charge from empty every time the ring mounts (e.g. each visit to the dashboard).
+  const [charged, setCharged] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setCharged(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
@@ -48,8 +54,8 @@ export function ScoreRing({
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={c}
-          strokeDashoffset={c * (1 - pct)}
-          style={{ transition: "stroke-dashoffset .7s cubic-bezier(.4,0,.2,1)" }}
+          strokeDashoffset={charged ? c * (1 - pct) : c}
+          style={{ transition: "stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)" }}
         />
       </svg>
       <div className="absolute flex flex-col items-center">

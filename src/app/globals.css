@@ -171,6 +171,49 @@ body {
   animation: fadeIn 0.35s ease both;
 }
 
+/* Mobile sheet: slide up from the bottom */
+@keyframes sheetUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.sheet-up {
+  animation: sheetUp 0.28s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+}
+
+/* Page swipe transitions */
+@keyframes slideFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes slideFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.slide-left {
+  animation: slideFromRight 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.slide-right {
+  animation: slideFromLeft 0.32s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
 /* ---- Recap animations ---- */
 @keyframes recapPop {
   from {

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
+import clsx from "clsx";
 import { AREA_LABELS } from "@/lib/defaults";
 import { weekdayLabel } from "@/lib/date";
 import { useT } from "@/lib/i18n";
@@ -34,6 +35,7 @@ export default function StatisticsPage() {
   const t = useT();
   const [range, setRange] = useState("30");
   const [metric, setMetric] = useState<"life" | "elo" | "categories">("life");
+  const [soloCat, setSoloCat] = useState<string | null>(null);
 
   const days = RANGES.find((r) => r.key === range)!.days;
   const scoped = useMemo(() => {
@@ -126,20 +128,36 @@ export default function StatisticsPage() {
               data={catSeries}
               domain={[0, 100]}
               height={280}
-              series={enabledCats.map((c) => ({
+              series={(soloCat ? enabledCats.filter((c) => c === soloCat) : enabledCats).map((c) => ({
                 key: c,
                 name: t(AREA_LABELS[c]),
                 color: CAT_COLORS[c] ?? "var(--accent)",
               }))}
             />
-            <div className="mt-3 flex flex-wrap gap-3">
-              {enabledCats.map((c) => (
-                <span key={c} className="flex items-center gap-1.5 text-xs text-[var(--text-muted)]">
-                  <span className="h-2.5 w-2.5 rounded-full" style={{ background: CAT_COLORS[c] }} />
-                  {t(AREA_LABELS[c])}
-                </span>
-              ))}
+            <div className="mt-3 flex flex-wrap gap-2">
+              {enabledCats.map((c) => {
+                const active = soloCat === null || soloCat === c;
+                return (
+                  <button
+                    key={c}
+                    onClick={() => setSoloCat((s) => (s === c ? null : c))}
+                    className={clsx(
+                      "flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition",
+                      soloCat === c
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                        : "border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]",
+                      active ? "" : "opacity-45",
+                    )}
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: CAT_COLORS[c] }} />
+                    {t(AREA_LABELS[c])}
+                  </button>
+                );
+              })}
             </div>
+            {soloCat && (
+              <p className="mt-2 text-xs text-[var(--text-faint)]">{t("Showing one category — tap it again to show all.")}</p>
+            )}
           </>
         )}
       </Card>

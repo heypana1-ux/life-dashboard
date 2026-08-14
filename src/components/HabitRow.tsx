@@ -35,8 +35,6 @@ export function HabitRow({
   const countTarget = habit.timesPerDay ?? 0;
   const count = log?.count ?? 0;
   const marked = isCount ? count > 0 : !!log?.done;
-  // For build: marked = good (green). For reduce: marked = slip (red).
-  const success = isReduce ? !marked : marked;
 
   function setCount(n: number) {
     const c = Math.max(0, n);
@@ -53,8 +51,14 @@ export function HabitRow({
   const amountTarget = amountKind === "minutes" ? habit.targetMinutes : habit.targetValue;
   const amountUnit = amountKind === "minutes" ? "min" : habit.unit ?? "";
 
+  const metaParts = [t(areaLabel(habit.area))];
+  if (isCount) metaParts.push(`${countTarget}× ${t("per day")}`);
+  if (habit.targetMinutes) metaParts.push(fmtDuration(habit.targetMinutes));
+  if (habit.targetValue) metaParts.push(`${habit.targetValue.toLocaleString()} ${habit.unit ?? ""}`.trim());
+  if (item.weekTarget !== undefined) metaParts.push(`${item.weekDone}/${item.weekTarget} ${t("this week")}`);
+
   return (
-    <div className="flex items-center gap-3 rounded-xl px-1 py-2">
+    <div className="flex items-center gap-3 overflow-hidden rounded-xl px-1 py-2">
       <button
         onClick={onCircle}
         aria-label={isReduce ? "Record occurrence" : "Mark done"}
@@ -72,12 +76,11 @@ export function HabitRow({
         {isReduce ? marked ? <X size={16} /> : <Minus size={14} /> : <Check size={16} strokeWidth={3} />}
       </button>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+      <div className="min-w-0 flex-1 overflow-hidden">
+        <div className="flex min-w-0 items-center gap-2">
           <span
             className={clsx(
               "truncate text-sm font-medium",
-              success && marked !== isReduce ? "" : "",
               isReduce && marked ? "text-[var(--text-muted)]" : "",
             )}
           >
@@ -86,21 +89,7 @@ export function HabitRow({
           {habit.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
           {isReduce && <Badge tone="bad">{t("Reduce")}</Badge>}
         </div>
-        <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-faint)]">
-          <span>{t(areaLabel(habit.area))}</span>
-          {isCount && <span>· {countTarget}× {t("per day")}</span>}
-          {habit.targetMinutes && <span>· {fmtDuration(habit.targetMinutes)}</span>}
-          {habit.targetValue && (
-            <span>
-              · {habit.targetValue.toLocaleString()} {habit.unit}
-            </span>
-          )}
-          {item.weekTarget !== undefined && (
-            <span>
-              · {item.weekDone}/{item.weekTarget} {t("this week")}
-            </span>
-          )}
-        </div>
+        <div className="mt-0.5 truncate text-xs text-[var(--text-faint)]">{metaParts.join(" · ")}</div>
       </div>
 
       {isCount && showAmount && (
@@ -155,12 +144,12 @@ export function HabitRow({
       )}
 
       {isReduce ? (
-        <span className={clsx("text-xs font-medium", marked ? "text-[var(--bad)]" : "text-[var(--good)]")}>
+        <span className={clsx("shrink-0 text-xs font-medium", marked ? "text-[var(--bad)]" : "text-[var(--good)]")}>
           {marked ? t("Occurred") : t("Avoided")}
         </span>
       ) : (
         marked && !canEnterAmount && !(isCount && showAmount) && (
-          <span className="text-xs font-medium text-[var(--good)]">{t("Done")}</span>
+          <span className="shrink-0 text-xs font-medium text-[var(--good)]">{t("Done")}</span>
         )
       )}
     </div>
