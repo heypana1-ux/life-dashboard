@@ -8,10 +8,14 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
+  ZAxis,
 } from "recharts";
 import { fmtShort } from "@/lib/date";
 
@@ -222,6 +226,81 @@ export function Bars({
         <Tooltip content={<ChartTip unit={unit} />} cursor={{ fill: "var(--surface-2)" }} />
         <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
       </BarChart>
+    </ResponsiveContainer>
+  );
+}
+
+interface ScatterTipProps {
+  active?: boolean;
+  payload?: { payload?: { x: number; y: number } }[];
+  xLabel: string;
+  yLabel: string;
+}
+
+function ScatterTip({ active, payload, xLabel, yLabel }: ScatterTipProps) {
+  if (!active || !payload?.length) return null;
+  const p = payload[0].payload;
+  if (!p) return null;
+  return (
+    <div className="card !p-2 text-xs shadow-lg">
+      <div>{xLabel}: <span className="font-semibold">{p.x}</span></div>
+      <div>{yLabel}: <span className="font-semibold">{p.y}</span></div>
+    </div>
+  );
+}
+
+export function ScatterCorrelation({
+  points,
+  line,
+  xLabel,
+  yLabel,
+  height = 260,
+}: {
+  points: { x: number; y: number }[];
+  line: { x1: number; y1: number; x2: number; y2: number } | null;
+  xLabel: string;
+  yLabel: string;
+  height?: number;
+}) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ScatterChart margin={{ top: 10, right: 16, bottom: 4, left: -14 }}>
+        <CartesianGrid stroke={GRID} strokeDasharray="3 3" />
+        <XAxis
+          type="number"
+          dataKey="x"
+          name={xLabel}
+          tick={{ fill: AXIS, fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+          domain={["dataMin", "dataMax"]}
+        />
+        <YAxis
+          type="number"
+          dataKey="y"
+          name={yLabel}
+          tick={{ fill: AXIS, fontSize: 11 }}
+          axisLine={false}
+          tickLine={false}
+          width={44}
+          domain={["dataMin", "dataMax"]}
+        />
+        <ZAxis range={[50, 50]} />
+        <Tooltip content={<ScatterTip xLabel={xLabel} yLabel={yLabel} />} cursor={{ strokeDasharray: "3 3" }} />
+        {line && (
+          <ReferenceLine
+            ifOverflow="extendDomain"
+            segment={[
+              { x: line.x1, y: line.y1 },
+              { x: line.x2, y: line.y2 },
+            ]}
+            stroke="var(--accent)"
+            strokeWidth={2}
+            strokeDasharray="5 4"
+          />
+        )}
+        <Scatter data={points} fill="var(--accent)" fillOpacity={0.65} />
+      </ScatterChart>
     </ResponsiveContainer>
   );
 }

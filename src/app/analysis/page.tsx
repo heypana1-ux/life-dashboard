@@ -10,6 +10,7 @@ import { AreaKey } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
 import { sleepDurationMinutes } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, EmptyState, inputCls } from "@/components/ui";
+import { ScatterCorrelation } from "@/components/charts";
 
 export default function AnalysisPage() {
   const { data } = useStore();
@@ -147,7 +148,7 @@ function CorrelationExplorer() {
   const x = metrics.find((m) => m.key === xKey) ?? metrics[0];
   const y = metrics.find((m) => m.key === yKey) ?? metrics[1] ?? metrics[0];
 
-  const { points, r } = useMemo(() => {
+  const { points, r, line } = useMemo(() => {
     const pts: { x: number; y: number }[] = [];
     if (x && y) {
       for (const h of d.history) {
@@ -156,7 +157,7 @@ function CorrelationExplorer() {
         if (vx != null && vy != null) pts.push({ x: vx, y: vy });
       }
     }
-    return { points: pts, r: pearson(pts) };
+    return { points: pts, r: pearson(pts), line: regressionLine(pts) };
   }, [x, y, d.history]);
 
   if (metrics.length < 2) return null;
@@ -188,7 +189,7 @@ function CorrelationExplorer() {
         <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("Not enough overlapping days for these two yet.")}</p>
       ) : (
         <>
-          <Scatter points={points} xLabel={x!.label} yLabel={y!.label} />
+          <ScatterCorrelation points={points} line={line} xLabel={x!.label} yLabel={y!.label} />
           <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3 text-sm">
             <span className="font-semibold" style={{ color: corrColor(r) }}>
               r = {r.toFixed(2)}
@@ -230,31 +231,25 @@ function corrText(r: number, a: string, b: string, t: (k: string, v?: Record<str
     : t("{strength} inverse link — higher {a} tends to go with lower {b}.", { strength, a, b });
 }
 
-function Scatter({ points, xLabel, yLabel }: { points: { x: number; y: number }[]; xLabel: string; yLabel: string }) {
-  const W = 300;
-  const H = 190;
-  const pad = 30;
-  const xs = points.map((p) => p.x);
-  const ys = points.map((p) => p.y);
-  const xmin = Math.min(...xs);
-  const xmax = Math.max(...xs);
-  const ymin = Math.min(...ys);
-  const ymax = Math.max(...ys);
-  const nx = (v: number) => (xmax === xmin ? W / 2 : pad + ((v - xmin) / (xmax - xmin)) * (W - pad * 2));
-  const ny = (v: number) => (ymax === ymin ? H / 2 : H - pad - ((v - ymin) / (ymax - ymin)) * (H - pad * 2));
-  return (
-    <div className="overflow-x-auto">
-      <svg width={W} height={H} className="max-w-full">
-        <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="var(--border)" />
-        <line x1={pad} y1={pad} x2={pad} y2={H - pad} stroke="var(--border)" />
-        {points.map((p, i) => (
-          <circle key={i} cx={nx(p.x)} cy={ny(p.y)} r={3.5} fill="var(--accent)" fillOpacity={0.6} />
-        ))}
-        <text x={W / 2} y={H - 6} textAnchor="middle" className="fill-[var(--text-faint)]" fontSize="10">{xLabel}</text>
-        <text x={10} y={H / 2} textAnchor="middle" transform={`rotate(-90 10 ${H / 2})`} className="fill-[var(--text-faint)]" fontSize="10">{yLabel}</text>
-      </svg>
-    </div>
-  );
+/** Least-squares regression line across the x-range, for the scatter trend line. */
+function regressionLine(pts: { x: number; y: number }[]): { x1: number; y1: number; x2: number; y2: number } | null {
+  const n = pts.length;
+  if (n < 6) return null;
+  const mx = pts.reduce((a, p) => a + p.x, 0) / n;
+  const my = pts.reduce((a, p) => a + p.y, 0) / n;
+  let sxy = 0;
+  let sxx = 0;
+  for (const p of pts) {
+    sxy += (p.x - mx) * (p.y - my);
+    sxx += (p.x - mx) ** 2;
+  }
+  if (sxx === 0) return null;
+  const slope = sxy / sxx;
+  const intercept = my - slope * mx;
+  const xs = pts.map((p) => p.x);
+  const x1 = Math.min(...xs);
+  const x2 = Math.max(...xs);
+  return { x1, y1: slope * x1 + intercept, x2, y2: slope * x2 + intercept };
 }
 
 function DriverList({ title, drivers, positive }: { title: string; drivers: Driver[]; positive: boolean }) {
