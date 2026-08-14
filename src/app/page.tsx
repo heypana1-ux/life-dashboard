@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useDerived, useTodayComputation } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
 import { habitsForToday } from "@/lib/habitView";
+import { dayHasEntry } from "@/lib/dayActivity";
 import { areaColor } from "@/lib/areaStyle";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges } from "@/lib/challenges";
@@ -83,6 +84,20 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-[18px]">
         {/* Proactive coach briefing (only when AI coach is on) */}
         <CoachBriefing />
+
+        {/* Streak at risk: nudge to log something today */}
+        {streak >= 2 && !dayHasEntry(data, d.today) && (
+          <Link href="/today" className="block">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--warn)]/40 bg-[var(--warn)]/10 p-4 transition hover:border-[var(--warn)]">
+              <Flame size={22} className="shrink-0 text-[var(--warn)]" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold">{t("Keep your {n}-day streak alive", { n: streak })}</div>
+                <div className="text-xs text-[var(--text-muted)]">{t("Log anything today so your streak doesn't reset.")}</div>
+              </div>
+              <ArrowUpRight size={18} className="shrink-0 text-[var(--text-faint)]" />
+            </div>
+          </Link>
+        )}
 
         {/* Hero row: score card + 2x2 stat tiles */}
         <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">

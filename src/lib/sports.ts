@@ -60,3 +60,16 @@ export function speedKmh(distanceKm?: number, durationMin?: number): number | nu
   if (!distanceKm || distanceKm <= 0 || !durationMin || durationMin <= 0) return null;
   return Math.round((distanceKm / (durationMin / 60)) * 10) / 10;
 }
+
+/** Rough heart-rate zone from average pulse and age (max HR ≈ 220 − age). English label. */
+export function hrZone(pulse?: number, age?: number | null): { pct: number; label: string } | null {
+  if (!pulse || pulse <= 0 || !age || age <= 0) return null;
+  const max = 220 - age;
+  const pct = Math.round((pulse / max) * 100);
+  let label = "Recovery";
+  if (pct >= 90) label = "Maximum";
+  else if (pct >= 80) label = "Threshold";
+  else if (pct >= 70) label = "Aerobic";
+  else if (pct >= 60) label = "Easy";
+  return { pct, label };
+}

@@ -448,6 +448,8 @@ export interface Settings {
   medications?: string[];
   /** Opt-in menstrual cycle tracking on the Health screen. */
   cycleTracking?: boolean;
+  /** Opt-in weekly distance goal (km) for endurance sports; shown on Training. */
+  weeklyKmGoal?: number;
   /** Dates that shouldn't break streaks (vacation / planned rest). */
   restDays?: string[];
   /** How many missed days a streak tolerates before breaking (streak protection). */

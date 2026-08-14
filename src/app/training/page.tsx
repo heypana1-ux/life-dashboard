@@ -6,12 +6,12 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { uid } from "@/lib/defaults";
-import { sportKind, paceLabel, speedKmh } from "@/lib/sports";
+import { sportKind, paceLabel, speedKmh, hrZone } from "@/lib/sports";
 import { SportSelect } from "@/components/SportPicker";
 import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 import { exerciseHistory, loggedExerciseNames, muscleVolume, personalRecords } from "@/lib/trainingStats";
-import { fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
+import { ageFrom, fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
 import {
   Card,
   PageHeader,
@@ -195,6 +195,8 @@ function WorkoutsTab({
           })}
         </div>
       </Card>
+
+      <WeeklyDistanceCard workouts={data.workouts} />
 
       <div className="grid grid-cols-3 gap-3">
         <MiniStat label={t("Sessions this week")} value={String(thisWeek.length)} />
@@ -445,6 +447,53 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
         )}
       </Card>
     </>
+  );
+}
+
+function WeeklyDistanceCard({ workouts }: { workouts: Workout[] }) {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const goal = data.settings.weeklyKmGoal;
+  const [draft, setDraft] = useState<number | undefined>(20);
+
+  const km = useMemo(() => {
+    const week = new Set(isoRange(todayISO(), 7));
+    return Math.round(workouts.filter((w) => week.has(w.date) && w.distanceKm && sportKind(w.sport) === "distance").reduce((s, w) => s + (w.distanceKm as number), 0) * 10) / 10;
+  }, [workouts]);
+  const hasCardio = workouts.some((w) => w.distanceKm && sportKind(w.sport) === "distance");
+
+  if (!goal && !hasCardio) return null;
+
+  if (!goal) {
+    return (
+      <Card className="flex flex-wrap items-center justify-between gap-3 !py-4">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">{t("Weekly distance goal")}</div>
+          <div className="text-xs text-[var(--text-muted)]">{t("Set a weekly km target for your endurance training.")}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <NumberInput className={`${inputCls} w-20`} placeholder="20" value={draft} onChange={setDraft} />
+          <Button size="sm" onClick={() => draft && updateSettings({ weeklyKmGoal: draft })}>{t("Activate")}</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  const pct = Math.min(100, Math.round((km / goal) * 100));
+  return (
+    <Card className="!py-4">
+      <div className="mb-1.5 flex items-center justify-between text-sm">
+        <span className="font-medium">{t("Weekly distance")}</span>
+        <span className="tabular-nums text-[var(--text-muted)]">
+          {km} / {goal} km
+          <button onClick={() => updateSettings({ weeklyKmGoal: undefined })} className="ml-2 text-xs text-[var(--text-faint)] hover:text-[var(--text)]">{t("Off")}</button>
+        </span>
+      </div>
+      <div className="h-2.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: km >= goal ? "var(--good)" : "var(--accent)" }} />
+      </div>
+      {km >= goal && <p className="mt-1.5 text-xs font-medium text-[var(--good)]">{t("Weekly goal reached 🎉")}</p>}
+    </Card>
   );
 }
 
@@ -726,6 +775,8 @@ function WorkoutModal({
 
   const pace = paceLabel(draft.distanceKm, draft.durationMin);
   const speed = speedKmh(draft.distanceKm, draft.durationMin);
+  const age = data.settings.profile.birthDate ? ageFrom(data.settings.profile.birthDate) : null;
+  const zone = hrZone(draft.avgPulse, age);
 
   return (
     <Modal open={open} onClose={onClose} title={editing ? t("Edit workout") : t("New workout")} wide>
@@ -776,6 +827,9 @@ function WorkoutModal({
           )}
           <Field label={t("Avg pulse")}>
             <input type="number" className={inputCls} value={draft.avgPulse ?? ""} onChange={(e) => set({ avgPulse: e.target.value ? Number(e.target.value) : undefined })} />
+            {zone && (
+              <span className="mt-1 block text-xs text-[var(--text-faint)]">{t(zone.label)} · {zone.pct}% {t("max HR")}</span>
+            )}
           </Field>
         </div>
 
