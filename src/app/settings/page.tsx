@@ -266,6 +266,12 @@ export default function SettingsPage() {
       {/* Bugs & feedback */}
       <FeedbackCard />
 
+      <div className="text-center">
+        <Button variant="ghost" size="sm" onClick={() => updateSettings({ tourDone: false })}>
+          {t("Show the tour again")}
+        </Button>
+      </div>
+
       <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>

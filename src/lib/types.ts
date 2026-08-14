@@ -399,6 +399,8 @@ export interface Settings {
   restDays?: string[];
   /** How many missed days a streak tolerates before breaking (streak protection). */
   streakGrace?: number;
+  /** Whether the first-run mini tour has been completed/dismissed. */
+  tourDone?: boolean;
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

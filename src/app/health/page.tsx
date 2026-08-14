@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, HeartPulse, Save } from "lucide-react";
+import { Activity, HeartPulse, Save, Scale } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { HealthLog } from "@/lib/types";
 import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom } from "@/lib/health";
@@ -130,6 +130,8 @@ export default function HealthPage() {
         </Card>
       )}
 
+      <BodyMetricsCard />
+
       <Card>
         <SectionTitle right={<Activity size={16} className="text-[var(--text-faint)]" />}>{t("Wellbeing · last 30 days")}</SectionTitle>
         {trend.length >= 2 ? (
@@ -139,6 +141,68 @@ export default function HealthPage() {
         )}
       </Card>
     </div>
+  );
+}
+
+function bmiCategory(bmi: number): { key: string; color: string } {
+  if (bmi < 18.5) return { key: "Underweight", color: "var(--info)" };
+  if (bmi < 25) return { key: "Normal", color: "var(--good)" };
+  if (bmi < 30) return { key: "Overweight", color: "var(--warn)" };
+  return { key: "Obese", color: "var(--bad)" };
+}
+
+function BodyMetricsCard() {
+  const { data, saveWeight } = useStore();
+  const t = useT();
+  const today = todayISO();
+  const sorted = useMemo(() => [...data.weight].sort((a, b) => (a.date < b.date ? -1 : 1)), [data.weight]);
+  const latest = sorted[sorted.length - 1];
+  const height = data.settings.profile.heightCm;
+  const [kg, setKg] = useState<string>(latest?.kg ? String(latest.kg) : "");
+
+  const bmi = latest && height ? latest.kg / (height / 100) ** 2 : null;
+  const cat = bmi ? bmiCategory(bmi) : null;
+  const wTrend = sorted.slice(-90).map((w) => ({ date: w.date, value: w.kg }));
+
+  function save() {
+    const v = Number(kg);
+    if (v > 0) saveWeight({ date: today, kg: Math.round(v * 10) / 10 });
+  }
+
+  return (
+    <Card>
+      <SectionTitle right={<Scale size={16} className="text-[var(--text-faint)]" />}>{t("Body metrics")}</SectionTitle>
+      <div className="grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end">
+        <Field label={t("Weight today (kg)")}>
+          <div className="flex gap-2">
+            <input type="number" inputMode="decimal" min={0} step="0.1" className={inputCls} value={kg} onChange={(e) => setKg(e.target.value)} />
+            <Button variant="soft" size="sm" onClick={save} disabled={!kg}>
+              <Save size={15} /> {t("Save")}
+            </Button>
+          </div>
+        </Field>
+        <div className="flex gap-3">
+          <div className="tile p-3 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t("Latest")}</div>
+            <div className="num mt-1 text-lg font-bold">{latest ? `${latest.kg} kg` : "—"}</div>
+          </div>
+          <div className="tile p-3 text-center">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">BMI</div>
+            <div className="num mt-1 text-lg font-bold" style={{ color: cat?.color }}>{bmi ? bmi.toFixed(1) : "—"}</div>
+            {cat && <div className="text-[10px]" style={{ color: cat.color }}>{t(cat.key)}</div>}
+          </div>
+        </div>
+      </div>
+      {!height && (
+        <p className="mt-2 text-xs text-[var(--text-faint)]">{t("Set your height in Settings → Profile to see your BMI.")}</p>
+      )}
+      {wTrend.length >= 2 && (
+        <div className="mt-4">
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Weight · last 90 days")}</div>
+          <TrendLine data={wTrend} color="var(--info)" unit="kg" name={t("Weight (kg)")} />
+        </div>
+      )}
+    </Card>
   );
 }
 

@@ -38,6 +38,7 @@ import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
 import { DayFlow } from "@/components/DayFlow";
 import { RecapGate } from "@/components/Recap";
+import { Tour } from "@/components/Tour";
 
 interface NavItem {
   href: string;
@@ -226,6 +227,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
           <Reminders />
+          <Tour />
           <DayFlow />
           <RecapGate />
           <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>

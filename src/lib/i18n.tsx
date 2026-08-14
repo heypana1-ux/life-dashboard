@@ -921,6 +921,69 @@ const DE: Record<string, string> = {
 
   "Showing one category — tap it again to show all.": "Zeigt eine Kategorie — nochmal tippen zeigt wieder alle.",
 
+  // --- Mini tour ---
+  "Welcome to Life Dashboard": "Willkommen bei Life Dashboard",
+  "A private place to track your habits, sport, sleep, mood and more — and see how it all connects. Here's the 30-second tour.":
+    "Ein privater Ort für Gewohnheiten, Sport, Schlaf, Stimmung und mehr — und um zu sehen, wie alles zusammenhängt. Hier die 30-Sekunden-Tour.",
+  "Log your day": "Trag deinen Tag ein",
+  "“Today” is where you tick off habits and do a quick check-in. Missed a day? You can go back and edit any date.":
+    "Unter „Heute“ hakst du Gewohnheiten ab und machst einen kurzen Check-in. Tag verpasst? Du kannst jeden Tag nachträglich bearbeiten.",
+  "Habits & goals": "Gewohnheiten & Ziele",
+  "Build good habits and reduce bad ones — daily, weekly or a number of times per day. Goals hold longer-term milestones with deadlines.":
+    "Baue gute Gewohnheiten auf und reduziere schlechte — täglich, wöchentlich oder mehrmals am Tag. Ziele halten längerfristige Meilensteine mit Fristen.",
+  "Areas you choose": "Bereiche nach deiner Wahl",
+  "Turn areas on or off in Settings — training, sleep, learning, finances, health… Only what matters to you counts toward your Life Score.":
+    "Schalte Bereiche in den Einstellungen an/aus — Training, Schlaf, Lernen, Finanzen, Gesundheit… Nur was dir wichtig ist, zählt zum Life Score.",
+  "Statistics & Analysis": "Statistik & Analyse",
+  "See your trends, and let the Analysis tab surface connections in your data — what lifts your score and what drags it down.":
+    "Sieh deine Trends, und lass den Analyse-Tab Zusammenhänge aufdecken — was deinen Score hebt und was ihn runterzieht.",
+  "Stay motivated": "Bleib motiviert",
+  "Streaks, achievements, animated recaps and an optional scoreboard keep it fun. Everything stays on your device unless you turn on sync.":
+    "Serien, Erfolge, animierte Rückblicke und eine optionale Rangliste halten es spannend. Alles bleibt auf deinem Gerät, solange du Sync nicht aktivierst.",
+  "Let's go": "Los geht's",
+  Next: "Weiter",
+  "Show the tour again": "Tour erneut zeigen",
+
+  // --- Body metrics ---
+  "Body metrics": "Körpermetrik",
+  "Weight today (kg)": "Gewicht heute (kg)",
+  Latest: "Aktuell",
+  "Set your height in Settings → Profile to see your BMI.": "Trag deine Größe unter Einstellungen → Profil ein, um deinen BMI zu sehen.",
+  "Weight · last 90 days": "Gewicht · letzte 90 Tage",
+  Underweight: "Untergewicht",
+  Normal: "Normal",
+  Overweight: "Übergewicht",
+  Obese: "Adipositas",
+
+  // --- Templates ---
+  "Habit templates": "Gewohnheits-Vorlagen",
+  "Add a ready-made habit, then tweak it any way you like.": "Füge eine fertige Gewohnheit hinzu und passe sie beliebig an.",
+  "Goal templates": "Ziel-Vorlagen",
+  Close: "Schließen",
+  "Sport & body": "Sport & Körper",
+  "Productivity & mind": "Produktivität & Geist",
+  "Cardio / Run": "Cardio / Laufen",
+  "10,000 steps": "10.000 Schritte",
+  "Stretch / mobility": "Dehnen / Mobilität",
+  "Deep work block": "Deep-Work-Block",
+  Read: "Lesen",
+  "Study / learn a skill": "Lernen / Skill üben",
+  Meditate: "Meditieren",
+  "Plan tomorrow": "Morgen planen",
+  "Drink water": "Wasser trinken",
+  "Vitamins / supplements": "Vitamine / Supplements",
+  Skincare: "Hautpflege",
+  "No fast food": "Kein Fast Food",
+  "Excessive social media": "Zu viel Social Media",
+  "Late-night screens": "Bildschirm spät abends",
+  "Snacking / sweets": "Snacken / Süßes",
+  "Strength Training": "Krafttraining",
+  "Bench press bodyweight": "Bankdrücken Körpergewicht",
+  "Run a 5K": "5 km laufen",
+  "Read 12 books this year": "Dieses Jahr 12 Bücher lesen",
+  "Save an emergency fund": "Notgroschen aufbauen",
+  "Finish a creative project": "Ein kreatives Projekt abschließen",
+
   // --- Navigation / search ---
   "Jump to…": "Springe zu…",
   "Search pages…": "Seiten suchen…",

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Plus, Target, Trash2, Flag } from "lucide-react";
+import { Check, LayoutTemplate, Plus, Target, Trash2, Flag } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Goal } from "@/lib/types";
 import { fmtShort, todayISO } from "@/lib/date";
 import { uid } from "@/lib/defaults";
+import { GOAL_TEMPLATES } from "@/lib/templates";
 import { useT } from "@/lib/i18n";
 import { habit30dRate } from "@/lib/habitStats";
 import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
@@ -27,8 +28,23 @@ export default function GoalsPage() {
   const t = useT();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Goal | null>(null);
+  const [tpl, setTpl] = useState(false);
 
   const active = data.goals.filter((g) => !g.archived);
+
+  function addTemplate(tmpl: (typeof GOAL_TEMPLATES)[number]) {
+    saveGoal({
+      id: "",
+      title: tmpl.title,
+      description: "",
+      area: tmpl.area,
+      deadline: "",
+      progress: 0,
+      milestones: tmpl.milestones.map((label) => ({ id: uid("ms"), label, done: false })),
+      createdAt: todayISO(),
+      archived: false,
+    });
+  }
 
   function newGoal() {
     setDraft({
@@ -71,11 +87,36 @@ export default function GoalsPage() {
         title={t("Goals")}
         subtitle={t("Longer-term outcomes, distinct from daily habits.")}
         action={
-          <Button onClick={newGoal}>
-            <Plus size={16} /> {t("New goal")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="soft" onClick={() => setTpl(true)}>
+              <LayoutTemplate size={16} /> {t("Templates")}
+            </Button>
+            <Button onClick={newGoal}>
+              <Plus size={16} /> {t("New goal")}
+            </Button>
+          </div>
         }
       />
+
+      {tpl && (
+        <Card>
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-semibold">{t("Goal templates")}</span>
+            <button onClick={() => setTpl(false)} className="text-xs text-[var(--text-muted)] hover:text-[var(--text)]">{t("Close")}</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {GOAL_TEMPLATES.map((tmpl) => (
+              <button
+                key={tmpl.title}
+                onClick={() => { addTemplate(tmpl); setTpl(false); }}
+                className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)]"
+              >
+                + {t(tmpl.title)}
+              </button>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {active.length === 0 ? (
         <EmptyState

@@ -5,6 +5,7 @@ import {
   Dumbbell,
   Flame,
   GraduationCap,
+  LayoutTemplate,
   type LucideIcon,
   Moon,
   Palette,
@@ -18,8 +19,10 @@ import { useStore } from "@/lib/store";
 import { AreaKey, Habit } from "@/lib/types";
 import { fmtDuration } from "@/lib/date";
 import { habitCurrentStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
+import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
+import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
-import { PageHeader, Button, Badge, EmptyState, Chip } from "@/components/ui";
+import { PageHeader, Button, Badge, EmptyState, Chip, Modal } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
 
 const AREA_ICON: Partial<Record<AreaKey, LucideIcon>> = {
@@ -32,11 +35,12 @@ const AREA_ICON: Partial<Record<AreaKey, LucideIcon>> = {
 };
 
 export default function HabitsPage() {
-  const { data, removeHabit } = useStore();
+  const { data, removeHabit, addHabit } = useStore();
   const t = useT();
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Habit | undefined>();
   const [filter, setFilter] = useState<"all" | "build" | "reduce">("all");
+  const [tpl, setTpl] = useState(false);
 
   const habits = data.habits
     .filter((h) => !h.archived)
@@ -62,14 +66,19 @@ export default function HabitsPage() {
         title={t("Habits")}
         subtitle={t("Build good routines, reduce the ones you don't want.")}
         action={
-          <Button
-            onClick={() => {
-              setEditing(undefined);
-              setOpen(true);
-            }}
-          >
-            <Plus size={16} /> {t("New habit")}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="soft" onClick={() => setTpl(true)}>
+              <LayoutTemplate size={16} /> {t("Templates")}
+            </Button>
+            <Button
+              onClick={() => {
+                setEditing(undefined);
+                setOpen(true);
+              }}
+            >
+              <Plus size={16} /> {t("New habit")}
+            </Button>
+          </div>
         }
       />
 
@@ -135,7 +144,54 @@ export default function HabitsPage() {
       )}
 
       <HabitForm open={open} onClose={() => setOpen(false)} editing={editing} />
+      <TemplatesModal open={tpl} onClose={() => setTpl(false)} onAdd={(h) => addHabit(h)} existing={new Set(data.habits.map((h) => h.name.toLowerCase()))} />
     </div>
+  );
+}
+
+function TemplatesModal({
+  open,
+  onClose,
+  onAdd,
+  existing,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onAdd: (h: (typeof HABIT_TEMPLATE_GROUPS)[number]["items"][number]) => void;
+  existing: Set<string>;
+}) {
+  const t = useT();
+  return (
+    <Modal open={open} onClose={onClose} title={t("Habit templates")} wide>
+      <p className="mb-3 text-sm text-[var(--text-muted)]">{t("Add a ready-made habit, then tweak it any way you like.")}</p>
+      <div className="space-y-4">
+        {HABIT_TEMPLATE_GROUPS.map((g) => (
+          <div key={g.group}>
+            <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t(g.group)}</div>
+            <div className="flex flex-wrap gap-2">
+              {g.items.map((h) => {
+                const added = existing.has(h.name.toLowerCase());
+                return (
+                  <button
+                    key={h.name}
+                    disabled={added}
+                    onClick={() => onAdd(h)}
+                    className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-sm font-medium enabled:hover:border-[var(--accent)] disabled:opacity-40"
+                  >
+                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: h.color }} />
+                    {t(h.name)}
+                    <span className="text-xs text-[var(--text-faint)]">· {t(AREA_LABELS[h.area])}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 flex justify-end">
+        <Button variant="ghost" onClick={onClose}>{t("Done")}</Button>
+      </div>
+    </Modal>
   );
 }
 
