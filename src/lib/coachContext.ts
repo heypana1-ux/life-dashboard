@@ -128,6 +128,17 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   if (data.workouts.length) {
     const prs = personalRecords(data.workouts).slice(0, 5).map((p) => `${p.name} ${p.weight}kg×${p.reps} (~1RM ${p.best1RM})`);
     if (prs.length) L.push(`Strength records: ${prs.join("; ")}.`);
+    // Recent training sessions (most recent first) so the coach can tailor the next one.
+    const recentW = [...data.workouts].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 6);
+    const lines = recentW.map((w) => {
+      const bits = [w.sport, `${w.durationMin}min`];
+      if (w.distanceKm) bits.push(`${w.distanceKm}km`);
+      if (w.rounds) bits.push(`${w.rounds} rounds`);
+      if (w.exercises.length) bits.push(`${w.exercises.length} exercises`);
+      if (w.performance) bits.push(`felt ${w.performance}/10`);
+      return `${w.date}: ${bits.join(", ")}`;
+    });
+    if (lines.length) L.push("Recent training sessions:\n" + lines.map((l) => `- ${l}`).join("\n"));
   }
 
   // Health details (symptoms, sick/recovery, meds, cycle)

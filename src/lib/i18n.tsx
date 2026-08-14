@@ -507,6 +507,12 @@ const DE: Record<string, string> = {
   Exercises: "Übungen",
   "Add exercise": "Übung hinzufügen",
   // --- Multi-sport training ---
+  "Quick start": "Schnellstart",
+  "Choose sport": "Sportart wählen",
+  "Search sports…": "Sportarten suchen …",
+  Strength: "Kraft",
+  Combat: "Kampfsport",
+  "Workout suggestion": "Workout-Vorschlag",
   "Start timer": "Timer starten",
   Pace: "Tempo",
   Rounds: "Runden",

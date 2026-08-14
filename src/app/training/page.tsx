@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Dumbbell, Play, Plus, Save, Square, Trash2, TrendingUp, Trophy } from "lucide-react";
+import { Activity, Dumbbell, Footprints, Play, Plus, Save, Square, Swords, Trash2, TrendingUp, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
-import { DEFAULT_SPORTS, uid } from "@/lib/defaults";
+import { uid } from "@/lib/defaults";
 import { sportKind, paceLabel, speedKmh } from "@/lib/sports";
+import { SportSelect } from "@/components/SportPicker";
 import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 import { exerciseHistory, loggedExerciseNames, muscleVolume, personalRecords } from "@/lib/trainingStats";
@@ -25,6 +26,7 @@ import {
   ScaleInput,
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
+import { CoachInsightCard } from "@/components/Coach";
 
 type Tab = "workouts" | "plans" | "progress";
 
@@ -35,6 +37,7 @@ export default function TrainingPage() {
   const [modal, setModal] = useState(false);
   const [editing, setEditing] = useState<Workout | undefined>();
   const [fromPlan, setFromPlan] = useState<WorkoutPlan | undefined>();
+  const [quickSport, setQuickSport] = useState<string | undefined>();
 
   const workouts = useMemo(
     () => [...data.workouts].sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -44,6 +47,16 @@ export default function TrainingPage() {
   function newWorkout(plan?: WorkoutPlan) {
     setEditing(undefined);
     setFromPlan(plan);
+    setQuickSport(undefined);
+    setModal(true);
+  }
+
+  // Tap a sport to jump straight into logging it — the timer auto-starts for
+  // time-based sports, so the form doubles as the post-session recap.
+  function quickStart(sport: string) {
+    setEditing(undefined);
+    setFromPlan(undefined);
+    setQuickSport(sport);
     setModal(true);
   }
 
@@ -71,16 +84,18 @@ export default function TrainingPage() {
           onEdit={(w) => {
             setEditing(w);
             setFromPlan(undefined);
+            setQuickSport(undefined);
             setModal(true);
           }}
           onDelete={removeWorkout}
           onNew={() => newWorkout()}
+          onQuickStart={quickStart}
         />
       )}
       {tab === "plans" && <PlansTab onStart={(p) => newWorkout(p)} />}
       {tab === "progress" && <ProgressTab workouts={data.workouts} />}
 
-      <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} fromPlan={fromPlan} />
+      <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} fromPlan={fromPlan} quickSport={quickSport} />
     </div>
   );
 }
@@ -92,14 +107,26 @@ function WorkoutsTab({
   onEdit,
   onDelete,
   onNew,
+  onQuickStart,
 }: {
   workouts: Workout[];
   onEdit: (w: Workout) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
+  onQuickStart: (sport: string) => void;
 }) {
   const { data } = useStore();
   const t = useT();
+
+  // Quick-start chips: the user's most-used sports (falling back to a few defaults).
+  const quickSports = useMemo(() => {
+    const freq = new Map<string, number>();
+    for (const w of data.workouts) freq.set(w.sport, (freq.get(w.sport) ?? 0) + 1);
+    const used = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s);
+    const base = ["Running", "Strength Training", "Taekwondo"];
+    return Array.from(new Set([...used, ...base])).slice(0, 5);
+  }, [data.workouts]);
+
   const week = isoRange(todayISO(), 7);
   const thisWeek = workouts.filter((w) => week.includes(w.date));
   const totalMin = workouts.reduce((s, w) => s + w.durationMin, 0);
@@ -119,6 +146,26 @@ function WorkoutsTab({
 
   return (
     <>
+      <Card className="!p-3">
+        <div className="mb-2 flex items-center gap-1.5 px-1 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
+          <Play size={11} /> {t("Quick start")}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {quickSports.map((s) => {
+            const Icon = SPORT_ICON[sportKind(s)];
+            return (
+              <button
+                key={s}
+                onClick={() => onQuickStart(s)}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)] hover:text-[var(--accent)]"
+              >
+                <Icon size={14} /> {s}
+              </button>
+            );
+          })}
+        </div>
+      </Card>
+
       <div className="grid grid-cols-3 gap-3">
         <MiniStat label={t("Sessions this week")} value={String(thisWeek.length)} />
         <MiniStat label={t("Total time")} value={totalMin ? fmtDuration(totalMin) : "—"} />
@@ -131,6 +178,11 @@ function WorkoutsTab({
           <Bars data={volume} color="var(--good)" unit="h" height={180} />
         </Card>
       )}
+
+      <CoachInsightCard
+        title={t("Workout suggestion")}
+        prompt="Based on my training history, records, goals and any limitations in my profile, suggest one concrete workout for my next session that fits me right now — exercises with sets/reps, or a session structure for my sport. Respect any current constraints. Keep it short."
+      />
 
       <Card>
         <SectionTitle>{t("Recent workouts")}</SectionTitle>
@@ -436,6 +488,13 @@ function CardioProgressCard({ workouts }: { workouts: Workout[] }) {
   );
 }
 
+const SPORT_ICON = {
+  strength: Dumbbell,
+  distance: Footprints,
+  rounds: Swords,
+  generic: Activity,
+} as const;
+
 function fmtClock(sec: number): string {
   const m = Math.floor(sec / 60);
   const s = sec % 60;
@@ -542,23 +601,25 @@ function WorkoutModal({
   onClose,
   editing,
   fromPlan,
+  quickSport,
 }: {
   open: boolean;
   onClose: () => void;
   editing?: Workout;
   fromPlan?: WorkoutPlan;
+  quickSport?: string;
 }) {
   const { data, saveWorkout } = useStore();
   const t = useT();
-  const sports = useMemo(() => {
-    const custom = data.habits.filter((h) => h.area === "sport").map((h) => h.name);
-    return Array.from(new Set([...DEFAULT_SPORTS, ...custom]));
-  }, [data.habits]);
+  const customSports = useMemo(
+    () => data.habits.filter((h) => h.area === "sport").map((h) => h.name),
+    [data.habits],
+  );
 
   const makeBlank = (): Workout => ({
     id: "",
     date: todayISO(),
-    sport: fromPlan ? fromPlan.name : sports[0] ?? "Strength Training",
+    sport: quickSport ?? (fromPlan ? fromPlan.name : "Strength Training"),
     durationMin: 60,
     intensity: 7,
     performance: 7,
@@ -568,7 +629,7 @@ function WorkoutModal({
     exercises: fromPlan ? planToExercises(fromPlan) : [],
   });
   const [draft, setDraft] = useState<Workout>(editing ?? makeBlank());
-  const key = editing?.id ?? `new-${fromPlan?.id ?? ""}`;
+  const key = editing?.id ?? `new-${fromPlan?.id ?? ""}-${quickSport ?? ""}`;
   const [lk, setLk] = useState<string | null>(null);
   // Live session timer → fills duration on stop.
   const [timerOn, setTimerOn] = useState(false);
@@ -576,6 +637,10 @@ function WorkoutModal({
   if (open && key !== lk) {
     setLk(key);
     setDraft(editing ?? makeBlank());
+    // Quick-start of a time-based sport: begin timing immediately (form doubles as recap).
+    const autoStart = !!quickSport && sportKind(quickSport) !== "strength";
+    setTimerOn(autoStart);
+    setElapsedSec(0);
   }
   if (!open && lk !== null) {
     setLk(null);
@@ -616,12 +681,7 @@ function WorkoutModal({
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Sport")}>
-            <input className={inputCls} list="sports-list" value={draft.sport} onChange={(e) => set({ sport: e.target.value })} />
-            <datalist id="sports-list">
-              {sports.map((s) => (
-                <option key={s} value={s} />
-              ))}
-            </datalist>
+            <SportSelect value={draft.sport} onChange={(s) => set({ sport: s })} extra={customSports} />
           </Field>
           <Field label={t("Date")}>
             <input type="date" max={todayISO()} className={inputCls} value={draft.date} onChange={(e) => set({ date: e.target.value })} />
