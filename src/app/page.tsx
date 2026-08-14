@@ -2,11 +2,13 @@
 
 import Link from "next/link";
 import { useMemo } from "react";
-import { ArrowUpRight, Flame, Sparkles, Trophy } from "lucide-react";
+import { ArrowUpRight, ChevronRight, Flame, Sparkles, Target, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived, useTodayComputation } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
 import { habitsForToday } from "@/lib/habitView";
+import { computeLevel } from "@/lib/level";
+import { weeklyChallenges } from "@/lib/challenges";
 import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AreaKey } from "@/lib/types";
@@ -15,6 +17,7 @@ import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatT
 import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
+import { CoachBriefing } from "@/components/Coach";
 
 export default function DashboardPage() {
   const { data } = useStore();
@@ -58,6 +61,11 @@ export default function DashboardPage() {
   const elo = d.todayScore?.elo ?? data.settings.eloStart;
   const eloBest = d.history.reduce((m, h) => Math.max(m, h.elo), data.settings.eloStart);
 
+  const level = useMemo(() => computeLevel(data, d.history), [data, d.history]);
+  const challenges = useMemo(() => weeklyChallenges(data, d.byDate, d.today), [data, d.byDate, d.today]);
+  const chDone = challenges.filter((c) => c.done).length;
+  const nextChallenge = challenges.find((c) => !c.done);
+
   return (
     <div>
       <PageHeader
@@ -71,6 +79,9 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-col gap-[18px]">
+        {/* Proactive coach briefing (only when AI coach is on) */}
+        <CoachBriefing />
+
         {/* Hero row: score card + 2x2 stat tiles */}
         <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">
           <Card className="flex flex-col items-center gap-6 !p-[26px] sm:flex-row sm:gap-[26px]">
@@ -111,6 +122,35 @@ export default function DashboardPage() {
             <StatTile icon={<Sparkles size={15} />} label={t("Today")} value={`${doneCount}/${buildGoals.length}`} sub={t("goals done")} />
           </div>
         </div>
+
+        {/* Level & weekly challenge strip */}
+        <Link href="/achievements" className="block">
+          <Card className="flex items-center gap-4 !py-4 transition hover:border-[var(--accent)]">
+            <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+              <span className="text-[9px] font-semibold uppercase leading-none tracking-wide">{t("Level")}</span>
+              <span className="num text-lg font-bold leading-tight">{level.level}</span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="mb-1 flex items-center justify-between text-[13px]">
+                <span className="font-semibold">{t(level.title)}</span>
+                <span className="text-[var(--text-faint)]">{level.pct}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                <div className="grad h-full rounded-full" style={{ width: `${level.pct}%` }} />
+              </div>
+              <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+                <Target size={12} className="shrink-0 text-[var(--accent)]" />
+                {nextChallenge ? (
+                  <span className="truncate">{challengeShort(nextChallenge, t)}</span>
+                ) : (
+                  <span>{t("All challenges done this week 🎉")}</span>
+                )}
+                <span className="ml-auto shrink-0 text-[var(--text-faint)]">{chDone}/{challenges.length}</span>
+              </div>
+            </div>
+            <ChevronRight size={18} className="shrink-0 text-[var(--text-faint)]" />
+          </Card>
+        </Link>
 
         {/* Categories + Insights */}
         <div className="grid gap-[18px] lg:grid-cols-[1.4fr_1fr]">
@@ -171,6 +211,21 @@ export default function DashboardPage() {
 
 export function toneColor(tone: "good" | "warn" | "info"): string {
   return tone === "good" ? "var(--good)" : tone === "warn" ? "var(--warn)" : "var(--info)";
+}
+
+function challengeShort(
+  c: { id: string; target: number },
+  t: (k: string, v?: Record<string, string | number>) => string,
+): string {
+  switch (c.id) {
+    case "train": return t("Train {n}× this week", { n: c.target });
+    case "logall": return t("Log all 7 days");
+    case "sleep": return t("Average {h}h sleep", { h: c.target });
+    case "habits": return t("Hit {n}% of your habits", { n: c.target });
+    case "journal": return t("Write 3 journal entries");
+    case "checkin": return t("Check in on 5 days");
+    default: return "";
+  }
 }
 
 const AREA_COLORS: Partial<Record<AreaKey, string>> = {

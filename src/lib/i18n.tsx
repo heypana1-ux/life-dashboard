@@ -838,6 +838,7 @@ const DE: Record<string, string> = {
   Veteran: "Veteran",
   Master: "Meister",
   "This week's challenges": "Challenges dieser Woche",
+  "All challenges done this week 🎉": "Alle Challenges diese Woche geschafft 🎉",
   done: "erledigt",
   "Train {n}× this week": "{n}× trainieren diese Woche",
   "Log all 7 days": "Alle 7 Tage eintragen",
