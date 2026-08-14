@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Dumbbell, Moon, BookOpen, ListChecks, Clipbo
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { AREA_LABELS } from "@/lib/defaults";
+import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, Modal, Badge, Button } from "@/components/ui";
@@ -161,15 +162,21 @@ function DayDetail({ date, onClose }: { date: string | null; onClose: () => void
 
         {cats.length > 0 && (
           <div className="grid grid-cols-2 gap-x-5 gap-y-2">
-            {cats.map(([k, v]) => (
-              <div key={k}>
-                <div className="mb-1 flex justify-between text-xs">
-                  <span>{t(AREA_LABELS[k])}</span>
-                  <span className="font-semibold">{v}</span>
+            {cats.map(([k, v]) => {
+              const Icon = AREA_ICONS[k];
+              return (
+                <div key={k}>
+                  <div className="mb-1 flex justify-between text-xs">
+                    <span className="flex items-center gap-1.5">
+                      {Icon && <Icon size={12} style={{ color: AREA_COLORS[k] }} />}
+                      {t(AREA_LABELS[k])}
+                    </span>
+                    <span className="font-semibold">{v}</span>
+                  </div>
+                  <Meter value={v} color={AREA_COLORS[k]} />
                 </div>
-                <Meter value={v} />
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

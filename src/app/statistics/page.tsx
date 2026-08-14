@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import clsx from "clsx";
 import { AREA_LABELS } from "@/lib/defaults";
+import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
 import { weekdayLabel } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
@@ -18,16 +19,6 @@ const RANGES: { key: string; days: number; label: string }[] = [
   { key: "365", days: 365, label: "1Y" },
   { key: "all", days: 100000, label: "All" },
 ];
-
-const CAT_COLORS: Record<string, string> = {
-  productivity: "#4f46e5",
-  sport: "#16a34a",
-  sleep: "#0ea5e9",
-  habits: "#d97706",
-  learning: "#9333ea",
-  creativity: "#db2777",
-  reflection: "#0891b2",
-};
 
 export default function StatisticsPage() {
   const { data } = useStore();
@@ -131,12 +122,13 @@ export default function StatisticsPage() {
               series={(soloCat ? enabledCats.filter((c) => c === soloCat) : enabledCats).map((c) => ({
                 key: c,
                 name: t(AREA_LABELS[c]),
-                color: CAT_COLORS[c] ?? "var(--accent)",
+                color: AREA_COLORS[c] ?? "var(--accent)",
               }))}
             />
             <div className="mt-3 flex flex-wrap gap-2">
               {enabledCats.map((c) => {
                 const active = soloCat === null || soloCat === c;
+                const Icon = AREA_ICONS[c];
                 return (
                   <button
                     key={c}
@@ -149,7 +141,7 @@ export default function StatisticsPage() {
                       active ? "" : "opacity-45",
                     )}
                   >
-                    <span className="h-2.5 w-2.5 rounded-full" style={{ background: CAT_COLORS[c] }} />
+                    {Icon ? <Icon size={12} style={{ color: AREA_COLORS[c] }} /> : <span className="h-2.5 w-2.5 rounded-full" style={{ background: AREA_COLORS[c] }} />}
                     {t(AREA_LABELS[c])}
                   </button>
                 );
