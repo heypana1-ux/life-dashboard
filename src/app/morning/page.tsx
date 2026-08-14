@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { Check, Flame, ListTodo, Moon, Trophy } from "lucide-react";
+import { Check, Flame, ListTodo, Moon, Sparkles, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { uid } from "@/lib/defaults";
 import { useDerived } from "@/lib/useDerived";
@@ -10,9 +10,12 @@ import { useT } from "@/lib/i18n";
 import { habitsForToday } from "@/lib/habitView";
 import { sleepScore } from "@/lib/score";
 import { activityStreak } from "@/lib/streak";
+import { buildCoachContext } from "@/lib/coachContext";
+import { coachAsk, checkCoachConfigured } from "@/lib/ai";
 import { fmtDuration, fmtLong, sleepDurationMinutes, todayISO } from "@/lib/date";
 import { Card, PageHeader, SectionTitle } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
+import { CoachBriefing } from "@/components/Coach";
 
 export default function MorningPage() {
   const { data } = useStore();
@@ -50,6 +53,9 @@ export default function MorningPage() {
             {t("Set your intention for the day. Small, consistent steps compound.")}
           </p>
         </div>
+
+        {/* Proactive coach briefing (only when the AI coach is enabled) */}
+        <CoachBriefing />
 
         {/* 3 tiles */}
         <div className="grid gap-4 sm:grid-cols-3">
@@ -115,11 +121,17 @@ export default function MorningPage() {
 
 type FocusItem = { id: string; text: string; done: boolean };
 
+const PLAN_PROMPT =
+  "Propose exactly 3 focus items for my day based on my data, goals and today's habits. Each item max 6 words, concrete and actionable. Return ONLY the three items, one per line, no numbering, no bullets, no extra words.";
+
 function FocusCard() {
   const { data, setFocus } = useStore();
+  const d = useDerived();
   const t = useT();
   const date = todayISO();
   const existing = data.focus.find((f) => f.date === date);
+  const aiOn = !!data.settings.aiCoachEnabled;
+  const [planning, setPlanning] = useState(false);
 
   const seed = (): FocusItem[] => {
     const base = existing?.items.map((i) => ({ ...i })) ?? [];
@@ -132,6 +144,36 @@ function FocusCard() {
     setItems(next);
     setFocus(date, next.filter((i) => i.text.trim()));
   }
+
+  async function planMyDay() {
+    if (planning) return;
+    setPlanning(true);
+    const ok = await checkCoachConfigured();
+    if (!ok) {
+      setPlanning(false);
+      return;
+    }
+    const ctx = buildCoachContext(data, d.history).text;
+    const res = await coachAsk(PLAN_PROMPT, ctx, data.settings.language);
+    setPlanning(false);
+    if (!res.reply) return;
+    const lines = res.reply
+      .split("\n")
+      .map((l) => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    if (lines.length) {
+      // Keep any already-completed items; overwrite empty/undone slots with suggestions.
+      const next: FocusItem[] = lines.map((text, i) => ({
+        id: items[i]?.id ?? uid("foc"),
+        text,
+        done: false,
+      }));
+      while (next.length < 3) next.push({ id: uid("foc"), text: "", done: false });
+      persist(next);
+    }
+  }
+
   const doneCount = items.filter((i) => i.text.trim() && i.done).length;
   const setCount = items.filter((i) => i.text.trim()).length;
 
@@ -139,13 +181,24 @@ function FocusCard() {
     <Card>
       <SectionTitle
         right={
-          setCount > 0 ? (
-            <span className="text-xs text-[var(--text-faint)]">
-              {doneCount}/{setCount} · {t("up to +2 score")}
-            </span>
-          ) : (
-            <span className="text-xs text-[var(--text-faint)]">{t("optional")}</span>
-          )
+          <div className="flex items-center gap-2">
+            {aiOn && (
+              <button
+                onClick={planMyDay}
+                disabled={planning}
+                className="inline-flex items-center gap-1 rounded-lg bg-[var(--accent-soft)] px-2 py-1 text-xs font-medium text-[var(--accent)] disabled:opacity-50"
+              >
+                <Sparkles size={12} /> {planning ? t("Planning…") : t("Plan my day")}
+              </button>
+            )}
+            {setCount > 0 ? (
+              <span className="text-xs text-[var(--text-faint)]">
+                {doneCount}/{setCount} · {t("up to +2 score")}
+              </span>
+            ) : (
+              <span className="text-xs text-[var(--text-faint)]">{t("optional")}</span>
+            )}
+          </div>
         }
       >
         <span className="inline-flex items-center gap-1.5">

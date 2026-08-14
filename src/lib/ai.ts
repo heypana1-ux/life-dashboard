@@ -33,6 +33,11 @@ export async function checkCoachConfigured(): Promise<boolean> {
   }
 }
 
+/** Single-shot helper for proactive features (briefing, plan-my-day). */
+export async function coachAsk(prompt: string, context: string, language: string): Promise<CoachResult> {
+  return askCoach([{ role: "user", content: prompt }], context, language);
+}
+
 export async function askCoach(
   messages: CoachTurn[],
   context: string,

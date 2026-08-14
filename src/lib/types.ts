@@ -448,6 +448,8 @@ export interface Settings {
   tourDone?: boolean;
   /** Opt-in: send derived (never raw) data to the AI coach provider. Off until enabled. */
   aiCoachEnabled?: boolean;
+  /** Cached once-per-day coach briefing so it isn't re-generated on every visit. */
+  coachBriefing?: { date: string; text: string };
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

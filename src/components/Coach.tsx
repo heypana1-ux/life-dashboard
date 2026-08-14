@@ -7,8 +7,12 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { buildCoachContext } from "@/lib/coachContext";
-import { askCoach, checkCoachConfigured, CoachTurn } from "@/lib/ai";
+import { askCoach, coachAsk, checkCoachConfigured, CoachTurn } from "@/lib/ai";
+import { todayISO } from "@/lib/date";
 import { Button } from "@/components/ui";
+
+const BRIEFING_PROMPT =
+  "Write a short daily briefing of 2-3 sentences: how I'm doing based on my recent data, and one concrete thing to focus on today. Be warm, specific and encouraging. Do not start with a greeting.";
 
 const QUICK_PROMPTS = [
   "How is my week going?",
@@ -215,6 +219,75 @@ function Shell({ children, onClose, t }: { children: React.ReactNode; onClose?: 
         )}
       </div>
       {children}
+    </div>
+  );
+}
+
+/* ---------------- Proactive daily briefing ---------------- */
+
+export function CoachBriefing() {
+  const { data, updateSettings } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const enabled = !!data.settings.aiCoachEnabled;
+  const today = todayISO();
+  const cached = data.settings.coachBriefing;
+  const [text, setText] = useState(cached?.date === today ? cached.text : "");
+  const [loading, setLoading] = useState(false);
+  const startedRef = useRef(false);
+
+  async function generate() {
+    setLoading(true);
+    const ok = await checkCoachConfigured();
+    if (!ok) {
+      setLoading(false);
+      return;
+    }
+    const ctx = buildCoachContext(data, d.history).text;
+    const res = await coachAsk(BRIEFING_PROMPT, ctx, data.settings.language);
+    setLoading(false);
+    if (res.reply) {
+      setText(res.reply);
+      updateSettings({ coachBriefing: { date: today, text: res.reply } });
+    }
+  }
+
+  useEffect(() => {
+    if (!enabled || text || startedRef.current) return;
+    startedRef.current = true;
+    void generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+
+  if (!enabled || (!text && !loading)) return null;
+
+  return (
+    <div className="card border-[var(--accent)]/25">
+      <div className="mb-1.5 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+            <Sparkles size={15} />
+          </span>
+          <span className="text-sm font-semibold">{t("Coach briefing")}</span>
+        </div>
+        {text && (
+          <button
+            onClick={() => { startedRef.current = true; setText(""); void generate(); }}
+            disabled={loading}
+            className="text-xs text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-40"
+          >
+            {t("Refresh")}
+          </button>
+        )}
+      </div>
+      {loading && !text ? (
+        <div className="space-y-2 py-1">
+          <div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" />
+          <div className="h-3 w-4/5 animate-pulse rounded bg-[var(--surface-2)]" />
+        </div>
+      ) : (
+        <p className="text-sm leading-relaxed text-[var(--text-muted)]">{text}</p>
+      )}
     </div>
   );
 }
