@@ -183,6 +183,12 @@ export interface HealthLog {
   sick?: boolean;
   /** Glasses of water (or similar hydration count). */
   hydration?: number;
+  /** Names of medications/supplements taken today (subset of Settings.medications). */
+  meds?: string[];
+  /** Menstrual flow that day: 0 none, 1 light, 2 medium, 3 heavy. Only when cycle tracking is on. */
+  period?: number;
+  /** "Taking it easy" — a recovery day. Also mirrored into restDays so streaks are protected. */
+  recovering?: boolean;
   note?: string;
 }
 
@@ -430,6 +436,10 @@ export interface Settings {
   dayFlow?: DayFlowSettings;
   /** How the Health screen collects data: a guided Q&A or a plain form. */
   healthMode?: "questions" | "form";
+  /** Medications / supplements the user tracks daily (shown as quick chips on Health). */
+  medications?: string[];
+  /** Opt-in menstrual cycle tracking on the Health screen. */
+  cycleTracking?: boolean;
   /** Dates that shouldn't break streaks (vacation / planned rest). */
   restDays?: string[];
   /** How many missed days a streak tolerates before breaking (streak protection). */

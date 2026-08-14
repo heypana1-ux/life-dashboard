@@ -23,6 +23,11 @@ export function weekdayOf(iso: string): number {
   return parseISO(iso).getDay();
 }
 
+/** Whole days from `a` to `b` (b − a). Negative if b is before a. */
+export function daysBetween(a: string, b: string): number {
+  return Math.round((parseISO(b).getTime() - parseISO(a).getTime()) / 86400000);
+}
+
 export function isoRange(endISO: string, days: number): string[] {
   const out: string[] = [];
   for (let i = days - 1; i >= 0; i--) out.push(addDays(endISO, -i));

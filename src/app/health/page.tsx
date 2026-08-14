@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, HeartPulse, Save, Scale } from "lucide-react";
+import { Activity, CalendarHeart, Droplet, HeartPulse, Pill, Plus, Save, Scale, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { HealthLog } from "@/lib/types";
 import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom } from "@/lib/health";
-import { fmtLong, todayISO } from "@/lib/date";
+import { analyzeCycle, FLOW_LABEL } from "@/lib/cycle";
+import { addDays, fmtLong, fmtShort, todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
@@ -43,8 +44,29 @@ export default function HealthPage() {
 
   function save() {
     saveHealth({ ...log, date });
+    // Recovery days are mirrored into restDays so streaks are protected automatically.
+    const rest = new Set(data.settings.restDays ?? []);
+    if (log.recovering) rest.add(date);
+    else rest.delete(date);
+    updateSettings({ restDays: [...rest] });
     setFlash(true);
     setTimeout(() => setFlash(false), 1800);
+  }
+
+  const cycleOn = !!data.settings.cycleTracking;
+  const meds = data.settings.medications ?? [];
+
+  function toggleMed(name: string) {
+    setLog((l) => {
+      const cur = new Set(l.meds ?? []);
+      if (cur.has(name)) cur.delete(name);
+      else cur.add(name);
+      return { ...l, meds: [...cur] };
+    });
+  }
+
+  function setFlow(v: number) {
+    setLog((l) => ({ ...l, period: l.period === v ? 0 : v }));
   }
 
   const trend = useMemo(() => {
@@ -89,7 +111,7 @@ export default function HealthPage() {
       </p>
 
       {mode === "questions" ? (
-        <QuestionFlow log={log} setLog={setLog} cycleSymptom={cycleSymptom} onSave={save} t={t} flash={flash} />
+        <QuestionFlow log={log} setLog={setLog} cycleSymptom={cycleSymptom} onSave={save} t={t} flash={flash} cycleOn={cycleOn} meds={meds} toggleMed={toggleMed} setFlow={setFlow} />
       ) : (
         <Card>
           <SectionTitle right={existing ? <Badge tone="good">{t("Logged")}</Badge> : <Badge>{t("New")}</Badge>}>
@@ -101,10 +123,26 @@ export default function HealthPage() {
               <div className="mb-2 text-sm font-medium">{t("Symptoms")}</div>
               <SymptomGrid log={log} cycleSymptom={cycleSymptom} t={t} />
             </div>
+            {cycleOn && (
+              <div>
+                <div className="mb-2 text-sm font-medium">{t("Menstrual flow")}</div>
+                <FlowSelect value={log.period ?? 0} onChange={setFlow} t={t} />
+              </div>
+            )}
+            {meds.length > 0 && (
+              <div>
+                <div className="mb-2 text-sm font-medium">{t("Medications & supplements")}</div>
+                <MedChips meds={meds} taken={log.meds ?? []} onToggle={toggleMed} t={t} />
+              </div>
+            )}
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
                 <span className="text-sm font-medium">{t("Felt sick today")}</span>
                 <Toggle checked={!!log.sick} onChange={(v) => setLog((l) => ({ ...l, sick: v }))} />
+              </div>
+              <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
+                <span className="text-sm font-medium">{t("Recovery day")}</span>
+                <Toggle checked={!!log.recovering} onChange={(v) => setLog((l) => ({ ...l, recovering: v }))} />
               </div>
               <Field label={t("Water (glasses)")}>
                 <input
@@ -117,6 +155,11 @@ export default function HealthPage() {
                 />
               </Field>
             </div>
+            {log.recovering && (
+              <p className="-mt-1 rounded-lg bg-[var(--accent-soft)] px-3 py-2 text-xs text-[var(--text-muted)]">
+                {t("Recovery days don't break your streaks — rest up.")}
+              </p>
+            )}
             <Field label={t("Note")}>
               <textarea className={inputCls} rows={2} value={log.note ?? ""} onChange={(e) => setLog((l) => ({ ...l, note: e.target.value }))} />
             </Field>
@@ -131,6 +174,10 @@ export default function HealthPage() {
       )}
 
       <BodyMetricsCard />
+
+      <CycleCard />
+
+      <MedicationsCard />
 
       <Card>
         <SectionTitle right={<Activity size={16} className="text-[var(--text-faint)]" />}>{t("Wellbeing · last 30 days")}</SectionTitle>
@@ -250,6 +297,227 @@ const SEV_COLOR: Record<number, string> = {
   3: "#dc2626",
 };
 
+/* ---------------- Menstrual flow ---------------- */
+
+const FLOW_COLOR: Record<number, string> = { 1: "#f472b6", 2: "#ec4899", 3: "#be185d" };
+
+function FlowSelect({ value, onChange, t }: { value: number; onChange: (v: number) => void; t: (k: string) => string }) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      <button
+        onClick={() => onChange(0)}
+        className={clsx(
+          "rounded-full border px-3 py-1.5 text-sm font-medium transition",
+          value === 0 ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
+        )}
+      >
+        {t("None")}
+      </button>
+      {[1, 2, 3].map((v) => (
+        <button
+          key={v}
+          onClick={() => onChange(v)}
+          className={clsx(
+            "flex items-center gap-1 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+            value === v ? "border-transparent text-white" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
+          )}
+          style={value === v ? { background: FLOW_COLOR[v] } : undefined}
+        >
+          <Droplet size={13} className={value === v ? "" : "text-[var(--text-faint)]"} />
+          {t(FLOW_LABEL[v])}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* ---------------- Medication chips ---------------- */
+
+function MedChips({ meds, taken, onToggle, t }: { meds: string[]; taken: string[]; onToggle: (n: string) => void; t: (k: string) => string }) {
+  const set = new Set(taken);
+  return (
+    <div className="flex flex-wrap gap-2">
+      {meds.map((m) => {
+        const on = set.has(m);
+        return (
+          <button
+            key={m}
+            onClick={() => onToggle(m)}
+            className={clsx(
+              "flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition",
+              on ? "border-[var(--good)] bg-[var(--good)]/12 text-[var(--good)]" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
+            )}
+          >
+            <Pill size={13} />
+            {m}
+          </button>
+        );
+      })}
+      <span className="self-center text-xs text-[var(--text-faint)]">{t("Tap what you took")}</span>
+    </div>
+  );
+}
+
+/* ---------------- Cycle card ---------------- */
+
+function CycleCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const on = !!data.settings.cycleTracking;
+  const info = useMemo(() => analyzeCycle(data.health, todayISO()), [data.health]);
+
+  if (!on) {
+    return (
+      <Card>
+        <SectionTitle right={<CalendarHeart size={16} className="text-[var(--text-faint)]" />}>{t("Cycle tracking")}</SectionTitle>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--text-muted)]">
+            {t("Track your menstrual cycle to log flow and see an estimated next period. Off by default.")}
+          </p>
+          <Button variant="soft" size="sm" onClick={() => updateSettings({ cycleTracking: true })}>{t("Enable")}</Button>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          <button onClick={() => updateSettings({ cycleTracking: false })} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]">
+            {t("Turn off")}
+          </button>
+        }
+      >
+        {t("Cycle")}
+      </SectionTitle>
+      {info.lastStart == null ? (
+        <p className="py-4 text-center text-sm text-[var(--text-muted)]">
+          {t("Log your flow on the days it happens to start seeing predictions here.")}
+        </p>
+      ) : (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <CycleStat label={t("Cycle day")} value={info.cycleDay != null ? String(info.cycleDay) : "—"} />
+            <CycleStat label={t("Avg length")} value={info.avgLength != null ? `${info.avgLength} ${t("days")}` : "—"} />
+            <CycleStat
+              label={t("Next (est.)")}
+              value={info.nextPredicted ? fmtShort(info.nextPredicted) : "—"}
+              sub={info.daysUntilNext != null ? (info.daysUntilNext >= 0 ? t("in {n} days", { n: info.daysUntilNext }) : t("{n} days ago", { n: Math.abs(info.daysUntilNext) })) : undefined}
+            />
+            <CycleStat label={t("Last period")} value={fmtShort(info.lastStart)} />
+          </div>
+          {info.periods.length > 0 && (
+            <div className="mt-4">
+              <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Recent periods")}</div>
+              <div className="flex flex-wrap gap-2">
+                {info.periods.slice(0, 6).map((p) => (
+                  <span key={p.start} className="rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs">
+                    {fmtShort(p.start)} · {p.length} {p.length === 1 ? t("day") : t("days")}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          <p className="mt-3 text-[11px] text-[var(--text-faint)]">{t("Estimates from your logs — not medical advice.")}</p>
+        </>
+      )}
+    </Card>
+  );
+}
+
+function CycleStat({ label, value, sub }: { label: string; value: string; sub?: string }) {
+  return (
+    <div className="tile p-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{label}</div>
+      <div className="num mt-0.5 text-base font-bold">{value}</div>
+      {sub && <div className="text-[11px] text-[var(--text-muted)]">{sub}</div>}
+    </div>
+  );
+}
+
+/* ---------------- Medications management + adherence ---------------- */
+
+function MedicationsCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const meds = useMemo(() => data.settings.medications ?? [], [data.settings.medications]);
+  const [name, setName] = useState("");
+
+  function add() {
+    const n = name.trim();
+    if (!n || meds.some((m) => m.toLowerCase() === n.toLowerCase())) return;
+    updateSettings({ medications: [...meds, n] });
+    setName("");
+  }
+  function remove(m: string) {
+    updateSettings({ medications: meds.filter((x) => x !== m) });
+  }
+
+  // 14-day adherence grid per medication.
+  const days = useMemo(() => {
+    const today = todayISO();
+    return Array.from({ length: 14 }, (_, i) => addDays(today, -(13 - i)));
+  }, []);
+  const takenByDate = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const h of data.health) if (h.meds?.length) map.set(h.date, new Set(h.meds));
+    return map;
+  }, [data.health]);
+
+  return (
+    <Card>
+      <SectionTitle right={<Pill size={16} className="text-[var(--text-faint)]" />}>{t("Medications & supplements")}</SectionTitle>
+      <div className="flex gap-2">
+        <input
+          className={inputCls}
+          placeholder={t("e.g. Vitamin D, Iron…")}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+        />
+        <Button variant="soft" size="sm" onClick={add} disabled={!name.trim()}>
+          <Plus size={15} /> {t("Add")}
+        </Button>
+      </div>
+
+      {meds.length === 0 ? (
+        <p className="mt-3 text-sm text-[var(--text-muted)]">
+          {t("Add the medications or supplements you take, then tick them off each day in your health check.")}
+        </p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {meds.map((m) => {
+            const takenCount = days.filter((d) => takenByDate.get(d)?.has(m)).length;
+            return (
+              <div key={m}>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 text-sm font-medium">
+                    <Pill size={13} className="text-[var(--text-faint)]" /> {m}
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-[var(--text-faint)]">{takenCount}/14 {t("days")}</span>
+                    <button onClick={() => remove(m)} className="text-[var(--text-faint)] hover:text-[var(--bad)]" aria-label={t("Delete")}>
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex gap-[3px]">
+                  {days.map((d) => {
+                    const took = takenByDate.get(d)?.has(m);
+                    return <span key={d} title={d} className="h-3.5 flex-1 rounded-[2px]" style={{ background: took ? "var(--good)" : "var(--surface-3)" }} />;
+                  })}
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-[11px] text-[var(--text-faint)]">{t("Last 14 days · filled = taken.")}</p>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 /* ---------------- Guided question flow ---------------- */
 
 function QuestionFlow({
@@ -259,6 +527,10 @@ function QuestionFlow({
   onSave,
   t,
   flash,
+  cycleOn,
+  meds,
+  toggleMed,
+  setFlow,
 }: {
   log: HealthLog;
   setLog: React.Dispatch<React.SetStateAction<HealthLog>>;
@@ -266,17 +538,32 @@ function QuestionFlow({
   onSave: () => void;
   t: (k: string) => string;
   flash: boolean;
+  cycleOn: boolean;
+  meds: string[];
+  toggleMed: (n: string) => void;
+  setFlow: (v: number) => void;
 }) {
   const [step, setStep] = useState(0);
-  const steps = ["wellbeing", "symptoms", "sick", "note"];
+  const steps = [
+    "wellbeing",
+    "symptoms",
+    ...(cycleOn ? ["flow"] : []),
+    ...(meds.length ? ["meds"] : []),
+    "sick",
+    "recovery",
+    "note",
+  ];
   const total = steps.length;
-  const key = steps[step];
+  const key = steps[Math.min(step, total - 1)];
   const last = step === total - 1;
 
   const questions: Record<string, string> = {
     wellbeing: t("How do you feel today?"),
     symptoms: t("Any symptoms?"),
+    flow: t("Menstrual flow"),
+    meds: t("Medications & supplements"),
     sick: t("Were you sick today?"),
+    recovery: t("Recovery day"),
     note: t("Anything to note?"),
   };
 
@@ -300,6 +587,18 @@ function QuestionFlow({
             <SymptomGrid log={log} cycleSymptom={cycleSymptom} t={t} />
           </>
         )}
+        {key === "flow" && (
+          <>
+            <p className="mb-2 text-xs text-[var(--text-muted)]">{t("Tap the level, or None.")}</p>
+            <FlowSelect value={log.period ?? 0} onChange={setFlow} t={t} />
+          </>
+        )}
+        {key === "meds" && (
+          <>
+            <p className="mb-2 text-xs text-[var(--text-muted)]">{t("Tap what you took")}</p>
+            <MedChips meds={meds} taken={log.meds ?? []} onToggle={toggleMed} t={t} />
+          </>
+        )}
         {key === "sick" && (
           <div className="flex gap-2">
             {[
@@ -312,6 +611,25 @@ function QuestionFlow({
                 className={clsx(
                   "flex-1 rounded-xl border p-4 text-sm font-medium transition",
                   !!log.sick === o.v ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        )}
+        {key === "recovery" && (
+          <div className="flex gap-2">
+            {[
+              { v: false, label: t("Normal day") },
+              { v: true, label: t("Recovery day") },
+            ].map((o) => (
+              <button
+                key={String(o.v)}
+                onClick={() => setLog((l) => ({ ...l, recovering: o.v }))}
+                className={clsx(
+                  "flex-1 rounded-xl border p-4 text-sm font-medium transition",
+                  !!log.recovering === o.v ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)]",
                 )}
               >
                 {o.label}
