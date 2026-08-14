@@ -53,10 +53,17 @@ export const NAV: NavItem[] = [
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
-/** Shown in the mobile bottom bar; the rest live under "More". */
-export const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
-  (href) => NAV.find((n) => n.href === href)!,
-);
+/** Default pages on the mobile bottom bar; the rest live under "More". User-customisable. */
+export const DEFAULT_PINNED = ["/", "/today", "/habits", "/statistics"];
+
+/** Resolve the pinned bottom-bar items (max 4) from saved hrefs, falling back to defaults. */
+export function pinnedNav(pinned?: string[]): NavItem[] {
+  const hrefs = pinned && pinned.length ? pinned : DEFAULT_PINNED;
+  return hrefs
+    .map((h) => NAV.find((n) => n.href === h))
+    .filter((n): n is NavItem => !!n)
+    .slice(0, 4);
+}
 
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [

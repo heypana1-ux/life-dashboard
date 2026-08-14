@@ -432,6 +432,8 @@ export interface Settings {
   lastBackupAt?: string;
   /** Custom ordering of the sidebar/navigation by href. Missing items fall back to default order. */
   navOrder?: string[];
+  /** Pages pinned to the mobile bottom bar (hrefs). Falls back to a sensible default set. */
+  navPinned?: string[];
   /** Guided day-flow overlays. */
   dayFlow?: DayFlowSettings;
   /** How the Health screen collects data: a guided Q&A or a plain form. */

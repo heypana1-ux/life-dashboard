@@ -4,10 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
-import { GripVertical, Menu, Plus, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { GripVertical, Menu, Plus, Search, ShieldCheck, Sparkles, Star } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
-import { NAV, BOTTOM, SECTIONS, orderNav, type NavItem } from "@/lib/nav";
+import { NAV, DEFAULT_PINNED, pinnedNav, SECTIONS, orderNav, type NavItem } from "@/lib/nav";
 import { Onboarding } from "@/components/Onboarding";
 import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
@@ -51,6 +51,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     hrefs.splice(from, 1);
     hrefs.splice(to, 0, dragHref);
     updateSettings({ navOrder: hrefs });
+  }
+
+  const pinned = data.settings.navPinned ?? DEFAULT_PINNED;
+  const bottomItems = pinnedNav(data.settings.navPinned);
+  function togglePin(href: string) {
+    const next = pinned.includes(href) ? pinned.filter((h) => h !== href) : [...pinned, href];
+    updateSettings({ navPinned: next });
   }
 
   // Swipe left/right to move to the next/previous page in the nav order (mobile).
@@ -171,7 +178,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile bottom nav */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur md:hidden">
-        {BOTTOM.map((item) => (
+        {bottomItems.map((item) => (
           <BottomLink
             key={item.href}
             item={item}
@@ -216,6 +223,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] py-2.5 pl-9 pr-3 text-sm outline-none focus:border-[var(--accent)]"
               />
             </label>
+            <div className="flex items-center gap-1.5 px-1 text-[11px] text-[var(--text-faint)]">
+              <Star size={11} /> {t("Tap the star to pin a page to the bottom bar.")}
+            </div>
             <div className="space-y-3 overflow-y-auto">
               {SECTIONS.map((sec) => {
                 const items = sec.hrefs
@@ -230,24 +240,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <div className="grid grid-cols-3 gap-2">
                       {items.map((item) => {
                         const Icon = item.icon;
+                        const isPinned = pinned.includes(item.href);
                         return (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            onClick={() => {
-                              setMoreOpen(false);
-                              setMoreQuery("");
-                            }}
-                            className={clsx(
-                              "flex flex-col items-center gap-1.5 rounded-xl p-3 text-center text-xs",
-                              isActive(pathname, item.href)
-                                ? "bg-[var(--accent-soft)] text-[var(--accent)]"
-                                : "text-[var(--text-muted)] hover:bg-[var(--surface-2)]",
-                            )}
-                          >
-                            <Icon size={20} />
-                            {t(item.label)}
-                          </Link>
+                          <div key={item.href} className="relative">
+                            <Link
+                              href={item.href}
+                              onClick={() => {
+                                setMoreOpen(false);
+                                setMoreQuery("");
+                              }}
+                              className={clsx(
+                                "flex flex-col items-center gap-1.5 rounded-xl p-3 text-center text-xs",
+                                isActive(pathname, item.href)
+                                  ? "bg-[var(--accent-soft)] text-[var(--accent)]"
+                                  : "text-[var(--text-muted)] hover:bg-[var(--surface-2)]",
+                              )}
+                            >
+                              <Icon size={20} />
+                              {t(item.label)}
+                            </Link>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); togglePin(item.href); }}
+                              className="absolute right-1 top-1 rounded-md p-0.5"
+                              aria-label={isPinned ? t("Unpin") : t("Pin to bar")}
+                            >
+                              <Star size={13} className={isPinned ? "fill-[var(--warn)] text-[var(--warn)]" : "text-[var(--text-faint)]"} />
+                            </button>
+                          </div>
                         );
                       })}
                     </div>
