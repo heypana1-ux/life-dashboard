@@ -28,6 +28,7 @@ interface RunExercise {
   muscle?: Muscle;
   targetReps?: number;
   targetWeight?: number;
+  restSec?: number;
   sets: RunSet[];
 }
 
@@ -51,6 +52,7 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
         muscle: (pe.name ? muscleFor(pe.name) : undefined) as Muscle | undefined,
         targetReps: pe.targetReps,
         targetWeight: pe.targetWeight,
+        restSec: pe.restSec,
         sets: [],
       })),
     [plan],
@@ -98,6 +100,8 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
     if (r <= 0 || !active) return;
     setExercises((xs) => xs.map((e, i) => (i === cur ? { ...e, sets: [...e.sets, { weight: w, reps: r }] } : e)));
     setReps("");
+    // Auto-start this exercise's configured rest (from the plan), if any.
+    if (active.restSec && active.restSec > 0) setRest(active.restSec);
   }
 
   function removeSet(exIdx: number, setIdx: number) {

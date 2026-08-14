@@ -520,6 +520,7 @@ const DE: Record<string, string> = {
   target: "Ziel",
   "Log set": "Satz eintragen",
   "Start rest": "Pause starten",
+  "Rest s": "Pause s",
   "Add your first exercise to begin.": "Füge deine erste Übung hinzu, um zu starten.",
   "Start timer": "Timer starten",
   Pace: "Tempo",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import clsx from "clsx";
 import { ArrowDownRight, ArrowUpRight, Minus, X } from "lucide-react";
@@ -305,6 +305,51 @@ export function Field({
 
 export const inputCls =
   "w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]";
+
+/**
+ * A number input that can actually be cleared. A plain controlled `<input type="number">`
+ * bound to a numeric state snaps back to 0 the moment you delete the last digit; this keeps
+ * the field's own text so it can be empty while typing, and reports `number | undefined`.
+ * For required fields, ignore `undefined` in your handler to keep the previous value.
+ */
+export function NumberInput({
+  value,
+  onChange,
+  className,
+  ...rest
+}: {
+  value: number | undefined;
+  onChange: (n: number | undefined) => void;
+  className?: string;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange" | "type">) {
+  const [text, setText] = useState(value == null ? "" : String(value));
+  const focused = useRef(false);
+  useEffect(() => {
+    // Sync from the outside only when the parsed text really differs (and never mid-typing),
+    // so a parent that clamps/ignores our value can't fight what the user is entering.
+    if (focused.current) return;
+    const parsed = text === "" ? undefined : Number(text);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (value !== parsed) setText(value == null ? "" : String(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+  return (
+    <input
+      type="number"
+      inputMode="decimal"
+      className={className ?? inputCls}
+      value={text}
+      onFocus={() => (focused.current = true)}
+      onBlur={() => (focused.current = false)}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        onChange(raw === "" ? undefined : Number(raw));
+      }}
+      {...rest}
+    />
+  );
+}
 
 export function Toggle({
   checked,

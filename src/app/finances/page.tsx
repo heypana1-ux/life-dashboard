@@ -39,6 +39,7 @@ import {
   Modal,
   Field,
   inputCls,
+  NumberInput,
   EmptyState,
   Badge,
 } from "@/components/ui";
@@ -797,7 +798,7 @@ function AccountModal({
             </select>
           </Field>
           <Field label={t("Value")}>
-            <input type="number" className={inputCls} value={draft.value} onChange={(e) => setDraft({ ...draft, value: Number(e.target.value) })} />
+            <NumberInput value={draft.value} onChange={(n) => setDraft({ ...draft, value: n ?? 0 })} />
           </Field>
         </div>
         <div className="flex justify-end gap-2">
@@ -836,7 +837,7 @@ function LiabilityModal({
         </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Balance")}>
-            <input type="number" className={inputCls} value={draft.balance} onChange={(e) => setDraft({ ...draft, balance: Number(e.target.value) })} />
+            <NumberInput value={draft.balance} onChange={(n) => setDraft({ ...draft, balance: n ?? 0 })} />
           </Field>
           <Field label={t("Monthly payment")}>
             <input type="number" className={inputCls} value={draft.monthlyPayment ?? ""} onChange={(e) => setDraft({ ...draft, monthlyPayment: e.target.value ? Number(e.target.value) : undefined })} />
@@ -893,15 +894,15 @@ function HoldingModal({
             </select>
           </Field>
           <Field label={t("Quantity")}>
-            <input type="number" className={inputCls} value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: Number(e.target.value) })} />
+            <NumberInput value={draft.quantity} onChange={(n) => setDraft({ ...draft, quantity: n ?? 0 })} />
           </Field>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Field label={t("Buy price")}>
-            <input type="number" className={inputCls} value={draft.buyPrice} onChange={(e) => setDraft({ ...draft, buyPrice: Number(e.target.value) })} />
+            <NumberInput value={draft.buyPrice} onChange={(n) => setDraft({ ...draft, buyPrice: n ?? 0 })} />
           </Field>
           <Field label={t("Current price")}>
-            <input type="number" className={inputCls} value={draft.currentPrice} onChange={(e) => setDraft({ ...draft, currentPrice: Number(e.target.value) })} />
+            <NumberInput value={draft.currentPrice} onChange={(n) => setDraft({ ...draft, currentPrice: n ?? 0 })} />
           </Field>
           <Field label={t("Monthly plan")}>
             <input type="number" className={inputCls} value={draft.monthlyPlan ?? ""} onChange={(e) => setDraft({ ...draft, monthlyPlan: e.target.value ? Number(e.target.value) : undefined })} />
@@ -963,7 +964,7 @@ function TransactionModal({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Amount")}>
-            <input type="number" className={inputCls} value={draft.amount || ""} onChange={(e) => setDraft({ ...draft, amount: Number(e.target.value) })} autoFocus />
+            <NumberInput value={draft.amount || undefined} onChange={(n) => setDraft({ ...draft, amount: n ?? 0 })} autoFocus />
           </Field>
           <Field label={t("Date")}>
             <input type="date" className={inputCls} value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
@@ -1096,7 +1097,7 @@ function RecurringModal({ open, onClose }: { open: boolean; onClose: () => void 
           </div>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Field label={t("Amount")}>
-              <input type="number" className={inputCls} value={draft.amount || ""} onChange={(e) => setDraft({ ...draft, amount: Number(e.target.value) })} />
+              <NumberInput value={draft.amount || undefined} onChange={(n) => setDraft({ ...draft, amount: n ?? 0 })} />
             </Field>
             <Field label={t("Day of month")}>
               <input type="number" min={1} max={31} className={inputCls} value={draft.dayOfMonth} onChange={(e) => setDraft({ ...draft, dayOfMonth: Math.min(31, Math.max(1, Number(e.target.value) || 1)) })} />

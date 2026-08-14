@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, Dumbbell, Footprints, Play, Plus, Save, Square, Swords, Trash2, TrendingUp, Trophy } from "lucide-react";
+import { Activity, Dumbbell, Footprints, Play, Plus, Save, Square, Swords, Timer, Trash2, TrendingUp, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
@@ -20,6 +20,7 @@ import {
   Modal,
   Field,
   inputCls,
+  NumberInput,
   EmptyState,
   Badge,
   Chip,
@@ -87,6 +88,7 @@ export default function TrainingPage() {
       {tab === "workouts" && (
         <WorkoutsTab
           workouts={workouts}
+          plans={data.workoutPlans}
           onEdit={(w) => {
             setEditing(w);
             setFromPlan(undefined);
@@ -96,6 +98,7 @@ export default function TrainingPage() {
           onDelete={removeWorkout}
           onNew={() => newWorkout()}
           onQuickStart={quickStart}
+          onStartPlan={(p) => setRunner({ plan: p })}
         />
       )}
       {tab === "plans" && <PlansTab onStart={(p) => setRunner({ plan: p })} />}
@@ -111,25 +114,36 @@ export default function TrainingPage() {
 
 function WorkoutsTab({
   workouts,
+  plans,
   onEdit,
   onDelete,
   onNew,
   onQuickStart,
+  onStartPlan,
 }: {
   workouts: Workout[];
+  plans: WorkoutPlan[];
   onEdit: (w: Workout) => void;
   onDelete: (id: string) => void;
   onNew: () => void;
   onQuickStart: (sport: string) => void;
+  onStartPlan: (p: WorkoutPlan) => void;
 }) {
   const { data } = useStore();
   const t = useT();
 
-  // Quick-start chips: the user's most-used sports (falling back to a few defaults).
+  // Quick-start chips: sports you've done recently (most first), plus a couple of defaults.
   const quickSports = useMemo(() => {
+    const last = new Map<string, string>(); // sport -> latest date
     const freq = new Map<string, number>();
-    for (const w of data.workouts) freq.set(w.sport, (freq.get(w.sport) ?? 0) + 1);
-    const used = [...freq.entries()].sort((a, b) => b[1] - a[1]).map(([s]) => s);
+    for (const w of data.workouts) {
+      freq.set(w.sport, (freq.get(w.sport) ?? 0) + 1);
+      if (!last.has(w.sport) || w.date > (last.get(w.sport) as string)) last.set(w.sport, w.date);
+    }
+    const used = [...freq.keys()].sort((a, b) => {
+      const d = (last.get(b) ?? "").localeCompare(last.get(a) ?? "");
+      return d !== 0 ? d : (freq.get(b) ?? 0) - (freq.get(a) ?? 0);
+    });
     const base = ["Running", "Strength Training", "Taekwondo"];
     return Array.from(new Set([...used, ...base])).slice(0, 5);
   }, [data.workouts]);
@@ -158,6 +172,15 @@ function WorkoutsTab({
           <Play size={11} /> {t("Quick start")}
         </div>
         <div className="flex flex-wrap gap-2">
+          {plans.map((p) => (
+            <button
+              key={p.id}
+              onClick={() => onStartPlan(p)}
+              className="flex items-center gap-1.5 rounded-full border border-[var(--accent)] bg-[var(--accent-soft)] px-3 py-1.5 text-sm font-medium text-[var(--accent)]"
+            >
+              <Play size={13} /> {p.name}
+            </button>
+          ))}
           {quickSports.map((s) => {
             const Icon = SPORT_ICON[sportKind(s)];
             return (
@@ -565,10 +588,14 @@ function PlanModal({ open, onClose, editing }: { open: boolean; onClose: () => v
                   />
                 </div>
                 <div className="flex items-center gap-1 text-xs text-[var(--text-faint)]">
-                  <input type="number" className={`${inputCls} !py-1.5 w-14`} placeholder={t("Sets")} value={ex.sets ?? ""} onChange={(e) => updateEx(i, { sets: e.target.value ? Number(e.target.value) : undefined })} />
+                  <NumberInput className={`${inputCls} !py-1.5 w-14`} placeholder={t("Sets")} value={ex.sets} onChange={(n) => updateEx(i, { sets: n })} />
                   ×
-                  <input type="number" className={`${inputCls} !py-1.5 w-14`} placeholder={t("Reps")} value={ex.targetReps ?? ""} onChange={(e) => updateEx(i, { targetReps: e.target.value ? Number(e.target.value) : undefined })} />
+                  <NumberInput className={`${inputCls} !py-1.5 w-14`} placeholder={t("Reps")} value={ex.targetReps} onChange={(n) => updateEx(i, { targetReps: n })} />
                 </div>
+                <label className="flex items-center gap-1 text-xs text-[var(--text-faint)]">
+                  <Timer size={13} />
+                  <NumberInput className={`${inputCls} !py-1.5 w-16`} placeholder={t("Rest s")} value={ex.restSec} onChange={(n) => updateEx(i, { restSec: n })} />
+                </label>
                 <button onClick={() => set({ exercises: draft.exercises.filter((_, j) => j !== i) })} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
                   <Trash2 size={15} />
                 </button>
@@ -698,7 +725,7 @@ function WorkoutModal({
         {/* Duration + live timer */}
         <div className="flex items-end gap-3">
           <Field label={t("Duration (min)")} className="flex-1">
-            <input type="number" className={inputCls} value={draft.durationMin} onChange={(e) => set({ durationMin: Number(e.target.value) })} />
+            <NumberInput value={draft.durationMin} onChange={(n) => set({ durationMin: n ?? 0 })} />
           </Field>
           <button
             onClick={toggleTimer}

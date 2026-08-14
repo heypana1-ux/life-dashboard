@@ -18,7 +18,7 @@ import { habitsForToday } from "@/lib/habitView";
 import { computeDay, scoreColor, scoreLabel, sleepScore } from "@/lib/score";
 import { addDays, fmtDuration, sleepDurationMinutes, todayISO } from "@/lib/date";
 import { DailyReview, SleepLog } from "@/lib/types";
-import { Button, ScaleInput, Field, inputCls } from "@/components/ui";
+import { Button, ScaleInput, Field, inputCls, NumberInput } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { AnimatedRing, RecapChecklist } from "@/components/Recap";
 import { useDerived } from "@/lib/useDerived";
@@ -455,21 +455,17 @@ function MorningFlow({ onClose }: { onClose: () => void }) {
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Fall-asleep (min)")}>
-            <input
-              type="number"
+            <NumberInput
               min={0}
-              className={inputCls}
               value={log.fallAsleepMinutes ?? 0}
-              onChange={(e) => setLog((l) => ({ ...l, fallAsleepMinutes: Number(e.target.value) }))}
+              onChange={(n) => setLog((l) => ({ ...l, fallAsleepMinutes: n ?? 0 }))}
             />
           </Field>
           <Field label={t("Awakenings")}>
-            <input
-              type="number"
+            <NumberInput
               min={0}
-              className={inputCls}
               value={log.awakenings ?? 0}
-              onChange={(e) => setLog((l) => ({ ...l, awakenings: Number(e.target.value) }))}
+              onChange={(n) => setLog((l) => ({ ...l, awakenings: n ?? 0 }))}
             />
           </Field>
         </div>

@@ -304,6 +304,8 @@ export interface PlanExercise {
   sets?: number;
   targetReps?: number;
   targetWeight?: number;
+  /** Rest after each set of this exercise, in seconds (auto-starts in the guided runner). */
+  restSec?: number;
 }
 
 export interface WorkoutPlan {

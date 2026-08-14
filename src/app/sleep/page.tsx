@@ -15,6 +15,7 @@ import {
   Field,
   inputCls,
   Badge,
+  NumberInput,
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
@@ -146,23 +147,17 @@ export default function SleepPage() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <Field label={t("Fall-asleep (min)")}>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
-                  className={inputCls}
                   value={log.fallAsleepMinutes ?? 0}
-                  onChange={(e) =>
-                    setLog((l) => ({ ...l, fallAsleepMinutes: Number(e.target.value) }))
-                  }
+                  onChange={(n) => setLog((l) => ({ ...l, fallAsleepMinutes: n ?? 0 }))}
                 />
               </Field>
               <Field label={t("Awakenings")}>
-                <input
-                  type="number"
+                <NumberInput
                   min={0}
-                  className={inputCls}
                   value={log.awakenings ?? 0}
-                  onChange={(e) => setLog((l) => ({ ...l, awakenings: Number(e.target.value) }))}
+                  onChange={(n) => setLog((l) => ({ ...l, awakenings: n ?? 0 }))}
                 />
               </Field>
             </div>

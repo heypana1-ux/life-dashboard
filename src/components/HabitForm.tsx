@@ -6,7 +6,7 @@ import { AREA_LABELS, HABIT_COLORS } from "@/lib/defaults";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { weekdayLabel } from "@/lib/date";
-import { Modal, Field, inputCls, Button, Chip } from "@/components/ui";
+import { Modal, Field, inputCls, Button, Chip, NumberInput } from "@/components/ui";
 import clsx from "clsx";
 
 const AREAS: AreaKey[] = [
@@ -147,13 +147,11 @@ export function HabitForm({
             </Chip>
           </div>
           {draft.schedule.type === "weekly" && (
-            <input
-              type="number"
+            <NumberInput
               min={1}
               max={7}
-              className={inputCls}
               value={draft.schedule.timesPerWeek ?? 3}
-              onChange={(e) => setSchedule({ timesPerWeek: Number(e.target.value) })}
+              onChange={(n) => n != null && setSchedule({ timesPerWeek: n })}
             />
           )}
           {draft.schedule.type === "weekdays" && (
@@ -200,14 +198,11 @@ export function HabitForm({
             </div>
             {targetMode === "times" && (
               <div>
-                <input
-                  type="number"
-                  inputMode="numeric"
+                <NumberInput
                   min={1}
                   max={20}
-                  className={inputCls}
                   value={draft.timesPerDay ?? 2}
-                  onChange={(e) => set({ timesPerDay: Math.max(1, Number(e.target.value) || 1) })}
+                  onChange={(n) => n != null && set({ timesPerDay: Math.max(1, n) })}
                 />
                 <p className="mt-1 text-xs text-[var(--text-faint)]">
                   {t("Fewer than the target counts partially; more gives a small bonus.")}
@@ -215,25 +210,19 @@ export function HabitForm({
               </div>
             )}
             {targetMode === "minutes" && (
-              <input
-                type="number"
-                inputMode="numeric"
+              <NumberInput
                 min={0}
-                className={inputCls}
                 placeholder={t("e.g. 30")}
-                value={draft.targetMinutes ?? ""}
-                onChange={(e) => set({ targetMinutes: e.target.value ? Number(e.target.value) : undefined })}
+                value={draft.targetMinutes}
+                onChange={(n) => set({ targetMinutes: n })}
               />
             )}
             {targetMode === "value" && (
               <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  className={inputCls}
+                <NumberInput
                   placeholder={t("Target value")}
-                  value={draft.targetValue ?? ""}
-                  onChange={(e) => set({ targetValue: e.target.value ? Number(e.target.value) : undefined })}
+                  value={draft.targetValue}
+                  onChange={(n) => set({ targetValue: n })}
                 />
                 <input
                   className={inputCls}
