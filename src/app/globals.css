@@ -126,6 +126,11 @@ body {
   color: var(--text);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Never allow horizontal scroll/zoom on mobile (it broke page-swipe navigation).
+     `clip` (not `hidden`) avoids turning the page into a scroll container, so
+     sticky headers keep working. */
+  overflow-x: clip;
+  max-width: 100%;
 }
 
 /* Thin, unobtrusive scrollbars */
