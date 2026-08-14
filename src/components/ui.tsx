@@ -285,13 +285,15 @@ export function Field({
   label,
   children,
   hint,
+  className,
 }: {
   label: string;
   children: React.ReactNode;
   hint?: string;
+  className?: string;
 }) {
   return (
-    <label className="block">
+    <label className={`block${className ? ` ${className}` : ""}`}>
       <span className="mb-1 block text-sm font-medium text-[var(--text-muted)]">
         {label}
       </span>

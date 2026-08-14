@@ -226,6 +226,25 @@ export interface Transaction {
   note?: string;
 }
 
+/** A recurring income/expense that is auto-booked once per month. */
+export interface RecurringTx {
+  id: string;
+  type: "income" | "expense";
+  category: string;
+  amount: number; // positive
+  dayOfMonth: number; // 1..31 (clamped to month length when booking)
+  note?: string;
+  active: boolean;
+  /** Month key (YYYY-MM) this rule was last booked for — prevents double booking. */
+  lastBooked?: string;
+}
+
+/** A monthly spending cap for one expense category. */
+export interface Budget {
+  category: string;
+  limit: number; // per-month limit in the user's currency
+}
+
 /** Auto-recorded net-worth point (one per day it changes) for the history chart. */
 export interface NetWorthPoint {
   date: string;
@@ -239,6 +258,10 @@ export interface Finances {
   holdings: Holding[];
   transactions: Transaction[];
   history: NetWorthPoint[];
+  /** Recurring booking rules (rent, salary, subscriptions…). */
+  recurring: RecurringTx[];
+  /** Per-category monthly spending limits. */
+  budgets: Budget[];
 }
 
 /* ---------------- Training ---------------- */

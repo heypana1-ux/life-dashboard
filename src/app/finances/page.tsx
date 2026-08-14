@@ -1,28 +1,33 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Plus, Trash2, Wallet } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus, Repeat, Trash2, Wallet } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import {
   AssetCategory,
+  Budget,
   FinanceAccount,
   Holding,
   HoldingKind,
   Liability,
+  RecurringTx,
   Transaction,
 } from "@/lib/types";
 import {
   EXPENSE_CATEGORIES,
   INCOME_CATEGORIES,
   budgetForMonth,
+  budgetVsActual,
   currentMonth,
   financeTotals,
   fmtMoney,
   holdingGain,
   holdingGainPct,
   holdingValue,
+  monthLabel,
   portfolioSummary,
+  shiftMonth,
 } from "@/lib/finance";
 import { todayISO } from "@/lib/date";
 import {
@@ -42,10 +47,15 @@ import { TrendLine } from "@/components/charts";
 type Tab = "overview" | "portfolio" | "budget";
 
 export default function FinancesPage() {
-  const { data } = useStore();
+  const { data, runRecurring } = useStore();
   const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
   const cur = data.finances.currency;
+
+  // Auto-book any due recurring transactions (rent, salary, subscriptions…).
+  useEffect(() => {
+    runRecurring();
+  }, [runRecurring]);
 
   return (
     <div className="space-y-6">
@@ -339,18 +349,52 @@ function PortfolioTab({ cur }: { cur: string }) {
 /* ---------------- Budget ---------------- */
 
 function BudgetTab({ cur }: { cur: string }) {
-  const { data, saveTransaction, removeTransaction } = useStore();
+  const { data, saveTransaction, removeTransaction, saveBudget, removeBudget } = useStore();
   const t = useT();
-  const month = currentMonth();
-  const b = useMemo(() => budgetForMonth(data.finances.transactions, month), [data.finances.transactions, month]);
+  const [month, setMonth] = useState(currentMonth());
   const [modal, setModal] = useState(false);
+  const [editTx, setEditTx] = useState<Transaction | undefined>();
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [recurringOpen, setRecurringOpen] = useState(false);
+
+  const b = useMemo(
+    () => budgetForMonth(data.finances.transactions, month),
+    [data.finances.transactions, month],
+  );
+  const budgetLines = useMemo(
+    () => budgetVsActual(data.finances.budgets, b.byCategory),
+    [data.finances.budgets, b.byCategory],
+  );
+  const totalBudget = data.finances.budgets.reduce((s, x) => s + x.limit, 0);
 
   const monthTxs = data.finances.transactions
     .filter((x) => x.date.slice(0, 7) === month)
     .sort((a, b) => (a.date < b.date ? 1 : -1));
 
+  const isCurrent = month === currentMonth();
+
   return (
     <div className="space-y-4">
+      {/* Month switcher */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          onClick={() => setMonth((m) => shiftMonth(m, -1))}
+          className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
+          aria-label={t("Previous month")}
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <div className="min-w-[9rem] text-center text-sm font-semibold">{monthLabel(month)}</div>
+        <button
+          onClick={() => setMonth((m) => shiftMonth(m, 1))}
+          disabled={isCurrent}
+          className="rounded-lg p-2 text-[var(--text-muted)] hover:bg-[var(--surface-2)] disabled:opacity-30"
+          aria-label={t("Next month")}
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
+
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label={t("Monthly income")} value={fmtMoney(b.income, cur)} tone="good" />
         <Stat label={t("Monthly expenses")} value={fmtMoney(b.expenses, cur)} tone="bad" />
@@ -358,31 +402,38 @@ function BudgetTab({ cur }: { cur: string }) {
         <Stat label={t("Savings rate")} value={`${b.savingsRate}%`} big />
       </div>
 
+      {/* Quick add */}
+      <QuickAdd cur={cur} month={month} onSave={saveTransaction} onMore={() => { setEditTx(undefined); setModal(true); }} />
+
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <SectionTitle
             right={
-              <Button variant="soft" size="sm" onClick={() => setModal(true)}>
-                <Plus size={14} /> {t("Add transaction")}
+              <Button variant="soft" size="sm" onClick={() => { setEditTx(undefined); setModal(true); }}>
+                <Plus size={14} /> {t("Add")}
               </Button>
             }
           >
-            {t("This month")}
+            {t("Transactions")}
           </SectionTitle>
           {monthTxs.length === 0 ? (
             <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No transactions yet")}</p>
           ) : (
             <div className="max-h-96 divide-y divide-[var(--border)] overflow-y-auto">
               {monthTxs.map((tx) => (
-                <div key={tx.id} className="flex items-center justify-between py-2.5">
-                  <div>
-                    <div className="text-sm font-medium">{t(categoryLabel(tx.category))}</div>
-                    <div className="text-xs text-[var(--text-faint)]">
+                <button
+                  key={tx.id}
+                  onClick={() => { setEditTx(tx); setModal(true); }}
+                  className="flex w-full items-center justify-between py-2.5 text-left hover:bg-[var(--surface-2)]"
+                >
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-medium">{t(categoryLabel(tx.category))}</div>
+                    <div className="truncate text-xs text-[var(--text-faint)]">
                       {tx.date}
                       {tx.note ? ` · ${tx.note}` : ""}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex shrink-0 items-center gap-2">
                     <span
                       className={`text-sm font-semibold tabular-nums ${
                         tx.type === "income" ? "text-[var(--good)]" : "text-[var(--bad)]"
@@ -391,21 +442,24 @@ function BudgetTab({ cur }: { cur: string }) {
                       {tx.type === "income" ? "+" : "−"}
                       {fmtMoney(tx.amount, cur)}
                     </span>
-                    <button
-                      onClick={() => removeTransaction(tx.id)}
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); removeTransaction(tx.id); }}
+                      onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); removeTransaction(tx.id); } }}
                       className="text-[var(--text-faint)] hover:text-[var(--bad)]"
                     >
                       <Trash2 size={14} />
-                    </button>
+                    </span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           )}
         </Card>
 
         <Card>
-          <SectionTitle>{t("Expenses")}</SectionTitle>
+          <SectionTitle>{t("Expenses by category")}</SectionTitle>
           {b.byCategory.length === 0 ? (
             <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No transactions yet")}</p>
           ) : (
@@ -416,7 +470,9 @@ function BudgetTab({ cur }: { cur: string }) {
                   <div key={c.category}>
                     <div className="mb-1 flex justify-between text-sm">
                       <span>{t(categoryLabel(c.category))}</span>
-                      <span className="tabular-nums text-[var(--text-muted)]">{fmtMoney(c.amount, cur)}</span>
+                      <span className="tabular-nums text-[var(--text-muted)]">
+                        {fmtMoney(c.amount, cur)} · {Math.round(pct)}%
+                      </span>
                     </div>
                     <div className="h-2 overflow-hidden rounded-full bg-[var(--ring-track)]">
                       <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
@@ -429,8 +485,202 @@ function BudgetTab({ cur }: { cur: string }) {
         </Card>
       </div>
 
-      <TransactionModal open={modal} onClose={() => setModal(false)} onSave={(tx) => { saveTransaction(tx); setModal(false); }} />
+      {/* Budget vs actual */}
+      <Card>
+        <SectionTitle
+          right={
+            <Button variant="soft" size="sm" onClick={() => setBudgetOpen(true)}>
+              <Plus size={14} /> {t("Set budgets")}
+            </Button>
+          }
+        >
+          {t("Budget vs. actual")}
+        </SectionTitle>
+        {budgetLines.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+            {t("Set a monthly limit per category to track how you're doing.")}
+          </p>
+        ) : (
+          <>
+            <div className="space-y-3">
+              {budgetLines.map((l) => (
+                <div key={l.category}>
+                  <div className="mb-1 flex justify-between text-sm">
+                    <span className="flex items-center gap-2">
+                      {t(categoryLabel(l.category))}
+                      {l.over && <Badge tone="bad">{t("Over budget")}</Badge>}
+                    </span>
+                    <span className="tabular-nums text-[var(--text-muted)]">
+                      {fmtMoney(l.spent, cur)} / {fmtMoney(l.limit, cur)}
+                    </span>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        width: `${Math.min(l.pct, 100)}%`,
+                        background: l.over ? "var(--bad)" : l.pct > 80 ? "var(--warn)" : "var(--good)",
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            {totalBudget > 0 && (
+              <p className="mt-3 text-xs text-[var(--text-faint)]">
+                {t("Total budgeted")}: {fmtMoney(totalBudget, cur)} · {t("spent")} {fmtMoney(b.expenses, cur)}
+              </p>
+            )}
+          </>
+        )}
+      </Card>
+
+      {/* Recurring */}
+      <Card>
+        <SectionTitle
+          right={
+            <Button variant="soft" size="sm" onClick={() => setRecurringOpen(true)}>
+              <Repeat size={14} /> {t("Manage")}
+            </Button>
+          }
+        >
+          {t("Recurring")}
+        </SectionTitle>
+        {data.finances.recurring.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+            {t("Add rent, salary or subscriptions to book them automatically each month.")}
+          </p>
+        ) : (
+          <div className="divide-y divide-[var(--border)]">
+            {data.finances.recurring.map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2.5">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">
+                    {t(categoryLabel(r.category))}
+                    {!r.active && <span className="ml-2 text-xs text-[var(--text-faint)]">({t("paused")})</span>}
+                  </div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {t("Day")} {r.dayOfMonth}
+                    {r.note ? ` · ${r.note}` : ""}
+                  </div>
+                </div>
+                <span
+                  className={`text-sm font-semibold tabular-nums ${
+                    r.type === "income" ? "text-[var(--good)]" : "text-[var(--bad)]"
+                  }`}
+                >
+                  {r.type === "income" ? "+" : "−"}
+                  {fmtMoney(r.amount, cur)}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <TransactionModal
+        open={modal}
+        onClose={() => setModal(false)}
+        editing={editTx}
+        defaultDate={isCurrent ? undefined : `${month}-01`}
+        onSave={(tx) => { saveTransaction(tx); setModal(false); }}
+      />
+      <BudgetModal
+        open={budgetOpen}
+        onClose={() => setBudgetOpen(false)}
+        budgets={data.finances.budgets}
+        onSave={saveBudget}
+        onRemove={removeBudget}
+      />
+      <RecurringModal open={recurringOpen} onClose={() => setRecurringOpen(false)} />
     </div>
+  );
+}
+
+/* Fast one-tap entry: type toggle, amount, category chips. */
+function QuickAdd({
+  cur,
+  month,
+  onSave,
+  onMore,
+}: {
+  cur: string;
+  month: string;
+  onSave: (t: Transaction) => void;
+  onMore: () => void;
+}) {
+  const t = useT();
+  const [type, setType] = useState<"expense" | "income">("expense");
+  const [amount, setAmount] = useState("");
+  const [category, setCategory] = useState("Groceries");
+  const cats = type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  function submit() {
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+    // Book on today if the visible month is the current one, else on the 1st of that month.
+    const date = month === currentMonth() ? todayISO() : `${month}-01`;
+    onSave({ id: "", date, type, category, amount: amt });
+    setAmount("");
+  }
+
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex overflow-hidden rounded-xl border border-[var(--border)]">
+          {(["expense", "income"] as const).map((ty) => (
+            <button
+              key={ty}
+              onClick={() => { setType(ty); setCategory(ty === "income" ? "Salary" : "Groceries"); }}
+              className={`px-3 py-2 text-sm font-medium ${
+                type === ty
+                  ? ty === "income"
+                    ? "bg-[var(--good)] text-white"
+                    : "bg-[var(--bad)] text-white"
+                  : "bg-[var(--surface-2)] text-[var(--text-muted)]"
+              }`}
+            >
+              {ty === "income" ? t("Income") : t("Expense")}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-1 items-center gap-2">
+          <input
+            type="number"
+            inputMode="decimal"
+            placeholder={`${t("Amount")} (${cur})`}
+            className={`${inputCls} flex-1`}
+            value={amount}
+            onChange={(e) => setAmount(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") submit(); }}
+          />
+          <Button onClick={submit} disabled={!amount || Number(amount) <= 0}>
+            <Plus size={16} /> {t("Add")}
+          </Button>
+        </div>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {cats.map((c) => (
+          <button
+            key={c}
+            onClick={() => setCategory(c)}
+            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+              category === c
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]"
+            }`}
+          >
+            {t(categoryLabel(c))}
+          </button>
+        ))}
+        <button
+          onClick={onMore}
+          className="rounded-full border border-dashed border-[var(--border)] px-2.5 py-1 text-xs font-medium text-[var(--text-faint)] hover:text-[var(--text)]"
+        >
+          {t("More options")}
+        </button>
+      </div>
+    </Card>
   );
 }
 
@@ -670,17 +920,33 @@ function TransactionModal({
   open,
   onClose,
   onSave,
+  editing,
+  defaultDate,
 }: {
   open: boolean;
   onClose: () => void;
   onSave: (t: Transaction) => void;
+  editing?: Transaction;
+  defaultDate?: string;
 }) {
   const t = useT();
-  const blank: Transaction = { id: "", date: todayISO(), type: "expense", category: "Groceries", amount: 0 };
-  const [draft, setDraft] = useState<Transaction>(blank);
+  const blank = (): Transaction => ({
+    id: "",
+    date: defaultDate ?? todayISO(),
+    type: "expense",
+    category: "Groceries",
+    amount: 0,
+  });
+  const [draft, setDraft] = useState<Transaction>(editing ?? blank());
+  const key = editing?.id ?? "new";
+  const [lk, setLk] = useState(key);
+  if (open && key !== lk) {
+    setLk(key);
+    setDraft(editing ?? blank());
+  }
   const cats = draft.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
   return (
-    <Modal open={open} onClose={onClose} title={t("Add transaction")}>
+    <Modal open={open} onClose={onClose} title={editing ? t("Edit transaction") : t("Add transaction")}>
       <div className="space-y-4">
         <div className="flex gap-2">
           {(["expense", "income"] as const).map((ty) => (
@@ -697,7 +963,7 @@ function TransactionModal({
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Field label={t("Amount")}>
-            <input type="number" className={inputCls} value={draft.amount} onChange={(e) => setDraft({ ...draft, amount: Number(e.target.value) })} autoFocus />
+            <input type="number" className={inputCls} value={draft.amount || ""} onChange={(e) => setDraft({ ...draft, amount: Number(e.target.value) })} autoFocus />
           </Field>
           <Field label={t("Date")}>
             <input type="date" className={inputCls} value={draft.date} onChange={(e) => setDraft({ ...draft, date: e.target.value })} />
@@ -716,6 +982,171 @@ function TransactionModal({
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
           <Button onClick={() => draft.amount > 0 && onSave(draft)} disabled={draft.amount <= 0}>{t("Save")}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function BudgetModal({
+  open,
+  onClose,
+  budgets,
+  onSave,
+  onRemove,
+}: {
+  open: boolean;
+  onClose: () => void;
+  budgets: Budget[];
+  onSave: (b: Budget) => void;
+  onRemove: (category: string) => void;
+}) {
+  const t = useT();
+  const [category, setCategory] = useState(EXPENSE_CATEGORIES[0]);
+  const [limit, setLimit] = useState("");
+
+  function add() {
+    const n = Number(limit);
+    if (!n || n <= 0) return;
+    onSave({ category, limit: n });
+    setLimit("");
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={t("Monthly budgets")}>
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-muted)]">
+          {t("Set a spending limit per category. You'll see how much of each you've used this month.")}
+        </p>
+        <div className="flex items-end gap-2">
+          <Field label={t("Category")} className="flex-1">
+            <select className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)}>
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{t(categoryLabel(c))}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t("Limit")} className="w-28">
+            <input type="number" className={inputCls} value={limit} onChange={(e) => setLimit(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
+          </Field>
+          <Button onClick={add} disabled={!limit || Number(limit) <= 0}>{t("Set")}</Button>
+        </div>
+        {budgets.length > 0 && (
+          <div className="divide-y divide-[var(--border)]">
+            {budgets.map((bd) => (
+              <div key={bd.category} className="flex items-center justify-between py-2">
+                <span className="text-sm">{t(categoryLabel(bd.category))}</span>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-medium tabular-nums">{bd.limit}</span>
+                  <button onClick={() => onRemove(bd.category)} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onClose}>{t("Done")}</Button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
+function RecurringModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useT();
+  const { data, saveRecurring, removeRecurring } = useStore();
+  const blank = (): RecurringTx => ({
+    id: "",
+    type: "expense",
+    category: "Subscriptions",
+    amount: 0,
+    dayOfMonth: 1,
+    active: true,
+  });
+  const [draft, setDraft] = useState<RecurringTx>(blank());
+  const cats = draft.type === "income" ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
+
+  function add() {
+    if (draft.amount <= 0) return;
+    saveRecurring(draft);
+    setDraft(blank());
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={t("Recurring transactions")} wide>
+      <div className="space-y-4">
+        <p className="text-sm text-[var(--text-muted)]">
+          {t("These are booked automatically each month when their day arrives, while the app is open.")}
+        </p>
+        <div className="rounded-xl border border-[var(--border)] p-3">
+          <div className="flex gap-2">
+            {(["expense", "income"] as const).map((ty) => (
+              <button
+                key={ty}
+                onClick={() => setDraft({ ...draft, type: ty, category: ty === "income" ? "Salary" : "Subscriptions" })}
+                className={`flex-1 rounded-xl border px-3 py-2 text-sm font-medium ${
+                  draft.type === ty ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)]"
+                }`}
+              >
+                {ty === "income" ? t("Income") : t("Expense")}
+              </button>
+            ))}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <Field label={t("Amount")}>
+              <input type="number" className={inputCls} value={draft.amount || ""} onChange={(e) => setDraft({ ...draft, amount: Number(e.target.value) })} />
+            </Field>
+            <Field label={t("Day of month")}>
+              <input type="number" min={1} max={31} className={inputCls} value={draft.dayOfMonth} onChange={(e) => setDraft({ ...draft, dayOfMonth: Math.min(31, Math.max(1, Number(e.target.value) || 1)) })} />
+            </Field>
+            <Field label={t("Category")}>
+              <select className={inputCls} value={draft.category} onChange={(e) => setDraft({ ...draft, category: e.target.value })}>
+                {cats.map((c) => (
+                  <option key={c} value={c}>{t(categoryLabel(c))}</option>
+                ))}
+              </select>
+            </Field>
+          </div>
+          <Field label={t("Note")} className="mt-3">
+            <input className={inputCls} value={draft.note ?? ""} onChange={(e) => setDraft({ ...draft, note: e.target.value })} />
+          </Field>
+          <div className="mt-3 flex justify-end">
+            <Button onClick={add} disabled={draft.amount <= 0}>
+              <Plus size={16} /> {t("Add rule")}
+            </Button>
+          </div>
+        </div>
+
+        {data.finances.recurring.length > 0 && (
+          <div className="divide-y divide-[var(--border)]">
+            {data.finances.recurring.map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2.5">
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{t(categoryLabel(r.category))}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {r.type === "income" ? "+" : "−"}{r.amount} · {t("Day")} {r.dayOfMonth}
+                    {r.note ? ` · ${r.note}` : ""}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => saveRecurring({ ...r, active: !r.active })}
+                    className={`rounded-lg px-2 py-1 text-xs font-medium ${r.active ? "text-[var(--good)]" : "text-[var(--text-faint)]"}`}
+                  >
+                    {r.active ? t("Active") : t("Paused")}
+                  </button>
+                  <button onClick={() => removeRecurring(r.id)} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="flex justify-end">
+          <Button variant="ghost" onClick={onClose}>{t("Done")}</Button>
         </div>
       </div>
     </Modal>

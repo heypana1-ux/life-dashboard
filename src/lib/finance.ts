@@ -1,4 +1,4 @@
-import { Finances, Holding, Transaction } from "./types";
+import { Budget, Finances, Holding, RecurringTx, Transaction } from "./types";
 import { todayISO } from "./date";
 
 /*
@@ -124,6 +124,88 @@ export function budgetForMonth(txs: Transaction[], month: string): MonthlyBudget
 
 export function currentMonth(): string {
   return monthKey(todayISO());
+}
+
+/** Shift a YYYY-MM key by n months (n can be negative). */
+export function shiftMonth(month: string, n: number): string {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(y, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+}
+
+/** Human month label, e.g. "August 2026", localized by the browser. */
+export function monthLabel(month: string): string {
+  const [y, m] = month.split("-").map(Number);
+  try {
+    return new Date(y, m - 1, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  } catch {
+    return month;
+  }
+}
+
+export interface BudgetLine {
+  category: string;
+  limit: number;
+  spent: number;
+  pct: number; // spent / limit * 100 (0 when no limit)
+  over: boolean;
+}
+
+/** Merge budget limits with actual spend for a given month's category totals. */
+export function budgetVsActual(
+  budgets: Budget[],
+  byCategory: { category: string; amount: number }[],
+): BudgetLine[] {
+  const spent = new Map(byCategory.map((c) => [c.category, c.amount]));
+  const seen = new Set<string>();
+  const lines: BudgetLine[] = budgets.map((b) => {
+    seen.add(b.category);
+    const s = spent.get(b.category) ?? 0;
+    return {
+      category: b.category,
+      limit: b.limit,
+      spent: s,
+      pct: b.limit > 0 ? (s / b.limit) * 100 : 0,
+      over: b.limit > 0 && s > b.limit,
+    };
+  });
+  return lines.sort((a, b) => b.pct - a.pct);
+}
+
+/** Number of days in the month of a YYYY-MM key. */
+function daysInMonth(month: string): number {
+  const [y, m] = month.split("-").map(Number);
+  return new Date(y, m, 0).getDate();
+}
+
+export interface DueBooking {
+  rule: RecurringTx;
+  date: string; // the YYYY-MM-DD it should be booked on
+}
+
+/**
+ * Work out which recurring rules are due to be booked as of `today`.
+ * A rule is due for the current month once today's day-of-month has reached its
+ * scheduled day (clamped to the month length), and it hasn't been booked yet this month.
+ * Returns the bookings plus the rules with `lastBooked` advanced.
+ */
+export function dueRecurring(
+  rules: RecurringTx[],
+  today: string,
+): { due: DueBooking[]; updatedRules: RecurringTx[] } {
+  const month = monthKey(today);
+  const todayDay = Number(today.slice(8, 10));
+  const due: DueBooking[] = [];
+  const updatedRules = rules.map((r) => {
+    if (!r.active) return r;
+    if (r.lastBooked === month) return r;
+    const day = Math.min(r.dayOfMonth, daysInMonth(month));
+    if (todayDay < day) return r; // not yet due this month
+    const date = `${month}-${String(day).padStart(2, "0")}`;
+    due.push({ rule: r, date });
+    return { ...r, lastBooked: month };
+  });
+  return { due, updatedRules };
 }
 
 export function fmtMoney(n: number, currency = "EUR"): string {

@@ -88,6 +88,8 @@ export function emptyFinances(): AppData["finances"] {
     holdings: [],
     transactions: [],
     history: [],
+    recurring: [],
+    budgets: [],
   };
 }
 

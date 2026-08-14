@@ -11,6 +11,7 @@ import React, {
 } from "react";
 import {
   AppData,
+  Budget,
   DailyReview,
   Experiment,
   FinanceAccount,
@@ -24,6 +25,7 @@ import {
   Project,
   HealthLog,
   FocusDay,
+  RecurringTx,
   SleepLog,
   Settings,
   Transaction,
@@ -33,6 +35,7 @@ import {
   SCHEMA_VERSION,
 } from "./types";
 import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
+import { dueRecurring } from "./finance";
 import { todayISO } from "./date";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
 import type { Session } from "@supabase/supabase-js";
@@ -98,7 +101,12 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     weight: parsed.weight ?? [],
     health: parsed.health ?? [],
     focus: parsed.focus ?? [],
-    finances: { ...base.finances, ...parsed.finances },
+    finances: {
+      ...base.finances,
+      ...parsed.finances,
+      recurring: parsed.finances?.recurring ?? [],
+      budgets: parsed.finances?.budgets ?? [],
+    },
     workouts: parsed.workouts ?? [],
     workoutPlans: parsed.workoutPlans ?? [],
     projects: parsed.projects ?? [],
@@ -157,6 +165,12 @@ interface StoreCtx {
   removeHolding: (id: string) => void;
   saveTransaction: (t: Transaction) => void;
   removeTransaction: (id: string) => void;
+  saveRecurring: (r: RecurringTx) => void;
+  removeRecurring: (id: string) => void;
+  saveBudget: (b: Budget) => void;
+  removeBudget: (category: string) => void;
+  /** Book any recurring rules that are due; returns how many were booked. */
+  runRecurring: () => number;
   /* workouts */
   saveWorkout: (w: Workout) => Workout;
   removeWorkout: (id: string) => void;
@@ -546,6 +560,61 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             transactions: d.finances.transactions.filter((x) => x.id !== id),
           },
         })),
+      saveRecurring: (r) =>
+        mutate((d) => {
+          const rec: RecurringTx = r.id ? r : { ...r, id: uid("rec") };
+          const recurring = d.finances.recurring.some((x) => x.id === rec.id)
+            ? d.finances.recurring.map((x) => (x.id === rec.id ? rec : x))
+            : [...d.finances.recurring, rec];
+          return { ...d, finances: { ...d.finances, recurring } };
+        }),
+      removeRecurring: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: {
+            ...d.finances,
+            recurring: d.finances.recurring.filter((x) => x.id !== id),
+          },
+        })),
+      saveBudget: (b) =>
+        mutate((d) => {
+          const budgets = d.finances.budgets.some((x) => x.category === b.category)
+            ? d.finances.budgets.map((x) => (x.category === b.category ? b : x))
+            : [...d.finances.budgets, b];
+          return { ...d, finances: { ...d.finances, budgets } };
+        }),
+      removeBudget: (category) =>
+        mutate((d) => ({
+          ...d,
+          finances: {
+            ...d.finances,
+            budgets: d.finances.budgets.filter((x) => x.category !== category),
+          },
+        })),
+      runRecurring: () => {
+        const { due } = dueRecurring(dataRef.current.finances.recurring, todayISO());
+        if (due.length === 0) return 0;
+        mutate((d) => {
+          const { due: dd, updatedRules } = dueRecurring(d.finances.recurring, todayISO());
+          const newTxs: Transaction[] = dd.map((x) => ({
+            id: uid("tx"),
+            date: x.date,
+            type: x.rule.type,
+            category: x.rule.category,
+            amount: x.rule.amount,
+            note: x.rule.note,
+          }));
+          return {
+            ...d,
+            finances: {
+              ...d.finances,
+              transactions: [...d.finances.transactions, ...newTxs],
+              recurring: updatedRules,
+            },
+          };
+        });
+        return due.length;
+      },
 
       /* workouts */
       saveWorkout: (w) => {

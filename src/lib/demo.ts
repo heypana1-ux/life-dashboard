@@ -184,6 +184,8 @@ export function clearDemo(data: AppData): AppData {
       holdings: [],
       transactions: [],
       history: [],
+      recurring: [],
+      budgets: [],
     },
     settings: { ...data.settings, demoDataLoaded: false },
   };
@@ -316,7 +318,7 @@ function demoFinances(startISO: string, endISO: string, rnd: () => number): Fina
     }
   }
 
-  return { currency: "EUR", accounts, liabilities, holdings, transactions, history };
+  return { currency: "EUR", accounts, liabilities, holdings, transactions, history, recurring: [], budgets: [] };
 }
 
 function isDue(h: Habit, wd: number): boolean {
