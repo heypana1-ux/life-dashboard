@@ -100,6 +100,7 @@ export function emptyData(): AppData {
     habits: [],
     habitLogs: [],
     reviews: [],
+    weeklyReviews: [],
     sleep: [],
     journal: [],
     goals: [],

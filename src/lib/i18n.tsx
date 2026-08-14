@@ -735,6 +735,33 @@ const DE: Record<string, string> = {
   "Play recap": "Rückblick abspielen",
   "Weekly & monthly recap": "Wochen- & Monatsrückblick",
   "An animated summary on Sundays and the 1st.": "Eine animierte Zusammenfassung sonntags und am 1.",
+  // --- Guided weekly review ---
+  "Weekly review": "Wochenreflexion",
+  "Time for your weekly review": "Zeit für deine Wochenreflexion",
+  "Take two minutes to reflect on your week.": "Nimm dir zwei Minuten, um über deine Woche nachzudenken.",
+  "What went well this week?": "Was lief diese Woche gut?",
+  "Wins, big or small. What are you proud of?": "Erfolge, groß oder klein. Worauf bist du stolz?",
+  "e.g. Trained three times, stuck to my sleep routine…": "z. B. Dreimal trainiert, Schlafroutine durchgezogen …",
+  "What was challenging?": "Was war herausfordernd?",
+  "What got in the way, and what did you learn?": "Was kam dir in die Quere und was hast du gelernt?",
+  "e.g. Skipped workouts when work got busy…": "z. B. Training ausgelassen, als es stressig wurde …",
+  "How did the week feel overall?": "Wie hat sich die Woche insgesamt angefühlt?",
+  "Your focus for next week": "Dein Fokus für nächste Woche",
+  "One or two things you want to prioritise. You'll see this at your next review.":
+    "Ein, zwei Dinge, die du priorisieren willst. Du siehst sie bei deiner nächsten Reflexion.",
+  "e.g. Protect my mornings, one more workout…": "z. B. Morgen schützen, ein Training mehr …",
+  "Finish review": "Reflexion abschließen",
+  "Last week's focus:": "Fokus letzte Woche:",
+  Meh: "Naja",
+  Okay: "Okay",
+  Good: "Gut",
+  Great: "Super",
+  "Start review": "Reflexion starten",
+  "Edit review": "Reflexion bearbeiten",
+  "A guided two-minute reflection on your week. Do it any time, or wait for the Sunday nudge.":
+    "Eine geführte Zwei-Minuten-Reflexion über deine Woche. Jederzeit oder mit dem Sonntags-Hinweis.",
+  "Week of {d}": "Woche vom {d}",
+  "Focus:": "Fokus:",
 
   // --- Analysis ---
   Analysis: "Analyse",

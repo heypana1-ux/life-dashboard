@@ -1,6 +1,6 @@
 import { AppData, AreaKey, DayScore } from "./types";
 import { habitsForToday } from "./habitView";
-import { sleepDurationMinutes, addDays } from "./date";
+import { sleepDurationMinutes, addDays, weekdayOf } from "./date";
 
 /*
   Data for the animated recaps: a single day (used by the end-of-day flow) and a period
@@ -112,6 +112,11 @@ export function periodRecap(
 /** The 7-day window ending on `end` (inclusive). */
 export function weekRange(end: string): { start: string; end: string } {
   return { start: addDays(end, -6), end };
+}
+
+/** The most recent Sunday on or before `date` — a stable key for "this week". */
+export function weekAnchor(date: string): string {
+  return addDays(date, -weekdayOf(date));
 }
 
 /** The calendar month containing `ref` (YYYY-MM-DD) → its first/last day. */

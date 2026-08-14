@@ -1,19 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ImageDown, Sparkles } from "lucide-react";
+import { CalendarCheck, ImageDown, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
 import { addDays, fmtShort, isoRange, monthLabel, parseISO, sleepDurationMinutes, todayISO } from "@/lib/date";
 import { fmtDuration } from "@/lib/date";
 import { fmtMoney } from "@/lib/finance";
+import { weekAnchor } from "@/lib/recap";
 import { buildInsights } from "@/lib/insights";
 import { translate } from "@/lib/i18n";
 import { downloadReportImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
+import { WeeklyReviewFlow } from "@/components/WeeklyReview";
+
+const RATING_EMOJI = ["😞", "😕", "😐", "🙂", "😄"];
 
 type Period = "week" | "month";
 
@@ -24,6 +28,14 @@ export default function ReportsPage() {
   const lang = useLang();
   const [period, setPeriod] = useState<Period>("week");
   const [recap, setRecap] = useState(false);
+  const [reviewOpen, setReviewOpen] = useState(false);
+
+  const anchor = weekAnchor(todayISO());
+  const thisWeekReviewed = data.weeklyReviews.some((r) => r.weekOf === anchor);
+  const pastReviews = useMemo(
+    () => [...data.weeklyReviews].sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1)),
+    [data.weeklyReviews],
+  );
 
   const report = useMemo(() => {
     const today = todayISO();
@@ -80,6 +92,43 @@ export default function ReportsPage() {
       </div>
 
       {recap && <RecapOverlay mode={period} refDate={todayISO()} onClose={() => setRecap(false)} />}
+      {reviewOpen && <WeeklyReviewFlow anchor={anchor} onClose={() => setReviewOpen(false)} />}
+
+      <Card>
+        <SectionTitle
+          right={
+            <Button variant="soft" size="sm" onClick={() => setReviewOpen(true)}>
+              <CalendarCheck size={14} /> {thisWeekReviewed ? t("Edit review") : t("Start review")}
+            </Button>
+          }
+        >
+          {t("Weekly review")}
+        </SectionTitle>
+        {pastReviews.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+            {t("A guided two-minute reflection on your week. Do it any time, or wait for the Sunday nudge.")}
+          </p>
+        ) : (
+          <div className="divide-y divide-[var(--border)]">
+            {pastReviews.slice(0, 8).map((r) => (
+              <div key={r.weekOf} className="flex items-start gap-3 py-3">
+                <span className="text-2xl leading-none">{RATING_EMOJI[Math.min(4, Math.max(0, r.rating - 1))]}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">
+                    {t("Week of {d}", { d: fmtShort(addDays(r.weekOf, -6)) })}
+                  </div>
+                  {r.focus && (
+                    <div className="mt-0.5 text-xs text-[var(--text-muted)]">
+                      <span className="font-medium text-[var(--accent)]">{t("Focus:")}</span> {r.focus}
+                    </div>
+                  )}
+                  {r.wins && <div className="mt-0.5 truncate text-xs text-[var(--text-faint)]">🎉 {r.wins}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {!report.hasData ? (
         <Card>

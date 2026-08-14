@@ -38,6 +38,7 @@ import { BackupReminder } from "@/components/BackupReminder";
 import { Reminders } from "@/components/Reminders";
 import { DayFlow } from "@/components/DayFlow";
 import { RecapGate } from "@/components/Recap";
+import { WeeklyReviewGate } from "@/components/WeeklyReview";
 import { Tour } from "@/components/Tour";
 
 interface NavItem {
@@ -230,6 +231,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Tour />
           <DayFlow />
           <RecapGate />
+          <WeeklyReviewGate />
           <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             <BackupReminder />
             {children}

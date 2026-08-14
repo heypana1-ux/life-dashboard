@@ -97,6 +97,16 @@ export interface DailyReview {
   improveTomorrow?: string;
 }
 
+/** A guided weekly reflection (the Sunday ritual). One per week, keyed by its Sunday anchor. */
+export interface WeeklyReview {
+  weekOf: string; // the Sunday that anchors the week (YYYY-MM-DD)
+  rating: number; // 1..5 — how the week felt overall
+  wins?: string;
+  challenges?: string;
+  focus?: string; // intention for the coming week
+  createdAt: string; // ISO timestamp
+}
+
 /** Manual sleep entry. */
 export interface SleepLog {
   date: string; // the morning you woke up (YYYY-MM-DD)
@@ -393,6 +403,8 @@ export interface DayFlowSettings {
   /** Debounce markers: the Sunday date the weekly recap last ran, and the YYYY-MM the monthly ran. */
   lastWeekly?: string;
   lastMonthly?: string;
+  /** The Sunday anchor (YYYY-MM-DD) the guided weekly review was last prompted for. */
+  lastGuidedReview?: string;
 }
 
 export interface Settings {
@@ -438,6 +450,7 @@ export interface AppData {
   habits: Habit[];
   habitLogs: HabitLog[];
   reviews: DailyReview[];
+  weeklyReviews: WeeklyReview[];
   sleep: SleepLog[];
   journal: JournalEntry[];
   goals: Goal[];
