@@ -325,6 +325,8 @@ export interface Workout {
   energyBefore?: number; // 1..10
   energyAfter?: number; // 1..10
   distanceKm?: number;
+  /** Rounds / sessions for combat & interval sports. */
+  rounds?: number;
   avgPulse?: number;
   notes?: string;
   exercises: Exercise[];

@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Dumbbell, Plus, Save, Trash2, TrendingUp, Trophy } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Dumbbell, Play, Plus, Save, Square, Trash2, TrendingUp, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { DEFAULT_SPORTS, uid } from "@/lib/defaults";
+import { sportKind, paceLabel, speedKmh } from "@/lib/sports";
 import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 import { exerciseHistory, loggedExerciseNames, muscleVolume, personalRecords } from "@/lib/trainingStats";
@@ -157,6 +158,8 @@ function WorkoutsTab({
                     <div className="mt-0.5 text-xs text-[var(--text-faint)]">
                       {fmtShort(w.date)}
                       {w.distanceKm ? ` · ${w.distanceKm} km` : ""}
+                      {paceLabel(w.distanceKm, w.durationMin) ? ` · ${paceLabel(w.distanceKm, w.durationMin)}` : ""}
+                      {w.rounds ? ` · ${w.rounds} ${t("rounds")}` : ""}
                       {w.avgPulse ? ` · ${w.avgPulse} bpm` : ""}
                     </div>
                   </div>
@@ -288,6 +291,8 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
 
   return (
     <>
+      <CardioProgressCard workouts={workouts} />
+
       <Card>
         <SectionTitle
           right={
@@ -359,6 +364,82 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
       </Card>
     </>
   );
+}
+
+function CardioProgressCard({ workouts }: { workouts: Workout[] }) {
+  const t = useT();
+  const sports = useMemo(() => {
+    const s = new Set<string>();
+    for (const w of workouts) if (sportKind(w.sport) === "distance" && w.distanceKm) s.add(w.sport);
+    return [...s];
+  }, [workouts]);
+  const [sport, setSport] = useState<string>("");
+  const active = sport && sports.includes(sport) ? sport : sports[0] ?? "";
+
+  const sessions = useMemo(
+    () =>
+      workouts
+        .filter((w) => w.sport === active && w.distanceKm && w.durationMin)
+        .sort((a, b) => (a.date < b.date ? -1 : 1)),
+    [workouts, active],
+  );
+
+  if (sports.length === 0) return null;
+
+  const distSeries = sessions.map((w) => ({ date: w.date, value: w.distanceKm as number }));
+  const paceSeries = sessions.map((w) => ({ date: w.date, value: Math.round((w.durationMin / (w.distanceKm as number)) * 100) / 100 }));
+  const bestDist = sessions.reduce((m, w) => Math.max(m, w.distanceKm as number), 0);
+  const bestPace = sessions.reduce((m, w) => Math.min(m, w.durationMin / (w.distanceKm as number)), Infinity);
+  const totalKm = Math.round(sessions.reduce((s, w) => s + (w.distanceKm as number), 0) * 10) / 10;
+
+  const fmtPace = (p: number) => {
+    if (!isFinite(p)) return "—";
+    const m = Math.floor(p);
+    const s = Math.round((p - m) * 60);
+    return `${m}:${String(s).padStart(2, "0")} /km`;
+  };
+
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          sports.length > 1 ? (
+            <select className={`${inputCls} w-auto`} value={active} onChange={(e) => setSport(e.target.value)}>
+              {sports.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
+          ) : (
+            <Badge tone="accent">{active}</Badge>
+          )
+        }
+      >
+        {t("Cardio progress")}
+      </SectionTitle>
+      <div className="mb-3 grid grid-cols-3 gap-2">
+        <MiniStat label={t("Best distance")} value={`${bestDist} km`} />
+        <MiniStat label={t("Best pace")} value={fmtPace(bestPace)} />
+        <MiniStat label={t("Total")} value={`${totalKm} km`} />
+      </div>
+      {distSeries.length >= 2 ? (
+        <>
+          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Distance (km)")}</div>
+          <TrendLine data={distSeries} color="var(--accent)" unit=" km" name={t("Distance (km)")} height={180} />
+          <div className="mb-1 mt-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Pace")} ({t("min/km")})</div>
+          <TrendLine data={paceSeries} color="var(--info)" name={t("Pace")} height={140} />
+          <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Lower pace is faster.")}</p>
+        </>
+      ) : (
+        <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("Log at least two sessions of this sport to see a trend.")}</p>
+      )}
+    </Card>
+  );
+}
+
+function fmtClock(sec: number): string {
+  const m = Math.floor(sec / 60);
+  const s = sec % 60;
+  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 function muscleLabel(m: string, t: (k: string) => string): string {
@@ -489,13 +570,36 @@ function WorkoutModal({
   const [draft, setDraft] = useState<Workout>(editing ?? makeBlank());
   const key = editing?.id ?? `new-${fromPlan?.id ?? ""}`;
   const [lk, setLk] = useState<string | null>(null);
+  // Live session timer → fills duration on stop.
+  const [timerOn, setTimerOn] = useState(false);
+  const [elapsedSec, setElapsedSec] = useState(0);
   if (open && key !== lk) {
     setLk(key);
     setDraft(editing ?? makeBlank());
   }
-  if (!open && lk !== null) setLk(null);
+  if (!open && lk !== null) {
+    setLk(null);
+    if (timerOn) setTimerOn(false);
+    if (elapsedSec) setElapsedSec(0);
+  }
 
   const set = (patch: Partial<Workout>) => setDraft((d) => ({ ...d, ...patch }));
+  const kind = sportKind(draft.sport);
+
+  useEffect(() => {
+    if (!timerOn) return;
+    const id = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [timerOn]);
+  function toggleTimer() {
+    if (timerOn) {
+      setTimerOn(false);
+      set({ durationMin: Math.max(1, Math.round(elapsedSec / 60)) });
+    } else {
+      setElapsedSec(0);
+      setTimerOn(true);
+    }
+  }
 
   function addExercise() {
     set({ exercises: [...draft.exercises, { id: uid("ex"), name: "", sets: [{ reps: 10, weight: 0 }] }] });
@@ -503,6 +607,9 @@ function WorkoutModal({
   function updateExercise(id: string, patch: Partial<Exercise>) {
     set({ exercises: draft.exercises.map((e) => (e.id === id ? { ...e, ...patch } : e)) });
   }
+
+  const pace = paceLabel(draft.distanceKm, draft.durationMin);
+  const speed = speedKmh(draft.distanceKm, draft.durationMin);
 
   return (
     <Modal open={open} onClose={onClose} title={editing ? t("Edit workout") : t("New workout")} wide>
@@ -520,13 +627,42 @@ function WorkoutModal({
             <input type="date" max={todayISO()} className={inputCls} value={draft.date} onChange={(e) => set({ date: e.target.value })} />
           </Field>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label={t("Duration (min)")}>
+
+        {/* Duration + live timer */}
+        <div className="flex items-end gap-3">
+          <Field label={t("Duration (min)")} className="flex-1">
             <input type="number" className={inputCls} value={draft.durationMin} onChange={(e) => set({ durationMin: Number(e.target.value) })} />
           </Field>
-          <Field label={t("Distance (km)")}>
-            <input type="number" className={inputCls} value={draft.distanceKm ?? ""} onChange={(e) => set({ distanceKm: e.target.value ? Number(e.target.value) : undefined })} />
-          </Field>
+          <button
+            onClick={toggleTimer}
+            className={`flex h-[42px] items-center gap-2 rounded-xl px-4 text-sm font-medium ${
+              timerOn ? "bg-[var(--bad)] text-white" : "bg-[var(--accent)] text-white"
+            }`}
+          >
+            {timerOn ? <><Square size={15} /> {fmtClock(elapsedSec)}</> : <><Play size={15} /> {t("Start timer")}</>}
+          </button>
+        </div>
+
+        {/* Sport-specific metrics */}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {kind === "distance" && (
+            <>
+              <Field label={t("Distance (km)")}>
+                <input type="number" inputMode="decimal" step="0.1" className={inputCls} value={draft.distanceKm ?? ""} onChange={(e) => set({ distanceKm: e.target.value ? Number(e.target.value) : undefined })} />
+              </Field>
+              <div>
+                <div className="mb-1 block text-sm font-medium text-[var(--text-muted)]">{t("Pace")}</div>
+                <div className="flex h-[42px] items-center rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 text-sm tabular-nums">
+                  {pace ? `${pace}${speed ? ` · ${speed} km/h` : ""}` : "—"}
+                </div>
+              </div>
+            </>
+          )}
+          {kind === "rounds" && (
+            <Field label={t("Rounds")}>
+              <input type="number" inputMode="numeric" className={inputCls} value={draft.rounds ?? ""} onChange={(e) => set({ rounds: e.target.value ? Number(e.target.value) : undefined })} />
+            </Field>
+          )}
           <Field label={t("Avg pulse")}>
             <input type="number" className={inputCls} value={draft.avgPulse ?? ""} onChange={(e) => set({ avgPulse: e.target.value ? Number(e.target.value) : undefined })} />
           </Field>
@@ -548,20 +684,22 @@ function WorkoutModal({
           ))}
         </div>
 
-        {/* Exercises */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <span className="text-sm font-medium">{t("Exercises")}</span>
-            <Button variant="soft" size="sm" onClick={addExercise}>
-              <Plus size={14} /> {t("Add exercise")}
-            </Button>
+        {/* Exercises — strength only */}
+        {kind === "strength" && (
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <span className="text-sm font-medium">{t("Exercises")}</span>
+              <Button variant="soft" size="sm" onClick={addExercise}>
+                <Plus size={14} /> {t("Add exercise")}
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {draft.exercises.map((ex) => (
+                <ExerciseEditor key={ex.id} ex={ex} onChange={(p) => updateExercise(ex.id, p)} onRemove={() => set({ exercises: draft.exercises.filter((x) => x.id !== ex.id) })} />
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            {draft.exercises.map((ex) => (
-              <ExerciseEditor key={ex.id} ex={ex} onChange={(p) => updateExercise(ex.id, p)} onRemove={() => set({ exercises: draft.exercises.filter((x) => x.id !== ex.id) })} />
-            ))}
-          </div>
-        </div>
+        )}
 
         <Field label={t("Notes")}>
           <textarea className={inputCls} rows={2} value={draft.notes ?? ""} onChange={(e) => set({ notes: e.target.value })} />

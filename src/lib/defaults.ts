@@ -31,16 +31,22 @@ export const DEFAULT_AREAS: AreaConfig[] = [
 export const DEFAULT_SPORTS = [
   "Strength Training",
   "Running",
+  "Sprint",
   "Cycling",
   "Swimming",
+  "Rowing",
+  "Walking",
+  "Hiking",
+  "Taekwondo",
+  "Boxing",
+  "Kickboxing",
+  "Martial Arts",
   "Football",
   "Basketball",
-  "Taekwondo",
-  "Martial Arts",
+  "Tennis",
   "Yoga",
   "Mobility",
   "Stretching",
-  "Hiking",
 ];
 
 export const HABIT_COLORS = [
