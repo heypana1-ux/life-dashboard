@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n";
 import { Workout, WorkoutPlan } from "@/lib/types";
 import { muscleFor, Muscle } from "@/lib/exercises";
 import { todayISO } from "@/lib/date";
-import { Button } from "@/components/ui";
+import { Button, ScaleInput } from "@/components/ui";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 
 /*
@@ -41,8 +41,21 @@ function fmtClock(sec: number): string {
 }
 
 export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: () => void }) {
-  const { saveWorkout } = useStore();
+  const { data, saveWorkout } = useStore();
   const t = useT();
+
+  // Last logged set per exercise (across all history) → suggested weight/reps.
+  const lastSet = useMemo(() => {
+    const m = new Map<string, RunSet>();
+    for (const w of [...data.workouts].sort((a, b) => (a.date < b.date ? -1 : 1))) {
+      for (const ex of w.exercises) {
+        const done = ex.sets.filter((s) => (s.reps ?? 0) > 0);
+        const last = done[done.length - 1];
+        if (last) m.set(ex.name.toLowerCase(), { weight: last.weight ?? 0, reps: last.reps ?? 0 });
+      }
+    }
+    return m;
+  }, [data.workouts]);
 
   const initial = useMemo<RunExercise[]>(
     () =>
@@ -64,11 +77,24 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
   const [reps, setReps] = useState("");
   const [elapsed, setElapsed] = useState(0);
   const [rest, setRest] = useState<number | null>(null);
+  const [phase, setPhase] = useState<"run" | "review">("run");
+  const [intensity, setIntensity] = useState(7);
+  const [performance, setPerformance] = useState(7);
+  const [fun, setFun] = useState(7);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // Suggest last time's weight/reps when moving to an exercise.
+  useEffect(() => {
+    const ls = exercises[cur] && lastSet.get(exercises[cur].name.toLowerCase());
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setWeight(ls ? String(ls.weight) : "");
+    setReps(ls ? String(ls.reps) : "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur, exercises.length]);
 
   // One-second heartbeat: advance the session clock and count down any active rest.
   useEffect(() => {
@@ -110,15 +136,15 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
 
   const totalSets = exercises.reduce((s, e) => s + e.sets.length, 0);
 
-  function finish() {
+  function doSave() {
     const w: Workout = {
       id: "",
       date: todayISO(),
       sport: "Strength Training",
       durationMin: Math.max(1, Math.round(elapsed / 60)),
-      intensity: 7,
-      performance: 7,
-      fun: 7,
+      intensity,
+      performance,
+      fun,
       exercises: exercises
         .filter((e) => e.sets.length > 0)
         .map((e) => ({ id: uid("ex"), name: e.name, muscle: e.muscle, sets: e.sets.map((s) => ({ reps: s.reps, weight: s.weight })) })),
@@ -128,6 +154,46 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
   }
 
   if (!mounted) return null;
+
+  // Review step: rate the session so it feeds the score, stats and the AI.
+  if (phase === "review") {
+    return createPortal(
+      <div className="fixed inset-0 z-[80] flex flex-col bg-[var(--bg)]">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+          <button onClick={() => setPhase("run")} className="text-sm text-[var(--text-muted)] hover:text-[var(--text)]">{t("Back")}</button>
+          <span className="text-sm font-semibold">{t("How was it?")}</span>
+          <span className="w-10" />
+        </div>
+        <div className="flex-1 overflow-y-auto px-4 py-5">
+          <div className="mx-auto w-full max-w-md space-y-6">
+            <div className="tile flex items-center justify-between p-4">
+              <span className="text-sm text-[var(--text-muted)]">{t("Duration")}</span>
+              <span className="num text-lg font-bold">{fmtClock(elapsed)} · {totalSets} {t("sets")}</span>
+            </div>
+            {([
+              [t("Intensity"), intensity, setIntensity],
+              [t("Performance"), performance, setPerformance],
+              [t("Fun"), fun, setFun],
+            ] as const).map(([label, val, setter]) => (
+              <div key={label}>
+                <div className="mb-1.5 flex items-center justify-between">
+                  <span className="text-sm font-medium">{label}</span>
+                  <span className="text-sm font-semibold text-[var(--accent)]">{val}/10</span>
+                </div>
+                <ScaleInput value={val} onChange={setter} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="border-t border-[var(--border)] p-4">
+          <Button className="mx-auto block w-full max-w-md !py-3" onClick={doSave}>
+            <Check size={16} /> {t("Save workout")}
+          </Button>
+        </div>
+      </div>,
+      document.body,
+    );
+  }
 
   return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col bg-[var(--bg)]">
@@ -141,7 +207,7 @@ export function WorkoutRunner({ plan, onClose }: { plan?: WorkoutPlan; onClose: 
           <span className="text-lg font-bold">{fmtClock(elapsed)}</span>
           <span className="text-xs text-[var(--text-faint)]">· {totalSets} {t("sets")}</span>
         </div>
-        <Button size="sm" onClick={finish}>
+        <Button size="sm" onClick={() => setPhase("review")} disabled={totalSets === 0}>
           <Check size={15} /> {t("Finish")}
         </Button>
       </div>

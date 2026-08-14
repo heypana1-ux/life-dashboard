@@ -521,6 +521,8 @@ const DE: Record<string, string> = {
   "Log set": "Satz eintragen",
   "Start rest": "Pause starten",
   "Rest s": "Pause s",
+  "How was it?": "Wie war's?",
+  "Save workout": "Workout speichern",
   "Add your first exercise to begin.": "Füge deine erste Übung hinzu, um zu starten.",
   "Start timer": "Timer starten",
   Pace: "Tempo",
