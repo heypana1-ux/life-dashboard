@@ -11,6 +11,7 @@ import { AREA_LABELS } from "@/lib/defaults";
 import { sleepDurationMinutes } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, EmptyState, inputCls } from "@/components/ui";
 import { ScatterCorrelation } from "@/components/charts";
+import { CoachInsightCard } from "@/components/Coach";
 
 export default function AnalysisPage() {
   const { data } = useStore();
@@ -55,6 +56,11 @@ export default function AnalysisPage() {
         </div>
         <p className="mt-3 max-w-[640px] text-[15px] leading-[1.55] opacity-95">{verdict.summary}</p>
       </div>
+
+      <CoachInsightCard
+        title={t("AI interpretation")}
+        prompt="Looking at my patterns, score drivers and self-reported goals, what are the 2-3 most useful, specific changes I could make? Keep it concrete and personal to my data."
+      />
 
       {hasDrivers && (
         <Card>

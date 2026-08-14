@@ -16,6 +16,7 @@ import { Language } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
 import { WeeklyReviewFlow } from "@/components/WeeklyReview";
+import { CoachInsightCard } from "@/components/Coach";
 
 const RATING_EMOJI = ["😞", "😕", "😐", "🙂", "😄"];
 
@@ -161,6 +162,15 @@ export default function ReportsPage() {
               )}
             </div>
           </Card>
+
+          <CoachInsightCard
+            title={t("AI summary")}
+            prompt={
+              period === "week"
+                ? "Give me a short, personal summary of my last 7 days: what stood out, what went well, and one specific thing to improve. 3-4 sentences."
+                : "Give me a short, personal summary of my last month: what stood out, what went well, and one specific thing to improve. 3-4 sentences."
+            }
+          />
 
           <Card>
             <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Highlights")}</SectionTitle>

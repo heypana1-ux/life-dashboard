@@ -292,6 +292,79 @@ export function CoachBriefing() {
   );
 }
 
+/* ---------------- Reusable inline AI insight (Reports, Analysis, …) ---------------- */
+
+export function CoachInsightCard({ title, prompt }: { title: string; prompt: string }) {
+  const { data, updateSettings } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const enabled = !!data.settings.aiCoachEnabled;
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function generate() {
+    setErr(null);
+    setLoading(true);
+    const ok = await checkCoachConfigured();
+    if (!ok) {
+      setLoading(false);
+      setErr("not_configured");
+      return;
+    }
+    const ctx = buildCoachContext(data, d.history).text;
+    const res = await coachAsk(prompt, ctx, data.settings.language);
+    setLoading(false);
+    if (res.reply) setText(res.reply);
+    else setErr(res.error ?? "network");
+  }
+
+  return (
+    <div className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-4">
+      <div className="mb-2 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+            <Sparkles size={15} />
+          </span>
+          <span className="text-sm font-semibold">{title}</span>
+        </div>
+        {enabled && (text || err) && (
+          <button onClick={generate} disabled={loading} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-40">
+            {t("Regenerate")}
+          </button>
+        )}
+      </div>
+
+      {!enabled ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--text-muted)]">{t("Turn on the AI coach for a personal take on this.")}</p>
+          <Button size="sm" variant="soft" onClick={() => updateSettings({ aiCoachEnabled: true })}>{t("Enable")}</Button>
+        </div>
+      ) : loading ? (
+        <div className="space-y-2 py-1">
+          <div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" />
+          <div className="h-3 w-11/12 animate-pulse rounded bg-[var(--surface-2)]" />
+          <div className="h-3 w-3/5 animate-pulse rounded bg-[var(--surface-2)]" />
+        </div>
+      ) : text ? (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">{text}</p>
+      ) : err ? (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-[var(--bad)]">{t(ERROR_MSG[err] ?? ERROR_MSG.network)}</p>
+          <Button size="sm" variant="soft" onClick={generate}>{t("Try again")}</Button>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--text-muted)]">{t("Get a personalised read on this from your coach.")}</p>
+          <Button size="sm" onClick={generate}>
+            <Sparkles size={14} /> {t("Generate")}
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ---------------- Floating launcher + slide-over panel ---------------- */
 
 export function CoachLauncher() {

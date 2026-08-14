@@ -450,6 +450,8 @@ export interface Settings {
   aiCoachEnabled?: boolean;
   /** Cached once-per-day coach briefing so it isn't re-generated on every visit. */
   coachBriefing?: { date: string; text: string };
+  /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */
+  about?: Record<string, string>;
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

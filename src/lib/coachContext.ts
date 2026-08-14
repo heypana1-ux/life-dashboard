@@ -1,8 +1,9 @@
 import { AppData, DayScore, Language } from "./types";
 import { analyze } from "./analysis";
 import { habitsForToday } from "./habitView";
+import { aboutSummary } from "./about";
 import { AREA_LABELS } from "./defaults";
-import { addDays, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
+import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
 import { weekAnchor } from "./recap";
 
 /*
@@ -31,7 +32,17 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
 
   // Who / when
   const name = data.settings.profile.name?.split(" ")[0];
-  L.push(line(["Today is", weekdayLabel(weekdayOf(today), true) + ",", today + ".", name ? `The user's name is ${name}.` : ""]));
+  const birth = data.settings.profile.birthDate;
+  const age = birth ? ageFrom(birth) : null;
+  L.push(line([
+    "Today is", weekdayLabel(weekdayOf(today), true) + ",", today + ".",
+    name ? `The user's name is ${name}.` : "",
+    age ? `They are ${age} years old.` : "",
+  ]));
+
+  // Self-reported profile (the "About you" questionnaire)
+  const about = aboutSummary(data.settings.about);
+  if (about) L.push(`About the user (self-reported):\n${about}`);
 
   // Enabled areas
   const enabled = data.settings.areas.filter((a) => a.enabled).map((a) => AREA_LABELS[a.key]);

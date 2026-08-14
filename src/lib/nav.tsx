@@ -19,6 +19,7 @@ import {
   Target,
   Settings as SettingsIcon,
   Trophy,
+  UserCircle,
   Wallet,
 } from "lucide-react";
 
@@ -45,6 +46,7 @@ export const NAV: NavItem[] = [
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/analysis", label: "Analysis", icon: Brain },
   { href: "/coach", label: "Coach", icon: Sparkles },
+  { href: "/about", label: "About you", icon: UserCircle },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/scoreboard", label: "Scoreboard", icon: Medal },
@@ -61,7 +63,7 @@ export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
   { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
-  { label: "System", hrefs: ["/settings"] },
+  { label: "System", hrefs: ["/about", "/settings"] },
 ];
 
 /** Apply the user's saved sidebar order, keeping any new items at the end. */
