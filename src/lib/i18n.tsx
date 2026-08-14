@@ -853,6 +853,7 @@ const DE: Record<string, string> = {
   // --- Dashboard activity ---
   Activity: "Aktivität",
   "Calendar →": "Kalender →",
+  "Logged (no score)": "Eingetragen (kein Score)",
   // --- Density ---
   Density: "Dichte",
   Cozy: "Gemütlich",

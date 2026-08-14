@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo } from "react";
+import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
+import { dayHasEntry } from "@/lib/dayActivity";
 import { scoreColor } from "@/lib/score";
 import { addDays, fmtShort, weekdayOf } from "@/lib/date";
 
@@ -11,6 +13,7 @@ import { addDays, fmtShort, weekdayOf } from "@/lib/date";
   coloured by score (empty days stay muted). Gives an at-a-glance sense of momentum.
 */
 export function MiniHeatmap({ weeks = 10 }: { weeks?: number }) {
+  const { data } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -19,18 +22,19 @@ export function MiniHeatmap({ weeks = 10 }: { weeks?: number }) {
     const lead = weekdayOf(today); // days after the last full column (0=Sun)
     const total = weeks * 7;
     const start = addDays(today, -(total - 1 - (6 - lead)));
-    const out: { date: string; score: number | null }[] = [];
+    const out: { date: string; score: number | null; logged: boolean }[] = [];
     for (let i = 0; i < total; i++) {
       const date = addDays(start, i);
       if (date > today) {
-        out.push({ date, score: null });
+        out.push({ date, score: null, logged: false });
         continue;
       }
       const h = d.byDate.get(date);
-      out.push({ date, score: h && h.lifeScore > 0 ? h.lifeScore : 0 });
+      const score = h && h.lifeScore > 0 ? h.lifeScore : 0;
+      out.push({ date, score, logged: score === 0 && dayHasEntry(data, date) });
     }
     return out;
-  }, [d, weeks]);
+  }, [d, data, weeks]);
 
   return (
     <div className="overflow-x-auto">
@@ -38,11 +42,12 @@ export function MiniHeatmap({ weeks = 10 }: { weeks?: number }) {
         {cells.map((c) => (
           <span
             key={c.date}
-            title={c.score != null ? `${fmtShort(c.date)}: ${c.score || "—"}` : ""}
+            title={c.score != null ? `${fmtShort(c.date)}: ${c.score || (c.logged ? t("Logged (no score)") : "—")}` : ""}
             className="h-[13px] w-[13px] rounded-[3px]"
             style={{
-              background: c.score == null ? "transparent" : c.score > 0 ? scoreColor(c.score) : "var(--surface-3)",
-              opacity: c.score == null ? 0 : c.score > 0 ? 0.35 + Math.min(c.score, 100) / 100 * 0.65 : 1,
+              background:
+                c.score == null ? "transparent" : c.score > 0 ? scoreColor(c.score) : c.logged ? "var(--text-faint)" : "var(--surface-3)",
+              opacity: c.score == null ? 0 : c.score > 0 ? 0.35 + Math.min(c.score, 100) / 100 * 0.65 : c.logged ? 0.4 : 1,
             }}
           />
         ))}

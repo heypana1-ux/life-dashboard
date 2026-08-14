@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { AREA_LABELS } from "@/lib/defaults";
 import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
+import { dayHasEntry } from "@/lib/dayActivity";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, Modal, Badge, Button } from "@/components/ui";
@@ -78,6 +79,8 @@ export default function CalendarPage() {
             if (!d) return <div key={i} />;
             const comp = computeDay(data, d);
             const score = comp.lifeScore;
+            const scored = score !== null && score > 0;
+            const logged = !scored && dayHasEntry(data, d); // logged content but no Life Score
             const dayNum = Number(d.slice(8));
             const isToday = d === today;
             const isFuture = d > today;
@@ -92,16 +95,17 @@ export default function CalendarPage() {
                   isFuture ? "opacity-30" : "hover:border-[var(--text-faint)]",
                 )}
                 style={{
-                  background:
-                    score !== null && score > 0
-                      ? `color-mix(in srgb, ${scoreColor(score)} 22%, var(--surface))`
-                      : "var(--surface-2)",
+                  background: scored
+                    ? `color-mix(in srgb, ${scoreColor(score!)} 22%, var(--surface))`
+                    : "var(--surface-2)",
                 }}
               >
                 <span className="font-medium">{dayNum}</span>
-                {score !== null && score > 0 && (
-                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full" style={{ background: scoreColor(score) }} />
-                )}
+                {scored ? (
+                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full" style={{ background: scoreColor(score!) }} />
+                ) : logged ? (
+                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full border border-[var(--text-faint)]" title={t("Logged (no score)")} />
+                ) : null}
               </button>
             );
           })}
