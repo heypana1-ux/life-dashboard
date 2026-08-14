@@ -446,6 +446,8 @@ export interface Settings {
   streakGrace?: number;
   /** Whether the first-run mini tour has been completed/dismissed. */
   tourDone?: boolean;
+  /** Opt-in: send derived (never raw) data to the AI coach provider. Off until enabled. */
+  aiCoachEnabled?: boolean;
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

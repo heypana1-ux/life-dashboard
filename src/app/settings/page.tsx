@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sun, Trash2, Upload, User } from "lucide-react";
+import { Activity, BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sparkles, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Accent, AreaKey, Language, Profile } from "@/lib/types";
 import {
@@ -202,6 +202,9 @@ export default function SettingsPage() {
       {/* Reminders */}
       <RemindersCard />
 
+      {/* AI coach */}
+      <CoachCard />
+
       {/* Guided day-flow overlays */}
       <DayFlowCard />
 
@@ -276,6 +279,29 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
     </div>
+  );
+}
+
+function CoachCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const on = !!data.settings.aiCoachEnabled;
+  return (
+    <Card>
+      <SectionTitle right={<Sparkles size={16} className="text-[var(--text-faint)]" />}>{t("AI coach")}</SectionTitle>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-sm font-medium">{t("Enable AI coach")}</div>
+          <div className="text-xs text-[var(--text-muted)]">
+            {t("A chat that interprets your data. Only derived summaries are sent — never your journal, health notes or finance amounts.")}
+          </div>
+        </div>
+        <Toggle checked={on} onChange={(v) => updateSettings({ aiCoachEnabled: v })} />
+      </div>
+      <p className="mt-3 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-muted)]">
+        {t("Needs a free Groq API key set as GROQ_API_KEY in your Vercel project. The key stays on the server and is never exposed in the app.")}
+      </p>
+    </Card>
   );
 }
 

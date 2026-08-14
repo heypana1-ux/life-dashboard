@@ -762,6 +762,48 @@ const DE: Record<string, string> = {
     "Eine geführte Zwei-Minuten-Reflexion über deine Woche. Jederzeit oder mit dem Sonntags-Hinweis.",
   "Week of {d}": "Woche vom {d}",
   "Focus:": "Fokus:",
+  // --- AI coach ---
+  Coach: "Coach",
+  Send: "Senden",
+  "AI coach": "KI-Coach",
+  "Your AI coach": "Dein KI-Coach",
+  "Open coach": "Coach öffnen",
+  "Enable AI coach": "KI-Coach aktivieren",
+  "Your data, interpreted. Ask anything.": "Deine Daten, interpretiert. Frag alles.",
+  "Ask about your week, your patterns and what to focus on. Your app analyses the numbers first — the coach only interprets the results.":
+    "Frag nach deiner Woche, deinen Mustern und worauf du dich konzentrieren solltest. Deine App wertet die Zahlen zuerst aus — der Coach interpretiert nur die Ergebnisse.",
+  "Only derived summaries are sent (scores, trends, habit names, the engine's findings) — never your journal text, health notes or finance amounts. You can turn this off any time in Settings.":
+    "Es werden nur abgeleitete Zusammenfassungen gesendet (Scores, Trends, Gewohnheitsnamen, die Erkenntnisse der Engine) — niemals dein Tagebuchtext, Gesundheitsnotizen oder Finanzbeträge. Du kannst das jederzeit in den Einstellungen abschalten.",
+  "A chat that interprets your data. Only derived summaries are sent — never your journal, health notes or finance amounts.":
+    "Ein Chat, der deine Daten interpretiert. Es werden nur abgeleitete Zusammenfassungen gesendet — niemals dein Tagebuch, Gesundheitsnotizen oder Finanzbeträge.",
+  "Needs a free Groq API key set as GROQ_API_KEY in your Vercel project. The key stays on the server and is never exposed in the app.":
+    "Benötigt einen kostenlosen Groq-API-Key als GROQ_API_KEY in deinem Vercel-Projekt. Der Key bleibt auf dem Server und wird nie in der App sichtbar.",
+  "One-time setup": "Einmalige Einrichtung",
+  "The coach needs a free Groq API key, stored securely on the server (never in the app).":
+    "Der Coach braucht einen kostenlosen Groq-API-Key, sicher auf dem Server gespeichert (nie in der App).",
+  "Create a free key at console.groq.com → API Keys.": "Erstelle einen kostenlosen Key auf console.groq.com → API Keys.",
+  "In Vercel → your project → Settings → Environment Variables, add GROQ_API_KEY with that value.":
+    "In Vercel → dein Projekt → Settings → Environment Variables GROQ_API_KEY mit diesem Wert hinzufügen.",
+  "Redeploy the project, then tap Re-check below.": "Projekt neu deployen, dann unten auf Erneut prüfen tippen.",
+  "Re-check": "Erneut prüfen",
+  "Ask me anything about your data.": "Frag mich alles über deine Daten.",
+  "Ask your coach…": "Frag deinen Coach …",
+  "AI can be wrong. Interprets your data, not medical or financial advice.":
+    "KI kann sich irren. Interpretiert deine Daten, keine medizinische oder finanzielle Beratung.",
+  "How is my week going?": "Wie läuft meine Woche?",
+  "Why was my score lower recently?": "Warum war mein Score zuletzt niedriger?",
+  "What should I prioritise tomorrow?": "Was sollte ich morgen priorisieren?",
+  "Which habits help me the most?": "Welche Gewohnheiten helfen mir am meisten?",
+  "What negative patterns do you see?": "Welche negativen Muster erkennst du?",
+  "The AI coach isn't set up yet. Add your Groq API key (see setup below).":
+    "Der KI-Coach ist noch nicht eingerichtet. Füge deinen Groq-API-Key hinzu (siehe Einrichtung unten).",
+  "The free AI limit was hit for now — try again in a minute.":
+    "Das kostenlose KI-Limit ist vorerst erreicht — versuch es in einer Minute erneut.",
+  "The AI provider returned an error. Try again shortly.": "Der KI-Anbieter hat einen Fehler gemeldet. Versuch es gleich nochmal.",
+  "Couldn't reach the AI service. Check your connection and try again.":
+    "Der KI-Dienst war nicht erreichbar. Prüfe deine Verbindung und versuch es erneut.",
+  "The AI didn't return an answer — try rephrasing.": "Die KI hat keine Antwort geliefert — formulier es anders.",
+  "Something went wrong with that request.": "Bei dieser Anfrage ist etwas schiefgelaufen.",
 
   // --- Analysis ---
   Analysis: "Analyse",

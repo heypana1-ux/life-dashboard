@@ -39,6 +39,7 @@ import { Reminders } from "@/components/Reminders";
 import { DayFlow } from "@/components/DayFlow";
 import { RecapGate } from "@/components/Recap";
 import { WeeklyReviewGate } from "@/components/WeeklyReview";
+import { CoachLauncher } from "@/components/Coach";
 import { Tour } from "@/components/Tour";
 
 interface NavItem {
@@ -63,6 +64,7 @@ const NAV: NavItem[] = [
   { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/analysis", label: "Analysis", icon: Brain },
+  { href: "/coach", label: "Coach", icon: Sparkles },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
   { href: "/scoreboard", label: "Scoreboard", icon: Medal },
@@ -77,7 +79,7 @@ const BOTTOM = ["/", "/today", "/habits", "/statistics"].map(
 // Grouping for the mobile "More" sheet (keeps it scannable as features grow).
 const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/analysis", "/reports", "/achievements", "/scoreboard"] },
+  { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/settings"] },
 ];
@@ -232,6 +234,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <DayFlow />
           <RecapGate />
           <WeeklyReviewGate />
+          {!isActive(pathname, "/coach") && <CoachLauncher />}
           <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             <BackupReminder />
             {children}
