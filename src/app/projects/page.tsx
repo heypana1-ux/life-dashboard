@@ -71,7 +71,7 @@ export default function ProjectsPage() {
           }
         />
       ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2">
+        <div className="no-swipe flex gap-3 overflow-x-auto pb-2">
           {columns.map((col, ci) => {
             const items = projects.filter((p) => Math.min(p.column, columns.length - 1) === ci);
             return (

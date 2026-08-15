@@ -1640,6 +1640,8 @@ const DE: Record<string, string> = {
   "No measurements yet": "Noch keine Maße",
   "Pick a site above and log your first one.": "Wähl oben eine Stelle und trag dein erstes Maß ein.",
   "No subscriptions tracked": "Keine Abos erfasst",
+  "This day is already logged — edit and save to update it.": "Dieser Tag ist bereits eingetragen — bearbeiten und speichern, um ihn zu aktualisieren.",
+  Update: "Aktualisieren",
   "Health & fitness": "Gesundheit & Fitness",
   "Career & work": "Karriere & Arbeit",
   Money: "Geld",

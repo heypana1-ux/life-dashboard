@@ -92,7 +92,7 @@ export default function TodayPage() {
         title={isToday ? t("Today") : t("Edit day")}
         subtitle={fmtLong(date)}
         action={
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setDate((d) => addDays(d, -1))}
               className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"

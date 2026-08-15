@@ -31,7 +31,7 @@ const ERROR_MSG: Record<string, string> = {
   bad_request: "Something went wrong with that request.",
 };
 
-export function CoachChat({ onClose }: { onClose?: () => void }) {
+export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideHeader?: boolean }) {
   const { data, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
@@ -79,7 +79,7 @@ export function CoachChat({ onClose }: { onClose?: () => void }) {
   /* ---- Opt-in gate ---- */
   if (!enabled) {
     return (
-      <Shell onClose={onClose} t={t}>
+      <Shell onClose={onClose} hideHeader={hideHeader} t={t}>
         <div className="flex flex-1 flex-col items-center justify-center px-2 text-center">
           <div className="grad mb-4 flex h-14 w-14 items-center justify-center rounded-2xl text-white">
             <Sparkles size={24} />
@@ -105,7 +105,7 @@ export function CoachChat({ onClose }: { onClose?: () => void }) {
   /* ---- Setup needed (enabled but no key on server) ---- */
   if (configured === false) {
     return (
-      <Shell onClose={onClose} t={t}>
+      <Shell onClose={onClose} hideHeader={hideHeader} t={t}>
         <div className="flex-1 overflow-y-auto px-1">
           <div className="rounded-xl border border-[var(--border)] p-4">
             <h3 className="flex items-center gap-2 text-sm font-semibold">
@@ -130,7 +130,7 @@ export function CoachChat({ onClose }: { onClose?: () => void }) {
 
   /* ---- Chat ---- */
   return (
-    <Shell onClose={onClose} t={t}>
+    <Shell onClose={onClose} hideHeader={hideHeader} t={t}>
       <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-0.5 py-1">
         {messages.length === 0 && (
           <div className="pt-2">
@@ -202,22 +202,24 @@ export function CoachChat({ onClose }: { onClose?: () => void }) {
 }
 
 /** Frame used by both the panel and the page (the page passes no onClose). */
-function Shell({ children, onClose, t }: { children: React.ReactNode; onClose?: () => void; t: (k: string) => string }) {
+function Shell({ children, onClose, hideHeader, t }: { children: React.ReactNode; onClose?: () => void; hideHeader?: boolean; t: (k: string) => string }) {
   return (
     <div className="flex h-full flex-col">
-      <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-2">
-        <div className="flex items-center gap-2">
-          <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
-            <Sparkles size={15} />
-          </span>
-          <span className="text-sm font-semibold">{t("Coach")}</span>
+      {!hideHeader && (
+        <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-2">
+          <div className="flex items-center gap-2">
+            <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+              <Sparkles size={15} />
+            </span>
+            <span className="text-sm font-semibold">{t("Coach")}</span>
+          </div>
+          {onClose && (
+            <button onClick={onClose} className="text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Close")}>
+              <X size={18} />
+            </button>
+          )}
         </div>
-        {onClose && (
-          <button onClick={onClose} className="text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Close")}>
-            <X size={18} />
-          </button>
-        )}
-      </div>
+      )}
       {children}
     </div>
   );

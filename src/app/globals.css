@@ -142,6 +142,16 @@ body {
   max-width: 100%;
 }
 
+/* iOS Safari auto-zooms when a focused form control has a font-size below 16px and then
+   won't zoom back out. Keep all controls at >=16px on touch devices to prevent that. */
+@media (pointer: coarse) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
 /* Thin, unobtrusive scrollbars */
 ::-webkit-scrollbar {
   width: 10px;

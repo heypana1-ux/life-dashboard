@@ -116,7 +116,7 @@ export default function HealthPage() {
       </p>
 
       {mode === "questions" ? (
-        <QuestionFlow log={log} setLog={setLog} cycleSymptom={cycleSymptom} onSave={save} t={t} flash={flash} cycleOn={cycleOn} meds={meds} toggleMed={toggleMed} setFlow={setFlow} />
+        <QuestionFlow log={log} setLog={setLog} cycleSymptom={cycleSymptom} onSave={save} t={t} flash={flash} cycleOn={cycleOn} meds={meds} toggleMed={toggleMed} setFlow={setFlow} existing={!!existing} />
       ) : (
         <Card>
           <SectionTitle right={existing ? <Badge tone="good">{t("Logged")}</Badge> : <Badge>{t("New")}</Badge>}>
@@ -729,6 +729,7 @@ function QuestionFlow({
   meds,
   toggleMed,
   setFlow,
+  existing,
 }: {
   log: HealthLog;
   setLog: React.Dispatch<React.SetStateAction<HealthLog>>;
@@ -740,6 +741,7 @@ function QuestionFlow({
   meds: string[];
   toggleMed: (n: string) => void;
   setFlow: (v: number) => void;
+  existing: boolean;
 }) {
   const [step, setStep] = useState(0);
   const steps = [
@@ -767,6 +769,12 @@ function QuestionFlow({
 
   return (
     <Card>
+      {existing && (
+        <div className="mb-3 flex items-center justify-between rounded-xl bg-[var(--good)]/10 px-3 py-2">
+          <span className="text-sm text-[var(--text-muted)]">{t("This day is already logged — edit and save to update it.")}</span>
+          <Badge tone="good">{t("Logged")}</Badge>
+        </div>
+      )}
       <div className="mb-4 flex gap-1">
         {steps.map((_, i) => (
           <div key={i} className={`h-1 flex-1 rounded-full ${i <= step ? "grad" : "bg-[var(--ring-track)]"}`} />
@@ -846,7 +854,7 @@ function QuestionFlow({
         </Button>
         {last ? (
           <Button onClick={onSave}>
-            <Save size={16} /> {t("Save")}
+            <Save size={16} /> {existing ? t("Update") : t("Save")}
           </Button>
         ) : (
           <Button onClick={() => setStep((s) => s + 1)}>{t("Continue")}</Button>

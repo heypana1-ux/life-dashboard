@@ -365,7 +365,7 @@ function MoodHeatmap() {
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <Sparkles size={15} className="text-[var(--accent)]" /> {t("Mood over the year")}
       </div>
-      <div className="overflow-x-auto">
+      <div className="no-swipe overflow-x-auto">
         <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ width: "max-content" }}>
           {cells.map((c) => (
             <span
