@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Activity, CalendarHeart, Droplet, HeartPulse, Pill, Plus, Save, Scale, Trash2 } from "lucide-react";
+import { Activity, CalendarHeart, Droplet, HeartPulse, Minus, Pill, Plus, Save, Scale, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { HealthLog } from "@/lib/types";
 import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom } from "@/lib/health";
@@ -175,6 +175,8 @@ export default function HealthPage() {
 
       <BodyMetricsCard />
 
+      <WaterCard />
+
       <CycleCard />
 
       <MedicationsCard />
@@ -296,6 +298,72 @@ const SEV_COLOR: Record<number, string> = {
   2: "#ea580c",
   3: "#dc2626",
 };
+
+/* ---------------- Water tracker ---------------- */
+
+function WaterCard() {
+  const { data, saveHealth, updateSettings } = useStore();
+  const t = useT();
+  const today = todayISO();
+  const goal = data.settings.waterGoalGlasses;
+  const [draft, setDraft] = useState(8);
+
+  const existing = data.health.find((h) => h.date === today);
+  const glasses = existing?.hydration ?? 0;
+  function setGlasses(n: number) {
+    const cur = existing ?? { date: today };
+    saveHealth({ ...cur, hydration: Math.max(0, n) });
+  }
+
+  if (!goal) {
+    return (
+      <Card>
+        <SectionTitle right={<Droplet size={16} className="text-[var(--text-faint)]" />}>{t("Water")}</SectionTitle>
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm text-[var(--text-muted)]">{t("Set a daily water goal to track your glasses.")}</p>
+          <div className="flex items-center gap-2">
+            <input type="number" min={1} className={`${inputCls} w-16`} value={draft} onChange={(e) => setDraft(Number(e.target.value) || 8)} />
+            <Button size="sm" onClick={() => updateSettings({ waterGoalGlasses: draft })}>{t("Activate")}</Button>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  const pct = Math.min(100, Math.round((glasses / goal) * 100));
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          <button onClick={() => updateSettings({ waterGoalGlasses: undefined })} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]">{t("Off")}</button>
+        }
+      >
+        {t("Water")}
+      </SectionTitle>
+      <div className="flex items-center gap-4">
+        <button onClick={() => setGlasses(glasses - 1)} disabled={glasses <= 0} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-2)] disabled:opacity-40">
+          <Minus size={18} />
+        </button>
+        <div className="flex-1 text-center">
+          <div className="num text-2xl font-bold">{glasses} / {goal}</div>
+          <div className="text-xs text-[var(--text-muted)]">{t("glasses")}</div>
+        </div>
+        <button onClick={() => setGlasses(glasses + 1)} className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white">
+          <Plus size={18} />
+        </button>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {Array.from({ length: goal }).map((_, i) => (
+          <Droplet key={i} size={18} className={i < glasses ? "fill-[var(--info)] text-[var(--info)]" : "text-[var(--surface-3)]"} />
+        ))}
+      </div>
+      {glasses >= goal && <p className="mt-2 text-xs font-medium text-[var(--good)]">{t("Daily goal reached 🎉")}</p>}
+      <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--ring-track)]">
+        <div className="h-full rounded-full bg-[var(--info)]" style={{ width: `${pct}%` }} />
+      </div>
+    </Card>
+  );
+}
 
 /* ---------------- Menstrual flow ---------------- */
 
