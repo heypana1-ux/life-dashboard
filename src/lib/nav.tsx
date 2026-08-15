@@ -14,7 +14,6 @@ import {
   type LucideIcon,
   Medal,
   Moon,
-  Smile,
   Sparkles,
   Sunrise,
   Target,
@@ -50,7 +49,6 @@ export const NAV: NavItem[] = [
   { href: "/about", label: "About you", icon: UserCircle },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
-  { href: "/avatar", label: "Character", icon: Smile },
   { href: "/scoreboard", label: "Scoreboard", icon: Medal },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
@@ -70,7 +68,7 @@ export function pinnedNav(pinned?: string[]): NavItem[] {
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/avatar", "/scoreboard"] },
+  { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/about", "/settings"] },
 ];
