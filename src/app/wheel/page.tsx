@@ -1,24 +1,32 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Compass, Save, Trash2 } from "lucide-react";
+import { Compass, Database, Save, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { fmtShort, todayISO } from "@/lib/date";
 import { WHEEL_DIMS, blankWheelScores, wheelAverage, latestWheel, previousWheel } from "@/lib/wheel";
-import { Card, PageHeader, SectionTitle, Button, ScaleInput, Badge } from "@/components/ui";
+import { dataWheelScores } from "@/lib/dataWheel";
+import { Card, PageHeader, SectionTitle, Button, ScaleInput, Badge, Chip } from "@/components/ui";
 import { RadarChart } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
 
+type Mode = "feeling" | "data";
+
 export default function WheelPage() {
   const { data, saveWheelCheck, removeWheelCheck } = useStore();
+  const d = useDerived();
   const t = useT();
   const today = todayISO();
 
   const latest = useMemo(() => latestWheel(data.wheelChecks), [data.wheelChecks]);
   const prev = useMemo(() => previousWheel(data.wheelChecks), [data.wheelChecks]);
   const todayCheck = data.wheelChecks.find((w) => w.date === today);
+  const dataScores = useMemo(() => dataWheelScores(data, d.history), [data, d.history]);
+  const dataDims = WHEEL_DIMS.filter((dm) => dataScores[dm.key] != null);
 
+  const [mode, setMode] = useState<Mode>("feeling");
   const [draft, setDraft] = useState<Record<string, number>>(
     todayCheck?.scores ?? latest?.scores ?? blankWheelScores(),
   );
@@ -37,6 +45,8 @@ export default function WheelPage() {
     [data.wheelChecks],
   );
 
+  const dataAvg = dataDims.length ? dataDims.reduce((s, dm) => s + dataScores[dm.key], 0) / dataDims.length : 0;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -51,16 +61,22 @@ export default function WheelPage() {
         }
       />
 
-      {latest && (
+      <div className="flex gap-1.5">
+        <Chip active={mode === "feeling"} onClick={() => setMode("feeling")}>{t("How it feels")}</Chip>
+        <Chip active={mode === "data"} onClick={() => setMode("data")}>{t("From your data")}</Chip>
+      </div>
+
+      {/* ---- Feeling mode ---- */}
+      {mode === "feeling" && (latest ? (
         <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
           <Card className="flex flex-col items-center">
             <SectionTitle right={<Badge tone="accent">{t("Avg {n}", { n: wheelAverage(latest.scores).toFixed(1) })}</Badge>}>
               {t("Your wheel")}
             </SectionTitle>
             <RadarChart
-              axes={WHEEL_DIMS.map((d) => t(d.short))}
-              values={WHEEL_DIMS.map((d) => latest.scores[d.key] ?? 0)}
-              prev={prev ? WHEEL_DIMS.map((d) => prev.scores[d.key] ?? 0) : undefined}
+              axes={WHEEL_DIMS.map((dm) => t(dm.short))}
+              values={WHEEL_DIMS.map((dm) => latest.scores[dm.key] ?? 0)}
+              prev={prev ? WHEEL_DIMS.map((dm) => prev.scores[dm.key] ?? 0) : undefined}
             />
             {prev && (
               <p className="mt-1 text-[11px] text-[var(--text-faint)]">
@@ -94,7 +110,81 @@ export default function WheelPage() {
             </div>
           </Card>
         </div>
-      )}
+      ) : (
+        <Card>
+          <p className="py-4 text-center text-sm text-[var(--text-muted)]">{t("Do your first check-in below to see your wheel.")}</p>
+        </Card>
+      ))}
+
+      {/* ---- Data mode ---- */}
+      {mode === "data" && (dataDims.length >= 3 ? (
+        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+          <Card className="flex flex-col items-center">
+            <SectionTitle right={<Badge tone="accent">{t("Avg {n}", { n: dataAvg.toFixed(1) })}</Badge>}>
+              {t("Data wheel")}
+            </SectionTitle>
+            <RadarChart
+              axes={dataDims.map((dm) => t(dm.short))}
+              values={dataDims.map((dm) => dataScores[dm.key])}
+              prev={latest ? dataDims.map((dm) => latest.scores[dm.key] ?? 0) : undefined}
+            />
+            <p className="mt-1 text-[11px] text-[var(--text-faint)]">
+              {latest ? t("Solid = from your data · dashed = how you feel") : t("Scored 1–10 from your last 30 days of data.")}
+            </p>
+          </Card>
+
+          <Card>
+            <SectionTitle right={<Database size={16} className="text-[var(--text-faint)]" />}>{t("Feeling vs data")}</SectionTitle>
+            <div className="space-y-3">
+              {dataDims.map((dim) => {
+                const dv = dataScores[dim.key];
+                const fv = latest?.scores[dim.key];
+                const delta = fv != null ? fv - dv : null;
+                return (
+                  <div key={dim.key}>
+                    <div className="mb-1 flex items-center justify-between text-sm">
+                      <span>{t(dim.label)}</span>
+                      {delta != null ? (
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {t("feel")} {fv} · {t("data")} {dv}
+                          <span className={`ml-1.5 font-medium ${delta > 0 ? "text-[var(--warn)]" : delta < 0 ? "text-[var(--info)]" : "text-[var(--text-faint)]"}`}>
+                            {delta > 0 ? `+${delta}` : delta}
+                          </span>
+                        </span>
+                      ) : (
+                        <span className="text-xs text-[var(--text-muted)]">{t("data")} {dv}</span>
+                      )}
+                    </div>
+                    {fv != null && (
+                      <div className="mb-1 flex items-center gap-2">
+                        <span className="w-9 shrink-0 text-[10px] text-[var(--text-faint)]">{t("feel")}</span>
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                          <div className="h-full rounded-full bg-[var(--text-faint)]" style={{ width: `${(fv / 10) * 100}%` }} />
+                        </div>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <span className="w-9 shrink-0 text-[10px] text-[var(--text-faint)]">{t("data")}</span>
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                        <div className="grad h-full rounded-full" style={{ width: `${(dv / 10) * 100}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="mt-3 text-[11px] leading-[1.5] text-[var(--text-faint)]">
+              {t("Data covers only measurable areas (relationships and home stay feeling-only). A gap isn't wrong — it's worth a look.")}
+            </p>
+          </Card>
+        </div>
+      ) : (
+        <Card>
+          <p className="py-4 text-center text-sm text-[var(--text-muted)]">
+            {t("Log a bit more (habits, sleep, training, finances…) to unlock the data wheel.")}
+          </p>
+        </Card>
+      ))}
 
       {editing && (
         <Card>
@@ -109,7 +199,7 @@ export default function WheelPage() {
                   <span className="text-sm font-medium">{t(dim.label)}</span>
                   <span className="text-sm font-semibold text-[var(--accent)]">{draft[dim.key] ?? 5}/10</span>
                 </div>
-                <ScaleInput value={draft[dim.key] ?? 5} onChange={(v) => setDraft((d) => ({ ...d, [dim.key]: v }))} />
+                <ScaleInput value={draft[dim.key] ?? 5} onChange={(v) => setDraft((s) => ({ ...s, [dim.key]: v }))} />
               </div>
             ))}
           </div>
@@ -124,10 +214,10 @@ export default function WheelPage() {
         </Card>
       )}
 
-      {latest && (
+      {(latest || dataDims.length >= 3) && (
         <CoachInsightCard
           title={t("Coach: your balance")}
-          prompt="Look at my latest Wheel of Life self-assessment in the snapshot. In 2-3 sentences, note which areas are strongest and which are lowest, and suggest one small, realistic focus for the lowest area. Warm and concise."
+          prompt="Look at my Wheel of Life in the snapshot — both my self-rated (feeling) scores and the data-driven scores where available. In 2-3 sentences, note where feeling and data agree, the biggest gap between them, and one small realistic focus. Warm and concise."
         />
       )}
 

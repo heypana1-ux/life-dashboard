@@ -1605,6 +1605,18 @@ const DE: Record<string, string> = {
   "Be honest — this is a private snapshot, not a test.":
     "Sei ehrlich — das ist eine private Momentaufnahme, kein Test.",
   "Coach: your balance": "Coach: deine Balance",
+  "How it feels": "Wie es sich anfühlt",
+  "Data wheel": "Datenrad",
+  "Feeling vs data": "Gefühl vs. Daten",
+  feel: "Gefühl",
+  data: "Daten",
+  "Solid = from your data · dashed = how you feel": "Durchgezogen = aus deinen Daten · gestrichelt = dein Gefühl",
+  "Scored 1–10 from your last 30 days of data.": "Von 1–10 bewertet aus deinen letzten 30 Tagen Daten.",
+  "Data covers only measurable areas (relationships and home stay feeling-only). A gap isn't wrong — it's worth a look.":
+    "Daten decken nur messbare Bereiche ab (Beziehungen und Zuhause bleiben Gefühlssache). Eine Lücke ist nicht falsch — aber einen Blick wert.",
+  "Log a bit more (habits, sleep, training, finances…) to unlock the data wheel.":
+    "Trag etwas mehr ein (Gewohnheiten, Schlaf, Training, Finanzen…), um das Datenrad freizuschalten.",
+  "Do your first check-in below to see your wheel.": "Mach unten deinen ersten Check-in, um dein Rad zu sehen.",
   "Health & fitness": "Gesundheit & Fitness",
   "Career & work": "Karriere & Arbeit",
   Money: "Geld",

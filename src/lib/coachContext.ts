@@ -11,6 +11,7 @@ import { computeAchievements } from "./achievements";
 import { evaluateExperiment } from "./experiments";
 import { detectAnomalies } from "./anomalies";
 import { WHEEL_DIMS, latestWheel, wheelAverage } from "./wheel";
+import { dataWheelScores } from "./dataWheel";
 import { siteLabel } from "./bodySites";
 import { AREA_LABELS } from "./defaults";
 import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
@@ -247,7 +248,17 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   const wheel = latestWheel(data.wheelChecks);
   if (wheel) {
     const dims = WHEEL_DIMS.map((dm) => `${dm.label} ${wheel.scores[dm.key] ?? "?"}`).join(", ");
-    L.push(`Wheel of Life (self-rated 1-10, ${wheel.date}): avg ${wheelAverage(wheel.scores).toFixed(1)} — ${dims}.`);
+    L.push(`Wheel of Life — feeling (self-rated 1-10, ${wheel.date}): avg ${wheelAverage(wheel.scores).toFixed(1)} — ${dims}.`);
+  }
+  const dataWheel = dataWheelScores(data, history);
+  const dwKeys = Object.keys(dataWheel);
+  if (dwKeys.length) {
+    const parts = WHEEL_DIMS.filter((dm) => dataWheel[dm.key] != null).map((dm) => {
+      const dv = dataWheel[dm.key];
+      const fv = wheel?.scores[dm.key];
+      return `${dm.label} ${dv}${fv != null ? ` (feels ${fv})` : ""}`;
+    });
+    L.push(`Wheel of Life — data-driven (1-10 from last 30d): ${parts.join(", ")}.`);
   }
 
   // Analysis engine conclusions — the important part.
