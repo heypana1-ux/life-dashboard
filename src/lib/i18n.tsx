@@ -1617,6 +1617,29 @@ const DE: Record<string, string> = {
   "Log a bit more (habits, sleep, training, finances…) to unlock the data wheel.":
     "Trag etwas mehr ein (Gewohnheiten, Schlaf, Training, Finanzen…), um das Datenrad freizuschalten.",
   "Do your first check-in below to see your wheel.": "Mach unten deinen ersten Check-in, um dein Rad zu sehen.",
+
+  // --- Feature hints, empty states, animations, focus, correlations ---
+  "Got it": "Verstanden",
+  "Make this dashboard yours": "Mach dieses Dashboard zu deinem",
+  "Tap Customize to reorder or hide cards. The new Heads up card flags anything unusual in your recent data — tap it to jump to the details.":
+    "Tippe auf Anpassen, um Karten umzusortieren oder auszublenden. Die neue Auffälligkeiten-Karte zeigt Ungewöhnliches in deinen letzten Daten — tippe drauf für die Details.",
+  "This week's focus": "Fokus dieser Woche",
+  "Set an intention in your weekly review.": "Setz dir im Wochenrückblick ein Vorhaben.",
+  'Rate how your life feels, then switch to "From your data" to see the same areas scored from what you\'ve logged — and where gut feeling and numbers differ.':
+    "Bewerte, wie sich dein Leben anfühlt, und wechsle dann zu „Aus deinen Daten“, um dieselben Bereiche aus deinen Einträgen bewertet zu sehen — und wo Bauchgefühl und Zahlen auseinandergehen.",
+  "No wheel yet": "Noch kein Rad",
+  "Data wheel locked": "Datenrad gesperrt",
+  "Ask your wheel": "Frag dein Rad",
+  "Stack habits into routines": "Gewohnheiten zu Routinen bündeln",
+  'Give related habits the same routine name (in the habit editor) — e.g. "Evening routine" — to group them and complete them together.':
+    "Gib zusammengehörigen Gewohnheiten denselben Routine-Namen (im Editor) — z. B. „Abendroutine“ — um sie zu gruppieren und gemeinsam zu erledigen.",
+  "Life Score on days you do this": "Life Score an Tagen, an denen du das machst",
+  "Track body measurements": "Körpermaße verfolgen",
+  "Log circumferences like biceps or waist. Sites tied to a muscle show your recent training on it right next to the number.":
+    "Trag Umfänge wie Bizeps oder Taille ein. Stellen mit Muskelbezug zeigen dein aktuelles Training direkt neben der Zahl.",
+  "No measurements yet": "Noch keine Maße",
+  "Pick a site above and log your first one.": "Wähl oben eine Stelle und trag dein erstes Maß ein.",
+  "No subscriptions tracked": "Keine Abos erfasst",
   "Health & fitness": "Gesundheit & Fitness",
   "Career & work": "Karriere & Arbeit",
   Money: "Geld",

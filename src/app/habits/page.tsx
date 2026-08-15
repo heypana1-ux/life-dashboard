@@ -9,18 +9,20 @@ import {
   Repeat,
   Trash2,
 } from "lucide-react";
-import { CheckCircle2, Circle, Layers } from "lucide-react";
+import { CheckCircle2, Circle, Layers, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Habit } from "@/lib/types";
 import { fmtDuration, todayISO } from "@/lib/date";
 import { habitsForToday } from "@/lib/habitView";
-import { habitCurrentStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
+import { useDerived } from "@/lib/useDerived";
+import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact } from "@/lib/habitStats";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
 import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
+import { HintCard } from "@/components/HintCard";
 
 export default function HabitsPage() {
   const { data, removeHabit, addHabit } = useStore();
@@ -81,6 +83,10 @@ export default function HabitsPage() {
           {t("Reduce")} ({data.habits.filter((h) => h.kind === "reduce" && !h.archived).length})
         </Chip>
       </div>
+
+      <HintCard id="routines" title={t("Stack habits into routines")}>
+        {t("Give related habits the same routine name (in the habit editor) — e.g. \"Evening routine\" — to group them and complete them together.")}
+      </HintCard>
 
       <RoutinesCard />
 
@@ -298,7 +304,9 @@ function HabitCard({
   const isReduce = h.kind === "reduce";
   const t = useT();
   const { data } = useStore();
+  const d = useDerived();
   const streak = habitCurrentStreak(data, h);
+  const impact = habitLifeScoreImpact(data, d.history, h);
   const Icon = AREA_ICONS[h.area] ?? Repeat;
   const dots = habitHeatmap(data, h).slice(-30);
   const heatColor = (lvl: string) =>
@@ -324,6 +332,15 @@ function HabitCard({
           {h.timesPerDay ? ` · ${h.timesPerDay}× ${t("per day")}` : ""}
           {h.targetMinutes ? ` · ${fmtDuration(h.targetMinutes)}` : ""}
         </div>
+        {impact && Math.abs(impact.pct) >= 5 && (
+          <div className="mt-1 flex items-center gap-1.5 text-[12px]">
+            <TrendingUp size={12} className={impact.pct >= 0 ? "text-[var(--good)]" : "text-[var(--bad)]"} />
+            <span className="font-semibold" style={{ color: impact.pct >= 0 ? "var(--good)" : "var(--bad)" }}>
+              {impact.pct >= 0 ? "+" : ""}{impact.pct}%
+            </span>
+            <span className="text-[var(--text-faint)]">{t("Life Score on days you do this")}</span>
+          </div>
+        )}
       </div>
 
       <div className="hidden items-center gap-[3px] lg:flex">

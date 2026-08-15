@@ -8,9 +8,10 @@ import { useT } from "@/lib/i18n";
 import { fmtShort, todayISO } from "@/lib/date";
 import { WHEEL_DIMS, blankWheelScores, wheelAverage, latestWheel, previousWheel } from "@/lib/wheel";
 import { dataWheelScores } from "@/lib/dataWheel";
-import { Card, PageHeader, SectionTitle, Button, ScaleInput, Badge, Chip } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Button, ScaleInput, Badge, Chip, EmptyState } from "@/components/ui";
 import { RadarChart } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
+import { HintCard } from "@/components/HintCard";
 
 type Mode = "feeling" | "data";
 
@@ -47,6 +48,20 @@ export default function WheelPage() {
 
   const dataAvg = dataDims.length ? dataDims.reduce((s, dm) => s + dataScores[dm.key], 0) / dataDims.length : 0;
 
+  // Biggest feeling-vs-data gap, for a targeted coach prompt.
+  const gap = useMemo(() => {
+    if (!latest) return null;
+    let best: { label: string; feel: number; data: number; diff: number } | null = null;
+    for (const dm of dataDims) {
+      const fv = latest.scores[dm.key];
+      const dv = dataScores[dm.key];
+      if (fv == null) continue;
+      const diff = fv - dv;
+      if (!best || Math.abs(diff) > Math.abs(best.diff)) best = { label: dm.label, feel: fv, data: dv, diff };
+    }
+    return best && Math.abs(best.diff) >= 2 ? best : null;
+  }, [latest, dataDims, dataScores]);
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -60,6 +75,10 @@ export default function WheelPage() {
           ) : undefined
         }
       />
+
+      <HintCard id="wheel" title={t("Feeling vs data")}>
+        {t("Rate how your life feels, then switch to \"From your data\" to see the same areas scored from what you've logged — and where gut feeling and numbers differ.")}
+      </HintCard>
 
       <div className="flex gap-1.5">
         <Chip active={mode === "feeling"} onClick={() => setMode("feeling")}>{t("How it feels")}</Chip>
@@ -111,9 +130,7 @@ export default function WheelPage() {
           </Card>
         </div>
       ) : (
-        <Card>
-          <p className="py-4 text-center text-sm text-[var(--text-muted)]">{t("Do your first check-in below to see your wheel.")}</p>
-        </Card>
+        <EmptyState icon={<Compass size={26} />} title={t("No wheel yet")} hint={t("Do your first check-in below to see your wheel.")} />
       ))}
 
       {/* ---- Data mode ---- */}
@@ -179,11 +196,7 @@ export default function WheelPage() {
           </Card>
         </div>
       ) : (
-        <Card>
-          <p className="py-4 text-center text-sm text-[var(--text-muted)]">
-            {t("Log a bit more (habits, sleep, training, finances…) to unlock the data wheel.")}
-          </p>
-        </Card>
+        <EmptyState icon={<Database size={26} />} title={t("Data wheel locked")} hint={t("Log a bit more (habits, sleep, training, finances…) to unlock the data wheel.")} />
       ))}
 
       {editing && (
@@ -214,11 +227,20 @@ export default function WheelPage() {
         </Card>
       )}
 
-      {(latest || dataDims.length >= 3) && (
+      {mode === "data" && gap ? (
         <CoachInsightCard
-          title={t("Coach: your balance")}
-          prompt="Look at my Wheel of Life in the snapshot — both my self-rated (feeling) scores and the data-driven scores where available. In 2-3 sentences, note where feeling and data agree, the biggest gap between them, and one small realistic focus. Warm and concise."
+          key="gap"
+          title={t("Ask your wheel")}
+          prompt={`On my Wheel of Life there is a gap for "${gap.label}": I rate it ${gap.feel}/10 by feeling, but the data-driven score is ${gap.data}/10. In 2-3 sentences, reflect on why my feeling and the data might differ here, and give one small, concrete step. Warm and concise.`}
         />
+      ) : (
+        (latest || dataDims.length >= 3) && (
+          <CoachInsightCard
+            key="balance"
+            title={t("Coach: your balance")}
+            prompt="Look at my Wheel of Life in the snapshot — both my self-rated (feeling) scores and the data-driven scores where available. In 2-3 sentences, note where feeling and data agree, the biggest gap between them, and one small realistic focus. Warm and concise."
+          />
+        )
       )}
 
       {history.length > 0 && (

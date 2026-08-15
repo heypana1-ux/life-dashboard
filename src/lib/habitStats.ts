@@ -1,4 +1,4 @@
-import { AppData, Habit } from "./types";
+import { AppData, DayScore, Habit } from "./types";
 import { isDueOn } from "./score";
 import { addDays, isoRange, parseISO, todayISO } from "./date";
 import { logOf } from "./habitView";
@@ -88,6 +88,35 @@ export function habit30dRate(data: AppData, habit: Habit, days = 30): number {
     }
   }
   return n ? Math.round((hit / n) * 100) : 0;
+}
+
+/*
+  How a habit tends to go with the Life Score: average score on days the habit was done
+  (for reduce habits, days the behaviour occurred) vs other days. Association, not causation.
+*/
+export interface HabitImpact {
+  pct: number; // signed % difference in average Life Score (done days vs other days)
+  nWith: number;
+  nWithout: number;
+}
+
+export function habitLifeScoreImpact(data: AppData, history: DayScore[], habit: Habit): HabitImpact | null {
+  const withScores: number[] = [];
+  const withoutScores: number[] = [];
+  for (const h of history) {
+    if (h.lifeScore <= 0) continue;
+    if (parseISO(h.date) < parseISO(habit.createdAt)) continue;
+    const done = !!logOf(data, habit.id, h.date)?.done;
+    if (done) withScores.push(h.lifeScore);
+    else withoutScores.push(h.lifeScore);
+  }
+  if (withScores.length < 3 || withoutScores.length < 3) return null;
+  const mean = (xs: number[]) => xs.reduce((a, b) => a + b, 0) / xs.length;
+  const mWith = mean(withScores);
+  const mWithout = mean(withoutScores);
+  if (mWithout <= 0) return null;
+  const pct = Math.round(((mWith - mWithout) / mWithout) * 100);
+  return { pct, nWith: withScores.length, nWithout: withoutScores.length };
 }
 
 export type HeatLevel = "done" | "missed" | "none";

@@ -509,6 +509,8 @@ export interface Settings {
   about?: Record<string, string>;
   /** Dashboard personalization: hidden card ids and a custom card order. */
   dashboard?: { hidden?: string[]; order?: string[] };
+  /** Ids of one-time feature spotlight hints the user has dismissed. */
+  hintsSeen?: string[];
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

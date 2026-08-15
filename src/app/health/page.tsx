@@ -11,9 +11,10 @@ import { useT } from "@/lib/i18n";
 import { BODY_SITES, muscleForSite } from "@/lib/bodySites";
 import { muscleVolume } from "@/lib/trainingStats";
 import { MUSCLE_LABEL, Muscle } from "@/lib/exercises";
-import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle, EmptyState } from "@/components/ui";
 import { TrendLine, MiniSpark } from "@/components/charts";
 import { Ruler, Dumbbell } from "lucide-react";
+import { HintCard } from "@/components/HintCard";
 import clsx from "clsx";
 
 const blank = (date: string): HealthLog => ({ date, wellbeing: 7, symptoms: {}, sick: false });
@@ -177,6 +178,10 @@ export default function HealthPage() {
         </Card>
       )}
 
+      <HintCard id="measurements" title={t("Track body measurements")}>
+        {t("Log circumferences like biceps or waist. Sites tied to a muscle show your recent training on it right next to the number.")}
+      </HintCard>
+
       <BodyMetricsCard />
 
       <MeasurementsCard />
@@ -319,7 +324,9 @@ function MeasurementsCard() {
       </div>
 
       {measuredSites.length === 0 ? (
-        <p className="mt-4 text-sm text-[var(--text-muted)]">{t("No measurements yet. Pick a site and log your first one.")}</p>
+        <div className="mt-4">
+          <EmptyState icon={<Ruler size={26} />} title={t("No measurements yet")} hint={t("Pick a site above and log your first one.")} />
+        </div>
       ) : (
         <div className="mt-4 space-y-3">
           {measuredSites.map((s) => {

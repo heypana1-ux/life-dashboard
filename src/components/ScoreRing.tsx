@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useState } from "react";
 import { scoreColor } from "@/lib/score";
+import { AnimatedNumber } from "./ui";
 
 /** Circular Life Score gauge (0..100) with an accent-gradient stroke. */
 export function ScoreRing({
@@ -63,7 +64,7 @@ export function ScoreRing({
           className="font-bold tabular-nums leading-none tracking-[-0.03em]"
           style={{ fontSize: size / 3.6 }}
         >
-          {Math.round(value)}
+          <AnimatedNumber value={value} />
         </span>
         {label && (
           <span className="mt-1 text-xs font-medium text-[var(--text-muted)]">{label}</span>

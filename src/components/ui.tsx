@@ -83,6 +83,50 @@ export function StatTile({
   );
 }
 
+/** Count-up animation for a number. Eases from the previous value to the new one on change,
+ *  respecting prefers-reduced-motion (jumps instantly then). */
+export function AnimatedNumber({
+  value,
+  duration = 750,
+  format,
+}: {
+  value: number;
+  duration?: number;
+  format?: (n: number) => string;
+}) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+  const rafRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = value;
+    if (from === to) return;
+    const reduce = typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDisplay(to);
+      fromRef.current = to;
+      return;
+    }
+    const start = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(from + (to - from) * eased);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+      else fromRef.current = to;
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+  }, [value, duration]);
+
+  const n = Math.round(display);
+  return <>{format ? format(n) : n.toLocaleString()}</>;
+}
+
 /** Segmented control (pill group on a surface-2 track); active = gradient fill. */
 export function Segmented<T extends string>({
   options,
@@ -224,7 +268,11 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--border)] px-6 py-12 text-center">
-      {icon && <div className="mb-3 text-[var(--text-faint)]">{icon}</div>}
+      {icon && (
+        <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--surface-2)] text-[var(--text-faint)]">
+          {icon}
+        </div>
+      )}
       <p className="font-medium">{title}</p>
       {hint && <p className="mt-1 max-w-sm text-sm text-[var(--text-muted)]">{hint}</p>}
       {action && <div className="mt-4">{action}</div>}

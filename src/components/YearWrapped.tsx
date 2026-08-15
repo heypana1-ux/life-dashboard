@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ImageDown, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
 import { buildYearWrapped, areaLabelKey } from "@/lib/yearWrapped";
+import { downloadWrappedImage } from "@/lib/reportImage";
 import { fmtDuration, fmtShort } from "@/lib/date";
 import { AREA_LABELS } from "@/lib/defaults";
 
@@ -49,6 +50,28 @@ export function YearWrappedOverlay({ year, onClose }: { year: number; onClose: (
   const next = () => setI((x) => Math.min(total - 1, x + 1));
   const prev = () => setI((x) => Math.max(0, x - 1));
 
+  function shareImage() {
+    const tiles: { label: string; value: string }[] = [];
+    if (w.daysLogged > 0) tiles.push({ label: t("Days logged"), value: String(w.daysLogged) });
+    if (w.avgScore > 0) tiles.push({ label: t("Average Life Score"), value: String(w.avgScore) });
+    if (w.longestStreak >= 2) tiles.push({ label: t("Longest streak (days)"), value: String(w.longestStreak) });
+    if (w.workouts > 0) tiles.push({ label: t("Workouts"), value: String(w.workouts) });
+    if (w.journalEntries > 0) tiles.push({ label: t("Journal entries"), value: String(w.journalEntries) });
+    if (w.topHabit) tiles.push({ label: t("Your top habit"), value: w.topHabit.name });
+    tiles.push({ label: t("Level"), value: String(w.level) });
+    if (w.achievements > 0) tiles.push({ label: t("Achievements"), value: String(w.achievements) });
+    downloadWrappedImage(
+      {
+        kicker: t("Year in review").toUpperCase(),
+        year: String(year),
+        subtitle: t("{n} days logged", { n: w.daysLogged }),
+        tiles: tiles.slice(0, 8),
+        footer: t("Life Dashboard"),
+      },
+      `wrapped-${year}.png`,
+    );
+  }
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "Escape") onClose();
@@ -79,9 +102,14 @@ export function YearWrappedOverlay({ year, onClose }: { year: number; onClose: (
 
         <div className="flex items-center justify-between px-4 py-2">
           <span className="text-xs font-semibold uppercase tracking-[0.15em] text-white/80">{t("Wrapped")} {year}</span>
-          <button onClick={onClose} className="rounded-full p-1 text-white/80 hover:bg-white/15" aria-label={t("Close")}>
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={shareImage} className="rounded-full p-1 text-white/80 hover:bg-white/15" aria-label={t("Share as image")}>
+              <ImageDown size={19} />
+            </button>
+            <button onClick={onClose} className="rounded-full p-1 text-white/80 hover:bg-white/15" aria-label={t("Close")}>
+              <X size={20} />
+            </button>
+          </div>
         </div>
 
         {/* Slide content */}

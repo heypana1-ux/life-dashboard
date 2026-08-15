@@ -29,16 +29,27 @@ import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AreaKey, Settings } from "@/lib/types";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile, AnimatedNumber } from "@/components/ui";
 import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing } from "@/components/Coach";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
+import { HintCard } from "@/components/HintCard";
 
 /** Dashboard blocks the user can reorder / hide. Hero, coach briefing and the streak nudge stay pinned. */
-const MOVABLE = ["anomalies", "level", "catInsights", "activity", "goals"] as const;
+const MOVABLE = ["anomalies", "weeklyFocus", "level", "catInsights", "activity", "goals"] as const;
 type CardId = (typeof MOVABLE)[number];
+
+/** Where each anomaly links to when tapped. */
+const ANOMALY_HREF: Record<string, string> = {
+  "Life Score": "/statistics",
+  Sleep: "/sleep",
+  Habits: "/habits",
+  Wellbeing: "/health",
+  Mood: "/today",
+  Training: "/training",
+};
 
 function orderedCards(settings: Settings): CardId[] {
   const saved = (settings.dashboard?.order ?? []).filter((id): id is CardId => (MOVABLE as readonly string[]).includes(id));
@@ -94,6 +105,10 @@ export default function DashboardPage() {
   const chDone = challenges.filter((c) => c.done).length;
   const nextChallenge = challenges.find((c) => !c.done);
   const anomalies = useMemo(() => detectAnomalies(data, d.history), [data, d.history]);
+  const weeklyFocus = useMemo(
+    () => [...data.weeklyReviews].filter((r) => r.focus?.trim()).sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0] ?? null,
+    [data.weeklyReviews],
+  );
 
   const order = orderedCards(data.settings);
   const hidden = new Set(data.settings.dashboard?.hidden ?? []);
@@ -125,7 +140,11 @@ export default function DashboardPage() {
         ) : (
           <div className="flex flex-col gap-2.5">
             {anomalies.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 rounded-[13px] bg-[var(--surface-2)] p-[13px]">
+              <Link
+                key={a.id}
+                href={ANOMALY_HREF[a.id] ?? "/statistics"}
+                className="flex items-center gap-3 rounded-[13px] bg-[var(--surface-2)] p-[13px] transition hover:bg-[var(--surface-3)]"
+              >
                 <span
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
                   style={{ background: a.tone === "good" ? "var(--good)" : "var(--warn)" }}
@@ -143,7 +162,8 @@ export default function DashboardPage() {
                     {t("now")} {a.recent} · {t("usual")} {a.usual}
                   </div>
                 </div>
-              </div>
+                <ChevronRight size={16} className="shrink-0 text-[var(--text-faint)]" />
+              </Link>
             ))}
           </div>
         )}
@@ -151,6 +171,24 @@ export default function DashboardPage() {
           {t("Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.")}
         </p>
       </Card>
+    ),
+    weeklyFocus: (weeklyFocus || editMode) && (
+      <Link href="/reports" className="block">
+        <Card className="flex items-center gap-4 !py-4 transition hover:border-[var(--accent)]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <Target size={20} />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-[var(--text-faint)]">{t("This week's focus")}</div>
+            {weeklyFocus ? (
+              <div className="mt-0.5 truncate text-sm font-medium">{weeklyFocus.focus}</div>
+            ) : (
+              <div className="mt-0.5 text-sm text-[var(--text-muted)]">{t("Set an intention in your weekly review.")}</div>
+            )}
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-[var(--text-faint)]" />
+        </Card>
+      </Link>
     ),
     level: (
       <Link href="/achievements" className="block">
@@ -265,6 +303,10 @@ export default function DashboardPage() {
       />
 
       <div className="flex flex-col gap-[18px]">
+        <HintCard id="dashboard-v2" title={t("Make this dashboard yours")}>
+          {t("Tap Customize to reorder or hide cards. The new Heads up card flags anything unusual in your recent data — tap it to jump to the details.")}
+        </HintCard>
+
         {/* Proactive coach briefing (only when AI coach is on) */}
         <CoachBriefing />
 
@@ -316,9 +358,9 @@ export default function DashboardPage() {
           </Card>
 
           <div className="grid grid-cols-2 gap-[14px]">
-            <StatTile icon={<Trophy size={15} />} label={t("Life Rating")} value={elo.toLocaleString()} sub={`${t("Best")} ${eloBest.toLocaleString()}`} />
-            <StatTile icon={<Flame size={15} />} label={t("Streak")} value={`${streak}d`} sub={t("days with activity")} />
-            <StatTile icon={<ArrowUpRight size={15} />} label={t("7-day avg")} value={String(d.avg7)} sub={t("Life Score")} />
+            <StatTile icon={<Trophy size={15} />} label={t("Life Rating")} value={<AnimatedNumber value={elo} />} sub={`${t("Best")} ${eloBest.toLocaleString()}`} />
+            <StatTile icon={<Flame size={15} />} label={t("Streak")} value={<><AnimatedNumber value={streak} />d</>} sub={t("days with activity")} />
+            <StatTile icon={<ArrowUpRight size={15} />} label={t("7-day avg")} value={<AnimatedNumber value={d.avg7} />} sub={t("Life Score")} />
             <StatTile icon={<Sparkles size={15} />} label={t("Today")} value={`${doneCount}/${buildGoals.length}`} sub={t("goals done")} />
           </div>
         </div>
@@ -356,6 +398,7 @@ export default function DashboardPage() {
 
 const CARD_LABELS: Record<CardId, string> = {
   anomalies: "Heads up",
+  weeklyFocus: "This week's focus",
   level: "Level",
   catInsights: "Categories",
   activity: "Activity",

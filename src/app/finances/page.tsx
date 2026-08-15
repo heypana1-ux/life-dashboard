@@ -756,9 +756,11 @@ function SubscriptionAuditCard({ cur }: { cur: string }) {
     <Card>
       <SectionTitle right={<Repeat size={16} className="text-[var(--text-faint)]" />}>{t("Subscription audit")}</SectionTitle>
       {audit.items.length === 0 ? (
-        <p className="py-6 text-center text-sm text-[var(--text-muted)]">
-          {t("Add recurring expenses (Netflix, gym, insurance…) to see what they cost you per year.")}
-        </p>
+        <EmptyState
+          icon={<Repeat size={26} />}
+          title={t("No subscriptions tracked")}
+          hint={t("Add recurring expenses (Netflix, gym, insurance…) to see what they cost you per year.")}
+        />
       ) : (
         <>
           <div className="mb-3 grid grid-cols-2 gap-3">
