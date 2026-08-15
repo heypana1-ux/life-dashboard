@@ -8,7 +8,28 @@ import { useT } from "@/lib/i18n";
 import { AREA_LABELS } from "@/lib/defaults";
 import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
 import { dayHasEntry } from "@/lib/dayActivity";
+import { habitsForToday } from "@/lib/habitView";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
+import { AppData } from "@/lib/types";
+
+/* At-a-glance day markers: what happened that day. */
+const DAY_MARKS = [
+  { key: "trained", color: "#0ea5e9", label: "Training" },
+  { key: "habits", color: "#16a34a", label: "Habits" },
+  { key: "sleep", color: "#6366f1", label: "Sleep" },
+  { key: "journal", color: "#a855f7", label: "Journal" },
+] as const;
+
+function dayMarks(data: AppData, date: string): (typeof DAY_MARKS)[number][] {
+  const out: (typeof DAY_MARKS)[number][] = [];
+  if (data.workouts.some((w) => w.date === date)) out.push(DAY_MARKS[0]);
+  const build = habitsForToday(data, date).filter((g) => g.habit.kind === "build");
+  const done = build.filter((g) => g.log?.done).length;
+  if (build.length > 0 && done / build.length >= 0.6) out.push(DAY_MARKS[1]);
+  if (data.sleep.some((s) => s.date === date)) out.push(DAY_MARKS[2]);
+  if (data.journal.some((j) => j.date === date)) out.push(DAY_MARKS[3]);
+  return out;
+}
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, Modal, Badge, Button } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
@@ -101,19 +122,28 @@ export default function CalendarPage() {
                 }}
               >
                 <span className="font-medium">{dayNum}</span>
-                {scored ? (
-                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full" style={{ background: scoreColor(score!) }} />
-                ) : logged ? (
-                  <span className="mt-0.5 h-1.5 w-1.5 rounded-full border border-[var(--text-faint)]" title={t("Logged (no score)")} />
-                ) : null}
+                {(() => {
+                  const marks = dayMarks(data, d);
+                  if (marks.length > 0) {
+                    return (
+                      <span className="mt-0.5 flex gap-[3px]">
+                        {marks.map((m) => (
+                          <span key={m.key} className="h-1.5 w-1.5 rounded-full" style={{ background: m.color }} title={t(m.label)} />
+                        ))}
+                      </span>
+                    );
+                  }
+                  if (logged) return <span className="mt-0.5 h-1.5 w-1.5 rounded-full border border-[var(--text-faint)]" title={t("Logged (no score)")} />;
+                  return null;
+                })()}
               </button>
             );
           })}
         </div>
-        <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-[var(--text-faint)]">
-          <Legend color="var(--bad)" label={t("Rough")} />
-          <Legend color="var(--warn)" label={t("Mixed")} />
-          <Legend color="var(--good)" label={t("Strong")} />
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-[var(--text-faint)]">
+          {DAY_MARKS.map((m) => (
+            <Legend key={m.key} color={m.color} label={t(m.label)} />
+          ))}
         </div>
       </Card>
 
