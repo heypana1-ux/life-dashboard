@@ -221,6 +221,26 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   const openCh = ch.filter((c) => !c.done);
   L.push(line([`This week's challenges: ${ch.length - openCh.length}/${ch.length} done.`, openCh.length ? `Still open: ${openCh.map((c) => c.title).join(", ")}.` : ""]));
 
+  // Reduce-habit slips: self-reported triggers and weekend timing (last 60 days)
+  const reduceIds = new Set(data.habits.filter((h) => h.kind === "reduce").map((h) => h.id));
+  if (reduceIds.size) {
+    const since = addDays(today, -60);
+    const slips = data.habitLogs.filter((l) => reduceIds.has(l.habitId) && l.done && l.date >= since);
+    if (slips.length) {
+      const trig = new Map<string, number>();
+      let weekend = 0;
+      for (const s of slips) {
+        if (s.trigger) trig.set(s.trigger, (trig.get(s.trigger) ?? 0) + 1);
+        const wd = weekdayOf(s.date);
+        if (wd === 0 || wd === 6) weekend += 1;
+      }
+      const parts = [`${slips.length} slips in 60 days`];
+      if (trig.size) parts.push(`common triggers: ${[...trig.entries()].sort((a, b) => b[1] - a[1]).slice(0, 4).map(([k, n]) => `${k} ${n}x`).join(", ")}`);
+      parts.push(`${Math.round((weekend / slips.length) * 100)}% on weekends`);
+      L.push(`Watch-list slips: ${parts.join("; ")}.`);
+    }
+  }
+
   // Recent anomalies (last 7 days vs the prior 3 weeks)
   const anomalies = detectAnomalies(data, history);
   if (anomalies.length) {

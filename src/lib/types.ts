@@ -64,6 +64,9 @@ export interface Habit {
   priority: Priority;
   /** 1..5 subjective difficulty. */
   difficulty: number;
+  /** 1..5 importance: how much finishing this habit counts toward the Life Score.
+   *  Higher = a done/missed day moves that area's score more. Defaults from priority. */
+  weight?: number;
   /** For "reduce" habits: how heavily an occurrence hurts the score (1..5). */
   severity?: number;
   color?: string;
@@ -83,6 +86,8 @@ export interface HabitLog {
   value?: number;
   /** For habits with a per-day target: how many times it was done today. */
   count?: number;
+  /** For "reduce" slips: an optional trigger/situation, to surface patterns over time. */
+  trigger?: string;
   notes?: string;
 }
 
@@ -411,6 +416,29 @@ export interface Experiment {
   createdAt: string;
 }
 
+/* ---------------- Reward shop ---------------- */
+
+/** A user-defined real-life reward, unlockable by spending earned points. */
+export interface RewardItem {
+  id: string;
+  name: string;
+  cost: number;
+  icon?: string; // an emoji
+}
+
+/** A record of a reward the user cashed in (points are deducted from the balance). */
+export interface Redemption {
+  id: string;
+  name: string;
+  cost: number;
+  date: string; // ISO timestamp
+}
+
+export interface RewardsState {
+  items: RewardItem[];
+  redemptions: Redemption[];
+}
+
 /* ---------------- Settings ---------------- */
 
 export interface ReminderSettings {
@@ -539,4 +567,5 @@ export interface AppData {
   workoutPlans: WorkoutPlan[];
   projects: Project[];
   experiments: Experiment[];
+  rewards: RewardsState;
 }

@@ -38,8 +38,10 @@ const blankReview = (date: string): DailyReview => ({
   discipline: 6,
 });
 
+const TRIGGERS = ["Stress", "Boredom", "Tiredness", "Social", "Hunger", "Craving", "Emotions", "Habit"];
+
 export default function TodayPage() {
-  const { data, saveReview } = useStore();
+  const { data, saveReview, setHabitLog } = useStore();
   const t = useT();
   const today = todayISO();
   const [date, setDate] = useState(today);
@@ -72,6 +74,10 @@ export default function TodayPage() {
     saveReview({ ...review, date });
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
+  }
+
+  function setTrigger(habitId: string, trigger: string | undefined) {
+    setHabitLog({ habitId, date, done: true, trigger });
   }
 
   const projected = comp.lifeScore ?? 0;
@@ -168,6 +174,42 @@ export default function TodayPage() {
                   <HabitRow key={g.habit.id} item={g} date={date} />
                 ))}
               </div>
+
+              {reduce.some((g) => g.log?.done) && (
+                <div className="mt-4 border-t border-[var(--border)] pt-3">
+                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
+                    {t("What triggered it? (optional)")}
+                  </div>
+                  <div className="space-y-3">
+                    {reduce.filter((g) => g.log?.done).map((g) => (
+                      <div key={g.habit.id}>
+                        <div className="mb-1 text-sm font-medium">{g.habit.name}</div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {TRIGGERS.map((tr) => {
+                            const active = g.log?.trigger === tr;
+                            return (
+                              <button
+                                key={tr}
+                                onClick={() => setTrigger(g.habit.id, active ? undefined : tr)}
+                                className={
+                                  active
+                                    ? "rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-medium text-white"
+                                    : "rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:border-[var(--accent)]"
+                                }
+                              >
+                                {t(tr)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+                    {t("Noticing your triggers helps you and the coach spot patterns.")}
+                  </p>
+                </div>
+              )}
             </Card>
           )}
 

@@ -325,6 +325,7 @@ function HabitCard({
         <div className="flex flex-wrap items-center gap-[9px]">
           <span className="truncate text-[15px] font-semibold">{h.name}</span>
           {isReduce ? <Badge tone="bad">{t("Reduce")}</Badge> : <Badge>{t("Build")}</Badge>}
+          {!isReduce && (h.weight ?? 0) >= 4 && <Badge tone="accent">{t("Key habit")}</Badge>}
           {h.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
         </div>
         <div className="mt-0.5 text-[12.5px] text-[var(--text-muted)]">

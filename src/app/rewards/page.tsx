@@ -1,0 +1,167 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { Coins, Gift, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { useStore } from "@/lib/store";
+import { useDerived } from "@/lib/useDerived";
+import { useT } from "@/lib/i18n";
+import { fmtShort } from "@/lib/date";
+import {
+  REWARD_TEMPLATES,
+  pointsBalance,
+  pointsEarned,
+  dailyRate,
+  daysToAfford,
+} from "@/lib/rewardShop";
+import { Card, PageHeader, SectionTitle, Button, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
+import { HintCard } from "@/components/HintCard";
+
+export default function RewardsPage() {
+  const { data, saveReward, removeReward, redeemReward, undoRedemption } = useStore();
+  const d = useDerived();
+  const t = useT();
+
+  const earned = useMemo(() => pointsEarned(d.history), [d.history]);
+  const balance = useMemo(() => pointsBalance(d.history, data.rewards.redemptions), [d.history, data.rewards.redemptions]);
+  const rate = useMemo(() => dailyRate(d.history), [d.history]);
+
+  const items = [...data.rewards.items].sort((a, b) => a.cost - b.cost);
+  const redemptions = [...data.rewards.redemptions].sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  const [name, setName] = useState("");
+  const [cost, setCost] = useState<number | undefined>(200);
+  const [icon, setIcon] = useState("🎁");
+
+  const existingNames = new Set(data.rewards.items.map((r) => r.name.toLowerCase()));
+
+  function add() {
+    if (!name.trim() || !cost || cost <= 0) return;
+    saveReward({ id: "", name: name.trim(), cost, icon: icon.trim() || "🎁" });
+    setName("");
+    setCost(200);
+    setIcon("🎁");
+  }
+
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={t("Reward shop")}
+        subtitle={t("Earn points by living well, then cash them in for rewards you set yourself.")}
+      />
+
+      <HintCard id="rewards" title={t("How points work")}>
+        {t("Each logged day earns points equal to your Life Score ÷ 10 (score 70 → 7 points). Define your own rewards, then redeem them when you've saved enough.")}
+      </HintCard>
+
+      {/* Balance */}
+      <Card className="flex flex-col items-center gap-1 text-center">
+        <div className="flex items-center gap-2 text-[var(--accent)]">
+          <Coins size={22} />
+          <span className="num text-4xl font-bold">{balance.toLocaleString()}</span>
+        </div>
+        <div className="text-sm text-[var(--text-muted)]">{t("points to spend")}</div>
+        <div className="mt-1 flex gap-4 text-xs text-[var(--text-faint)]">
+          <span>{t("Earned")}: {earned.toLocaleString()}</span>
+          <span>{t("~{n} pts / day", { n: rate.toFixed(1) })}</span>
+        </div>
+      </Card>
+
+      {/* Your rewards */}
+      <Card>
+        <SectionTitle right={<Gift size={16} className="text-[var(--text-faint)]" />}>{t("Your rewards")}</SectionTitle>
+        {items.length === 0 ? (
+          <EmptyState icon={<Gift size={26} />} title={t("No rewards yet")} hint={t("Add one below or pick a template to get started.")} />
+        ) : (
+          <div className="space-y-2.5">
+            {items.map((r) => {
+              const affordable = balance >= r.cost;
+              const days = daysToAfford(r.cost, balance, rate);
+              return (
+                <div key={r.id} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+                  <span className="text-2xl">{r.icon ?? "🎁"}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{t(r.name)}</div>
+                    <div className="text-xs text-[var(--text-faint)]">
+                      {r.cost.toLocaleString()} {t("pts")}
+                      {!affordable && days != null && ` · ${t("~{n} days away", { n: days })}`}
+                      {!affordable && days == null && ` · ${t("keep logging to earn points")}`}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => removeReward(r.id)}
+                    className="text-[var(--text-faint)] hover:text-[var(--bad)]"
+                    aria-label={t("Delete")}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                  <Button size="sm" disabled={!affordable} onClick={() => redeemReward(r)}>
+                    {affordable ? t("Redeem") : t("Locked")}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Add custom */}
+        <div className="mt-4 border-t border-[var(--border)] pt-4">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Add a reward")}</div>
+          <div className="flex flex-wrap items-end gap-2">
+            <Field label={t("Emoji")} className="w-16">
+              <input className={`${inputCls} text-center`} value={icon} maxLength={2} onChange={(e) => setIcon(e.target.value)} />
+            </Field>
+            <Field label={t("Name")} className="min-w-[8rem] flex-1">
+              <input className={inputCls} placeholder={t("e.g. Spa afternoon")} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
+            </Field>
+            <Field label={t("Cost (pts)")} className="w-24">
+              <NumberInput value={cost} min={1} onChange={setCost} />
+            </Field>
+            <Button onClick={add} disabled={!name.trim() || !cost}>
+              <Plus size={16} /> {t("Add")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Templates */}
+        <div className="mt-4">
+          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Ideas")}</div>
+          <div className="flex flex-wrap gap-1.5">
+            {REWARD_TEMPLATES.filter((tpl) => !existingNames.has(t(tpl.name).toLowerCase()) && !existingNames.has(tpl.name.toLowerCase())).map((tpl) => (
+              <button
+                key={tpl.name}
+                onClick={() => saveReward({ id: "", name: tpl.name, cost: tpl.cost, icon: tpl.icon })}
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)]"
+              >
+                <span>{tpl.icon}</span> {t(tpl.name)}
+                <span className="text-xs text-[var(--text-faint)]">{tpl.cost}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </Card>
+
+      {/* History */}
+      {redemptions.length > 0 && (
+        <Card>
+          <SectionTitle>{t("Redeemed")}</SectionTitle>
+          <div className="divide-y divide-[var(--border)]">
+            {redemptions.map((r) => (
+              <div key={r.id} className="flex items-center justify-between py-2.5 text-sm">
+                <div>
+                  <span className="font-medium">{t(r.name)}</span>
+                  <span className="ml-2 text-xs text-[var(--text-faint)]">{fmtShort(r.date.slice(0, 10))}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Badge tone="bad">−{r.cost} {t("pts")}</Badge>
+                  <button onClick={() => undoRedemption(r.id)} className="flex items-center gap-1 text-xs text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Undo")}>
+                    <RotateCcw size={13} /> {t("Undo")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}

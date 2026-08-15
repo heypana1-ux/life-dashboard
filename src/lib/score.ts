@@ -120,7 +120,9 @@ function habitAreaScore(
   let counted = 0;
   for (const h of active) {
     if (h.kind === "build") {
-      const w = PRIORITY_WEIGHT[h.priority];
+      // Importance (1..5) sets how much this habit moves the area score; falls back to the
+      // habit's priority for records created before explicit weighting existed.
+      const w = h.weight ?? PRIORITY_WEIGHT[h.priority];
       if (h.schedule.type === "weekly") {
         fSum += w * weeklyFraction(h, dateISO, logs);
         wSum += w;

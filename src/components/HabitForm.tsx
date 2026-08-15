@@ -264,6 +264,26 @@ export function HabitForm({
           </Field>
         </div>
 
+        {draft.kind === "build" && (
+          <Field
+            label={`${t("Importance")}: ${draft.weight ?? 3}/5`}
+            hint={t("How much finishing this counts toward your Life Score. Higher = it moves your score more.")}
+          >
+            <input
+              type="range"
+              min={1}
+              max={5}
+              value={draft.weight ?? 3}
+              onChange={(e) => set({ weight: Number(e.target.value) })}
+              className="w-full accent-[var(--accent)]"
+            />
+            <div className="mt-1 flex justify-between text-[10px] text-[var(--text-faint)]">
+              <span>{t("Nice to have")}</span>
+              <span>{t("Essential")}</span>
+            </div>
+          </Field>
+        )}
+
         {draft.kind === "reduce" && (
           <Field label={`${t("Severity")}: ${draft.severity}/5`}>
             <input

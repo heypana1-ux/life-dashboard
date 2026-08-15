@@ -6,9 +6,10 @@ import { useDerived } from "@/lib/useDerived";
 import clsx from "clsx";
 import { AREA_LABELS } from "@/lib/defaults";
 import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
-import { weekdayLabel } from "@/lib/date";
+import { weekdayLabel, fmtShort } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
+import { bestSelf } from "@/lib/bestSelf";
 import { TrendLine, MultiLine, Bars } from "@/components/charts";
 
 const RANGES: { key: string; days: number; label: string }[] = [
@@ -71,6 +72,8 @@ export default function StatisticsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
+
+      <BestSelfCard />
 
       {/* Range selector */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -197,6 +200,41 @@ export default function StatisticsPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+function BestSelfCard() {
+  const d = useDerived();
+  const t = useT();
+  const bs = useMemo(() => bestSelf(d.history), [d.history]);
+  if (!bs.enough) return null;
+
+  const atPeak = bs.diff >= 0;
+  const pct = bs.best > 0 ? Math.min(100, Math.round((bs.current / bs.best) * 100)) : 0;
+  return (
+    <Card>
+      <SectionTitle right={<Badge tone={atPeak ? "good" : "accent"}>{atPeak ? t("At your best 🎉") : t("{n} to go", { n: Math.abs(bs.diff) })}</Badge>}>
+        {t("Your best self")}
+      </SectionTitle>
+      <div className="flex items-end gap-6">
+        <div>
+          <div className="text-[11px] uppercase tracking-wide text-[var(--text-faint)]">{t("Now (30-day avg)")}</div>
+          <div className="num text-3xl font-bold">{bs.current}</div>
+        </div>
+        <div className="pb-1 text-[var(--text-faint)]">vs</div>
+        <div>
+          <div className="text-[11px] uppercase tracking-wide text-[var(--text-faint)]">{t("Your best ever")}</div>
+          <div className="num text-3xl font-bold text-[var(--accent)]">{bs.best}</div>
+          {bs.bestEndDate && <div className="text-[11px] text-[var(--text-faint)]">{t("ended {d}", { d: fmtShort(bs.bestEndDate) })}</div>}
+        </div>
+      </div>
+      <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+        <div className="grad h-full rounded-full" style={{ width: `${pct}%` }} />
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+        {atPeak ? t("You're matching or beating your best 30-day stretch. Keep it up.") : t("Compared with your own peak — not anyone else's.")}
+      </p>
+    </Card>
   );
 }
 

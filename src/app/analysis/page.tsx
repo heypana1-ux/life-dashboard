@@ -9,7 +9,8 @@ import { analyze, Driver, Finding, FindingKind } from "@/lib/analysis";
 import { AreaKey } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
 import { sleepDurationMinutes } from "@/lib/date";
-import { Card, PageHeader, SectionTitle, EmptyState, inputCls } from "@/components/ui";
+import { whatIfSleep, project } from "@/lib/whatif";
+import { Card, PageHeader, SectionTitle, EmptyState, Badge, inputCls } from "@/components/ui";
 import { ScatterCorrelation } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
 
@@ -96,6 +97,8 @@ export default function AnalysisPage() {
         })
       )}
 
+      <WhatIfCard />
+
       <CorrelationExplorer />
 
       <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
@@ -112,6 +115,68 @@ interface Metric {
   label: string;
   get: (date: string) => number | null;
   unit?: string;
+}
+
+function WhatIfCard() {
+  const { data } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const model = useMemo(() => whatIfSleep(data, d.history), [data, d.history]);
+  const [hours, setHours] = useState<number | null>(null);
+  if (model.outcomes.length === 0) return null;
+
+  const base = Math.round(model.avgSleepHours * 10) / 10;
+  const h = hours ?? base;
+
+  return (
+    <Card>
+      <SectionTitle right={<Badge tone="accent">{t("Beta")}</Badge>}>{t("What if you slept…")}</SectionTitle>
+      <p className="mb-3 text-xs text-[var(--text-faint)]">
+        {t("Drag to see how sleeping more or less has tracked with your outcomes — modelled from your own data.")}
+      </p>
+      <div className="flex items-center justify-between text-sm">
+        <span className="font-medium">{t("Sleep")}</span>
+        <span className="num font-semibold text-[var(--accent)]">{h.toFixed(1)} h</span>
+      </div>
+      <input
+        type="range"
+        min={4}
+        max={10}
+        step={0.5}
+        value={h}
+        onChange={(e) => setHours(Number(e.target.value))}
+        className="mt-1 w-full accent-[var(--accent)]"
+      />
+      <div className="mb-3 mt-1 flex justify-between text-[10px] text-[var(--text-faint)]">
+        <span>4h</span>
+        <span>{t("your avg {n}h", { n: base.toFixed(1) })}</span>
+        <span>10h</span>
+      </div>
+      <div className="space-y-2">
+        {model.outcomes.map((o) => {
+          const pred = project(o, model, h);
+          const delta = pred - o.baseline;
+          const changed = Math.abs(delta) >= Math.pow(10, -o.decimals) / 2;
+          return (
+            <div key={o.key} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] p-3 text-sm">
+              <span>{t(o.label)}</span>
+              <div className="flex items-center gap-2 tabular-nums">
+                <span className="text-[var(--text-faint)]">{o.baseline.toFixed(o.decimals)}</span>
+                <span className="text-[var(--text-faint)]">→</span>
+                <span className="num font-semibold">{pred.toFixed(o.decimals)}</span>
+                {changed && (
+                  <span className={delta >= 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}>
+                    {delta >= 0 ? "+" : ""}{delta.toFixed(o.decimals)}
+                  </span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("A rough projection from correlation in your data — not a guarantee.")}</p>
+    </Card>
+  );
 }
 
 function CorrelationExplorer() {

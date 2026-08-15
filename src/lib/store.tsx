@@ -26,6 +26,8 @@ import {
   Liability,
   Profile,
   Project,
+  RewardItem,
+  Redemption,
   HealthLog,
   FocusDay,
   RecurringTx,
@@ -119,6 +121,10 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     workoutPlans: parsed.workoutPlans ?? [],
     projects: parsed.projects ?? [],
     experiments: parsed.experiments ?? [],
+    rewards: {
+      items: parsed.rewards?.items ?? [],
+      redemptions: parsed.rewards?.redemptions ?? [],
+    },
   };
 }
 
@@ -200,6 +206,11 @@ interface StoreCtx {
   /* experiments */
   saveExperiment: (e: Experiment) => Experiment;
   removeExperiment: (id: string) => void;
+  /* reward shop */
+  saveReward: (r: RewardItem) => RewardItem;
+  removeReward: (id: string) => void;
+  redeemReward: (item: RewardItem) => void;
+  undoRedemption: (id: string) => void;
   /* cloud sync */
   sync: SyncState;
   /* bulk */
@@ -734,6 +745,25 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       removeExperiment: (id) =>
         mutate((d) => ({ ...d, experiments: d.experiments.filter((x) => x.id !== id) })),
+
+      /* reward shop */
+      saveReward: (r) => {
+        const item: RewardItem = r.id ? r : { ...r, id: uid("rw") };
+        mutate((d) => {
+          const others = d.rewards.items.filter((x) => x.id !== item.id);
+          return { ...d, rewards: { ...d.rewards, items: [...others, item] } };
+        });
+        return item;
+      },
+      removeReward: (id) =>
+        mutate((d) => ({ ...d, rewards: { ...d.rewards, items: d.rewards.items.filter((x) => x.id !== id) } })),
+      redeemReward: (item) =>
+        mutate((d) => {
+          const redemption: Redemption = { id: uid("rd"), name: item.name, cost: item.cost, date: new Date().toISOString() };
+          return { ...d, rewards: { ...d.rewards, redemptions: [...d.rewards.redemptions, redemption] } };
+        }),
+      undoRedemption: (id) =>
+        mutate((d) => ({ ...d, rewards: { ...d.rewards, redemptions: d.rewards.redemptions.filter((x) => x.id !== id) } })),
 
       sync: {
         configured: isSyncConfigured,

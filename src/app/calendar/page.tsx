@@ -30,8 +30,10 @@ function dayMarks(data: AppData, date: string): (typeof DAY_MARKS)[number][] {
   if (data.journal.some((j) => j.date === date)) out.push(DAY_MARKS[3]);
   return out;
 }
+import { useDerived } from "@/lib/useDerived";
+import { weekdayPatterns } from "@/lib/weekdayStats";
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
-import { Card, PageHeader, Modal, Badge, Button } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Modal, Badge, Button } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
 import clsx from "clsx";
 
@@ -147,8 +149,54 @@ export default function CalendarPage() {
         </div>
       </Card>
 
+      <WeekdayCard />
+
       <DayDetail date={selected} onClose={() => setSelected(null)} />
     </div>
+  );
+}
+
+function WeekdayCard() {
+  const d = useDerived();
+  const t = useT();
+  const p = useMemo(() => weekdayPatterns(d.history), [d.history]);
+  if (!p.enough) return null;
+  const maxAvg = Math.max(...p.stats.map((s) => s.avg), 1);
+
+  return (
+    <Card className="mx-auto max-w-[760px]">
+      <SectionTitle>{t("Your week at a glance")}</SectionTitle>
+      {p.best && p.worst && p.best.wd !== p.worst.wd && (
+        <p className="mb-3 text-sm text-[var(--text-muted)]">
+          {t("On average, {best} is your strongest day and {worst} your toughest.", {
+            best: t(weekdayLabel(p.best.wd)),
+            worst: t(weekdayLabel(p.worst.wd)),
+          })}
+        </p>
+      )}
+      <div className="flex items-end justify-between gap-2" style={{ height: 130 }}>
+        {p.stats.map((s) => {
+          const h = s.n > 0 ? Math.max(6, Math.round((s.avg / maxAvg) * 104)) : 4;
+          const isBest = p.best?.wd === s.wd;
+          const isWorst = p.worst?.wd === s.wd;
+          return (
+            <div key={s.wd} className="flex flex-1 flex-col items-center gap-1.5">
+              <span className="num text-[11px] font-semibold text-[var(--text-muted)]">{s.n > 0 ? s.avg : "—"}</span>
+              <div
+                className="w-full rounded-t-md"
+                style={{
+                  height: h,
+                  background: isBest ? "var(--good)" : isWorst ? "var(--warn)" : "var(--accent)",
+                  opacity: s.n > 0 ? 1 : 0.3,
+                }}
+              />
+              <span className="text-[11px] text-[var(--text-faint)]">{t(weekdayLabel(s.wd)).slice(0, 2)}</span>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Average Life Score per weekday, from all your logged days.")}</p>
+    </Card>
   );
 }
 

@@ -1642,6 +1642,84 @@ const DE: Record<string, string> = {
   "No subscriptions tracked": "Keine Abos erfasst",
   "This day is already logged — edit and save to update it.": "Dieser Tag ist bereits eingetragen — bearbeiten und speichern, um ihn zu aktualisieren.",
   Update: "Aktualisieren",
+
+  // --- Habit importance weighting ---
+  Importance: "Wichtigkeit",
+  "How much finishing this counts toward your Life Score. Higher = it moves your score more.":
+    "Wie stark das Erledigen in deinen Life Score einfließt. Höher = bewegt deinen Score mehr.",
+  "Nice to have": "Nice to have",
+  Essential: "Essenziell",
+  "Key habit": "Kern-Gewohnheit",
+
+  // --- Slip triggers ---
+  "What triggered it? (optional)": "Was war der Auslöser? (optional)",
+  "Noticing your triggers helps you and the coach spot patterns.":
+    "Auslöser zu erkennen hilft dir und dem Coach, Muster zu finden.",
+  Stress: "Stress",
+  Boredom: "Langeweile",
+  Tiredness: "Müdigkeit",
+  Hunger: "Hunger",
+  Craving: "Verlangen",
+  Emotions: "Emotionen",
+
+  // --- Reward shop ---
+  "Reward shop": "Belohnungs-Shop",
+  "Earn points by living well, then cash them in for rewards you set yourself.":
+    "Sammle Punkte durch gutes Leben und löse sie gegen selbst gewählte Belohnungen ein.",
+  "How points work": "So funktionieren Punkte",
+  "Each logged day earns points equal to your Life Score ÷ 10 (score 70 → 7 points). Define your own rewards, then redeem them when you've saved enough.":
+    "Jeder erfasste Tag bringt Punkte in Höhe deines Life Score ÷ 10 (Score 70 → 7 Punkte). Lege eigene Belohnungen fest und löse sie ein, wenn du genug gesammelt hast.",
+  "points to spend": "Punkte zum Ausgeben",
+  Earned: "Gesammelt",
+  "~{n} pts / day": "~{n} Pkt / Tag",
+  "Your rewards": "Deine Belohnungen",
+  "No rewards yet": "Noch keine Belohnungen",
+  "Add one below or pick a template to get started.": "Füge unten eine hinzu oder wähle eine Vorlage.",
+  pts: "Pkt",
+  "~{n} days away": "~noch {n} Tage",
+  "keep logging to earn points": "weiter eintragen, um Punkte zu sammeln",
+  Redeem: "Einlösen",
+  "Add a reward": "Belohnung hinzufügen",
+  Emoji: "Emoji",
+  "e.g. Spa afternoon": "z. B. Spa-Nachmittag",
+  "Cost (pts)": "Kosten (Pkt)",
+  Ideas: "Ideen",
+  Redeemed: "Eingelöst",
+  "Favourite coffee": "Lieblingskaffee",
+  "Favourite meal": "Lieblingsessen",
+  "Gaming evening": "Zock-Abend",
+  "Movie night": "Filmabend",
+  "New book": "Neues Buch",
+  "Lazy morning": "Fauler Morgen",
+  "Small treat": "Kleine Belohnung",
+  "A full day off": "Ein ganzer freier Tag",
+
+  // --- Best self ---
+  "Your best self": "Dein bestes Ich",
+  "At your best 🎉": "Auf Bestform 🎉",
+  "{n} to go": "noch {n}",
+  "Now (30-day avg)": "Jetzt (30-Tage-Ø)",
+  "Your best ever": "Dein bisher Bestes",
+  "ended {d}": "endete {d}",
+  "You're matching or beating your best 30-day stretch. Keep it up.":
+    "Du erreichst oder übertriffst deine beste 30-Tage-Phase. Weiter so.",
+  "Compared with your own peak — not anyone else's.": "Verglichen mit deinem eigenen Höchststand — nicht mit anderen.",
+
+  // --- Weekday patterns ---
+  "Your week at a glance": "Deine Woche auf einen Blick",
+  "On average, {best} is your strongest day and {worst} your toughest.":
+    "Im Schnitt ist {best} dein stärkster und {worst} dein schwächster Tag.",
+  "Average Life Score per weekday, from all your logged days.":
+    "Durchschnittlicher Life Score pro Wochentag, aus allen erfassten Tagen.",
+
+  // --- What-if simulator ---
+  "What if you slept…": "Was wäre, wenn du schläfst…",
+  Beta: "Beta",
+  "Drag to see how sleeping more or less has tracked with your outcomes — modelled from your own data.":
+    "Zieh den Regler, um zu sehen, wie mehr oder weniger Schlaf mit deinen Werten zusammenhing — aus deinen eigenen Daten modelliert.",
+  "your avg {n}h": "dein Ø {n}h",
+  "A rough projection from correlation in your data — not a guarantee.":
+    "Eine grobe Hochrechnung aus Korrelationen in deinen Daten — keine Garantie.",
   "Health & fitness": "Gesundheit & Fitness",
   "Career & work": "Karriere & Arbeit",
   Money: "Geld",
