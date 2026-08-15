@@ -12,6 +12,7 @@ import React, {
 import {
   AppData,
   Budget,
+  SavingsGoal,
   DailyReview,
   Experiment,
   FinanceAccount,
@@ -108,6 +109,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
       ...parsed.finances,
       recurring: parsed.finances?.recurring ?? [],
       budgets: parsed.finances?.budgets ?? [],
+      savingsGoals: parsed.finances?.savingsGoals ?? [],
     },
     workouts: parsed.workouts ?? [],
     workoutPlans: parsed.workoutPlans ?? [],
@@ -172,6 +174,8 @@ interface StoreCtx {
   removeRecurring: (id: string) => void;
   saveBudget: (b: Budget) => void;
   removeBudget: (category: string) => void;
+  saveSavingsGoal: (g: SavingsGoal) => void;
+  removeSavingsGoal: (id: string) => void;
   /** Book any recurring rules that are due; returns how many were booked. */
   runRecurring: () => number;
   /* workouts */
@@ -597,6 +601,22 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           finances: {
             ...d.finances,
             budgets: d.finances.budgets.filter((x) => x.category !== category),
+          },
+        })),
+      saveSavingsGoal: (g) =>
+        mutate((d) => {
+          const sg: SavingsGoal = g.id ? g : { ...g, id: uid("sg") };
+          const savingsGoals = d.finances.savingsGoals.some((x) => x.id === sg.id)
+            ? d.finances.savingsGoals.map((x) => (x.id === sg.id ? sg : x))
+            : [...d.finances.savingsGoals, sg];
+          return { ...d, finances: { ...d.finances, savingsGoals } };
+        }),
+      removeSavingsGoal: (id) =>
+        mutate((d) => ({
+          ...d,
+          finances: {
+            ...d.finances,
+            savingsGoals: d.finances.savingsGoals.filter((x) => x.id !== id),
           },
         })),
       runRecurring: () => {

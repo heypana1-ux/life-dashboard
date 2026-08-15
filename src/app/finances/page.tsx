@@ -12,6 +12,7 @@ import {
   HoldingKind,
   Liability,
   RecurringTx,
+  SavingsGoal,
   Transaction,
 } from "@/lib/types";
 import {
@@ -19,8 +20,10 @@ import {
   INCOME_CATEGORIES,
   budgetForMonth,
   budgetVsActual,
+  categoryComparison,
   currentMonth,
   financeTotals,
+  fixedCostsMonthly,
   fmtMoney,
   holdingGain,
   holdingGainPct,
@@ -179,6 +182,8 @@ function Overview({ cur }: { cur: string }) {
           )}
         </Card>
       </div>
+
+      <SavingsGoalsCard cur={cur} />
 
       <AccountModal
         open={accModal}
@@ -367,6 +372,8 @@ function BudgetTab({ cur }: { cur: string }) {
     [data.finances.budgets, b.byCategory],
   );
   const totalBudget = data.finances.budgets.reduce((s, x) => s + x.limit, 0);
+  const comparison = useMemo(() => categoryComparison(data.finances.transactions, month), [data.finances.transactions, month]);
+  const fixed = useMemo(() => fixedCostsMonthly(data.finances.recurring), [data.finances.recurring]);
 
   const monthTxs = data.finances.transactions
     .filter((x) => x.date.slice(0, 7) === month)
@@ -482,6 +489,56 @@ function BudgetTab({ cur }: { cur: string }) {
                 );
               })}
             </div>
+          )}
+        </Card>
+      </div>
+
+      {/* This vs last month + fixed costs */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <Card>
+          <SectionTitle>{t("This vs. last month")}</SectionTitle>
+          {comparison.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("No transactions yet")}</p>
+          ) : (
+            <div className="divide-y divide-[var(--border)]">
+              {comparison.slice(0, 8).map((c) => (
+                <div key={c.category} className="flex items-center justify-between py-2 text-sm">
+                  <span>{t(categoryLabel(c.category))}</span>
+                  <div className="flex items-center gap-2 tabular-nums">
+                    <span className="font-medium">{fmtMoney(c.now, cur)}</span>
+                    {c.prev > 0 && (
+                      <span className={`text-xs ${c.delta > 0 ? "text-[var(--bad)]" : c.delta < 0 ? "text-[var(--good)]" : "text-[var(--text-faint)]"}`}>
+                        {c.delta > 0 ? "▲" : c.delta < 0 ? "▼" : "="} {fmtMoney(Math.abs(c.delta), cur)}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+
+        <Card>
+          <SectionTitle right={<Repeat size={16} className="text-[var(--text-faint)]" />}>{t("Fixed costs")}</SectionTitle>
+          {fixed.items.length === 0 ? (
+            <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+              {t("Add recurring expenses to see your monthly fixed costs.")}
+            </p>
+          ) : (
+            <>
+              <div className="mb-2 flex items-baseline gap-2">
+                <span className="num text-2xl font-bold">{fmtMoney(fixed.total, cur)}</span>
+                <span className="text-xs text-[var(--text-muted)]">/ {t("month")}</span>
+              </div>
+              <div className="divide-y divide-[var(--border)]">
+                {fixed.items.map((r) => (
+                  <div key={r.id} className="flex items-center justify-between py-1.5 text-sm">
+                    <span>{t(categoryLabel(r.category))}{r.note ? ` · ${r.note}` : ""}</span>
+                    <span className="tabular-nums text-[var(--text-muted)]">{fmtMoney(r.amount, cur)}</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </Card>
       </div>
@@ -682,6 +739,97 @@ function QuickAdd({
         </button>
       </div>
     </Card>
+  );
+}
+
+/* ---------------- Savings goals ---------------- */
+
+function SavingsGoalsCard({ cur }: { cur: string }) {
+  const { data, saveSavingsGoal, removeSavingsGoal } = useStore();
+  const t = useT();
+  const goals = data.finances.savingsGoals;
+  const [modal, setModal] = useState(false);
+
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          <Button variant="soft" size="sm" onClick={() => setModal(true)}>
+            <Plus size={14} /> {t("Add goal")}
+          </Button>
+        }
+      >
+        {t("Savings goals")}
+      </SectionTitle>
+      {goals.length === 0 ? (
+        <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+          {t("Track a savings target like an emergency fund or a trip.")}
+        </p>
+      ) : (
+        <div className="space-y-4">
+          {goals.map((g) => {
+            const pct = g.target > 0 ? Math.min(100, Math.round((g.current / g.target) * 100)) : 0;
+            const done = g.current >= g.target && g.target > 0;
+            return (
+              <div key={g.id}>
+                <div className="mb-1 flex items-center justify-between text-sm">
+                  <span className="font-medium">{g.name}</span>
+                  <span className="tabular-nums text-[var(--text-muted)]">
+                    {fmtMoney(g.current, cur)} / {fmtMoney(g.target, cur)}
+                    <button onClick={() => removeSavingsGoal(g.id)} className="ml-2 text-[var(--text-faint)] hover:text-[var(--bad)]" aria-label={t("Delete")}>
+                      <Trash2 size={13} className="inline" />
+                    </button>
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: done ? "var(--good)" : "var(--accent)" }} />
+                  </div>
+                  <span className="w-9 text-right text-xs tabular-nums text-[var(--text-faint)]">{pct}%</span>
+                  <button
+                    onClick={() => saveSavingsGoal({ ...g, current: g.current + 50 })}
+                    className="rounded-lg bg-[var(--surface-2)] px-2 py-1 text-xs font-medium hover:bg-[var(--surface-3)]"
+                  >
+                    +50
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+      <SavingsGoalModal open={modal} onClose={() => setModal(false)} onSave={(g) => { saveSavingsGoal(g); setModal(false); }} />
+    </Card>
+  );
+}
+
+function SavingsGoalModal({ open, onClose, onSave }: { open: boolean; onClose: () => void; onSave: (g: SavingsGoal) => void }) {
+  const t = useT();
+  const blank = (): SavingsGoal => ({ id: "", name: "", target: 0, current: 0 });
+  const [draft, setDraft] = useState<SavingsGoal>(blank());
+  const [lk, setLk] = useState(false);
+  if (open && !lk) { setLk(true); setDraft(blank()); }
+  if (!open && lk) setLk(false);
+  return (
+    <Modal open={open} onClose={onClose} title={t("Add goal")}>
+      <div className="space-y-4">
+        <Field label={t("Name")}>
+          <input className={inputCls} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} autoFocus />
+        </Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label={t("Target")}>
+            <NumberInput value={draft.target || undefined} onChange={(n) => setDraft({ ...draft, target: n ?? 0 })} />
+          </Field>
+          <Field label={t("Saved so far")}>
+            <NumberInput value={draft.current || undefined} onChange={(n) => setDraft({ ...draft, current: n ?? 0 })} />
+          </Field>
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
+          <Button onClick={() => draft.name.trim() && draft.target > 0 && onSave(draft)} disabled={!draft.name.trim() || draft.target <= 0}>{t("Save")}</Button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 

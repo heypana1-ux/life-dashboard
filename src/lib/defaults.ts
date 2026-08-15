@@ -96,6 +96,7 @@ export function emptyFinances(): AppData["finances"] {
     history: [],
     recurring: [],
     budgets: [],
+    savingsGoals: [],
   };
 }
 

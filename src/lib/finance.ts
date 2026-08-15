@@ -1,6 +1,41 @@
 import { Budget, Finances, Holding, RecurringTx, Transaction } from "./types";
 import { todayISO } from "./date";
 
+/** Expense-category totals for this month vs the previous month, sorted by this month desc. */
+export interface CategoryDelta {
+  category: string;
+  now: number;
+  prev: number;
+  delta: number;
+}
+export function categoryComparison(txs: Transaction[], month: string): CategoryDelta[] {
+  const prevMonth = shiftMonth(month, -1);
+  const sum = (m: string) => {
+    const map = new Map<string, number>();
+    for (const t of txs) {
+      if (t.type !== "expense" || monthKey(t.date) !== m) continue;
+      map.set(t.category, (map.get(t.category) ?? 0) + t.amount);
+    }
+    return map;
+  };
+  const now = sum(month);
+  const prev = sum(prevMonth);
+  const cats = new Set([...now.keys(), ...prev.keys()]);
+  return [...cats]
+    .map((category) => {
+      const n = Math.round(now.get(category) ?? 0);
+      const p = Math.round(prev.get(category) ?? 0);
+      return { category, now: n, prev: p, delta: n - p };
+    })
+    .sort((a, b) => b.now - a.now);
+}
+
+/** Sum of active recurring expense rules per month ("fixed costs"). */
+export function fixedCostsMonthly(recurring: RecurringTx[]): { total: number; items: RecurringTx[] } {
+  const items = recurring.filter((r) => r.active && r.type === "expense");
+  return { total: Math.round(items.reduce((s, r) => s + r.amount, 0)), items };
+}
+
 /*
   Finance helpers. The market-data layer is intentionally modular: today it is a manual /
   mock provider (prices come from the user or a stub), and a real API provider can be

@@ -261,6 +261,15 @@ export interface Budget {
   limit: number; // per-month limit in the user's currency
 }
 
+/** A savings goal tracked manually (emergency fund, holiday…). */
+export interface SavingsGoal {
+  id: string;
+  name: string;
+  target: number;
+  current: number;
+  note?: string;
+}
+
 /** Auto-recorded net-worth point (one per day it changes) for the history chart. */
 export interface NetWorthPoint {
   date: string;
@@ -278,6 +287,8 @@ export interface Finances {
   recurring: RecurringTx[];
   /** Per-category monthly spending limits. */
   budgets: Budget[];
+  /** Manually-tracked savings goals. */
+  savingsGoals: SavingsGoal[];
 }
 
 /* ---------------- Training ---------------- */
