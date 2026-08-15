@@ -7,24 +7,23 @@ import { useT } from "@/lib/i18n";
 export default function CoachPage() {
   const t = useT();
   return (
-    <div className="flex min-h-[calc(100dvh-140px)] flex-col gap-4">
-      {/* Gradient hero — follows the active accent theme */}
-      <div className="grad relative overflow-hidden rounded-2xl px-5 py-6 text-white shadow-[var(--shadow)]">
-        <div className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/15 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-14 right-24 h-32 w-32 rounded-full bg-white/10 blur-2xl" />
-        <div className="relative z-10 flex items-center gap-3.5">
-          <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/20 backdrop-blur-sm">
-            <Sparkles size={24} />
+    <div className="flex min-h-[calc(100dvh-104px)] flex-col">
+      <div className="card relative flex min-h-0 flex-1 flex-col overflow-hidden border-[var(--accent)]/30 !p-0">
+        {/* Slim, theme-aware gradient header */}
+        <div className="grad flex items-center gap-2.5 px-4 py-3 text-white">
+          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+            <Sparkles size={18} />
           </span>
-          <div>
-            <h1 className="text-xl font-bold tracking-[-0.01em]">{t("Coach")}</h1>
-            <p className="mt-0.5 text-sm text-white/85">{t("Your data, interpreted. Ask anything.")}</p>
+          <div className="leading-tight">
+            <div className="text-[15px] font-bold">{t("Coach")}</div>
+            <div className="text-[11px] text-white/85">{t("Your data, interpreted. Ask anything.")}</div>
           </div>
         </div>
-      </div>
 
-      <div className="card flex min-h-0 flex-1 flex-col border-[var(--accent)]/25 bg-gradient-to-b from-[var(--accent-soft)]/40 to-transparent">
-        <CoachChat hideHeader />
+        {/* Themed chat surface — question & answer live here */}
+        <div className="flex min-h-0 flex-1 flex-col bg-gradient-to-b from-[var(--accent-soft)]/45 via-[var(--surface)] to-[var(--surface)] px-3.5 pb-3.5 pt-2.5">
+          <CoachChat hideHeader />
+        </div>
       </div>
     </div>
   );
