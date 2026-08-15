@@ -405,7 +405,7 @@ export interface ReminderSettings {
   firedToday: string[];
 }
 
-export type Accent = "calm" | "aurora" | "mono";
+export type Accent = "calm" | "aurora" | "mono" | "sunset" | "forest" | "rose";
 
 /** Optional guided day-flow overlays (evening wrap-up + morning sleep prompt). */
 export interface DayFlowSettings {

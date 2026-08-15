@@ -8,12 +8,24 @@ import { useT } from "@/lib/i18n";
 import { computeAchievements, computeRecords } from "@/lib/achievements";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges, Challenge } from "@/lib/challenges";
+import { ACCENT_REWARDS } from "@/lib/rewards";
+import { Accent } from "@/lib/types";
+import { Lock } from "lucide-react";
 import { todayISO } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
 import clsx from "clsx";
 
+const ACCENT_SWATCH: Record<Accent, string> = {
+  calm: "linear-gradient(135deg,#6366f1,#4f46e5)",
+  aurora: "linear-gradient(135deg,#06b6d4,#4f46e5)",
+  mono: "linear-gradient(135deg,#52525b,#27272a)",
+  sunset: "linear-gradient(135deg,#f97316,#db2777)",
+  forest: "linear-gradient(135deg,#22c55e,#0d9488)",
+  rose: "linear-gradient(135deg,#f43f5e,#a855f7)",
+};
+
 export default function AchievementsPage() {
-  const { data } = useStore();
+  const { data, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -63,6 +75,40 @@ export default function AchievementsPage() {
           {challenges.map((c) => (
             <ChallengeRow key={c.id} c={c} />
           ))}
+        </div>
+      </Card>
+
+      {/* Cosmetic rewards */}
+      <Card>
+        <SectionTitle right={<Badge tone="accent">{t("Level {n}", { n: level.level })}</Badge>}>{t("Rewards")}</SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Unlock accent themes as you level up. Purely cosmetic.")}</p>
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {ACCENT_REWARDS.map((r) => {
+            const unlocked = level.level >= r.unlockLevel;
+            const activeAccent = (data.settings.accent ?? "calm") === r.accent;
+            return (
+              <button
+                key={r.accent}
+                disabled={!unlocked}
+                onClick={() => updateSettings({ accent: r.accent })}
+                className={clsx(
+                  "flex items-center gap-2.5 rounded-xl border p-3 text-left transition",
+                  activeAccent ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)]",
+                  unlocked ? "hover:border-[var(--accent)]" : "opacity-60",
+                )}
+              >
+                <span className="h-8 w-8 shrink-0 rounded-lg" style={{ background: ACCENT_SWATCH[r.accent] }} />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">{t(r.name)}</div>
+                  <div className="text-[11px] text-[var(--text-faint)]">
+                    {unlocked ? (activeAccent ? t("Active") : t("Apply")) : (
+                      <span className="inline-flex items-center gap-1"><Lock size={10} /> {t("Level {n}", { n: r.unlockLevel })}</span>
+                    )}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </Card>
 

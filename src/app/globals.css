@@ -94,6 +94,15 @@
   --grad-a: #e4e4e7;
   --grad-b: #a1a1aa;
 }
+/* Sunset: orange → pink (unlockable) */
+:root[data-accent="sunset"] { --accent:#ea580c; --accent-soft:#ffedd5; --grad:linear-gradient(135deg,#f97316,#db2777); --grad-a:#f97316; --grad-b:#db2777; }
+.dark[data-accent="sunset"] { --accent:#fb923c; --accent-soft:#3a1e0e; --grad:linear-gradient(135deg,#fb923c,#f472b6); --grad-a:#fb923c; --grad-b:#f472b6; }
+/* Forest: green → teal (unlockable) */
+:root[data-accent="forest"] { --accent:#16a34a; --accent-soft:#dcfce7; --grad:linear-gradient(135deg,#22c55e,#0d9488); --grad-a:#22c55e; --grad-b:#0d9488; }
+.dark[data-accent="forest"] { --accent:#4ade80; --accent-soft:#0f2a1a; --grad:linear-gradient(135deg,#4ade80,#2dd4bf); --grad-a:#4ade80; --grad-b:#2dd4bf; }
+/* Rose: rose → violet (unlockable) */
+:root[data-accent="rose"] { --accent:#e11d48; --accent-soft:#ffe4e6; --grad:linear-gradient(135deg,#f43f5e,#a855f7); --grad-a:#f43f5e; --grad-b:#a855f7; }
+.dark[data-accent="rose"] { --accent:#fb7185; --accent-soft:#3a1620; --grad:linear-gradient(135deg,#fb7185,#c084fc); --grad-a:#fb7185; --grad-b:#c084fc; }
 
 @theme inline {
   --color-bg: var(--bg);
