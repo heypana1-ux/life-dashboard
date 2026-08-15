@@ -9,15 +9,17 @@ import {
   Repeat,
   Trash2,
 } from "lucide-react";
+import { CheckCircle2, Circle, Layers } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Habit } from "@/lib/types";
-import { fmtDuration } from "@/lib/date";
+import { fmtDuration, todayISO } from "@/lib/date";
+import { habitsForToday } from "@/lib/habitView";
 import { habitCurrentStreak, habitHeatmap, habit30dRate } from "@/lib/habitStats";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
-import { PageHeader, Button, Badge, EmptyState, Chip, Modal } from "@/components/ui";
+import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
 
 export default function HabitsPage() {
@@ -79,6 +81,8 @@ export default function HabitsPage() {
           {t("Reduce")} ({data.habits.filter((h) => h.kind === "reduce" && !h.archived).length})
         </Chip>
       </div>
+
+      <RoutinesCard />
 
       {habits.length === 0 ? (
         <EmptyState
@@ -178,6 +182,94 @@ function TemplatesModal({
         <Button variant="ghost" onClick={onClose}>{t("Done")}</Button>
       </div>
     </Modal>
+  );
+}
+
+/* ---------------- Habit-stacking routines ---------------- */
+
+function RoutinesCard() {
+  const { data, setHabitLog } = useStore();
+  const t = useT();
+  const today = todayISO();
+
+  // Group non-archived habits by their routine name.
+  const groups = new Map<string, Habit[]>();
+  for (const h of data.habits) {
+    if (h.archived || !h.group?.trim()) continue;
+    const key = h.group.trim();
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(h);
+  }
+  if (groups.size === 0) return null;
+
+  const dueToday = new Set(habitsForToday(data, today).map((g) => g.habit.id));
+  const doneToday = new Set(
+    data.habitLogs.filter((l) => l.date === today && l.done).map((l) => l.habitId),
+  );
+
+  function completeAll(habits: Habit[]) {
+    for (const h of habits) {
+      if (h.kind !== "build" || !dueToday.has(h.id) || doneToday.has(h.id)) continue;
+      const extra = h.timesPerDay ? { count: h.timesPerDay } : {};
+      setHabitLog({ habitId: h.id, date: today, done: true, ...extra });
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle right={<Layers size={16} className="text-[var(--text-faint)]" />}>{t("Routines")}</SectionTitle>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {[...groups.entries()].map(([name, habits]) => {
+          const due = habits.filter((h) => h.kind === "build" && dueToday.has(h.id));
+          const doneCount = due.filter((h) => doneToday.has(h.id)).length;
+          const allDone = due.length > 0 && doneCount === due.length;
+          return (
+            <div key={name} className="tile p-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="font-semibold">{name}</span>
+                {due.length > 0 && (
+                  <span className="text-xs text-[var(--text-faint)]">{doneCount}/{due.length} {t("today")}</span>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {habits.map((h) => {
+                  const isDue = dueToday.has(h.id);
+                  const done = doneToday.has(h.id);
+                  return (
+                    <div key={h.id} className="flex items-center gap-2 text-sm">
+                      {h.kind === "build" && isDue ? (
+                        done ? (
+                          <CheckCircle2 size={15} className="shrink-0 text-[var(--good)]" />
+                        ) : (
+                          <Circle size={15} className="shrink-0 text-[var(--text-faint)]" />
+                        )
+                      ) : (
+                        <span className="h-[15px] w-[15px] shrink-0 rounded-full" style={{ background: h.color ?? "var(--surface-3)" }} />
+                      )}
+                      <span className={done ? "text-[var(--text-faint)] line-through" : ""}>{h.name}</span>
+                      {h.kind === "build" && !isDue && (
+                        <span className="text-[10px] text-[var(--text-faint)]">· {t("not today")}</span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              {due.length > 0 && (
+                <Button
+                  variant={allDone ? "soft" : "primary"}
+                  size="sm"
+                  className="mt-3 w-full"
+                  disabled={allDone}
+                  onClick={() => completeAll(habits)}
+                >
+                  {allDone ? t("All done today 🎉") : t("Complete all today")}
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

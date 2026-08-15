@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarCheck, ImageDown, Sparkles } from "lucide-react";
+import { CalendarCheck, Gift, ImageDown, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
@@ -15,6 +15,8 @@ import { downloadReportImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
+import { YearWrappedOverlay } from "@/components/YearWrapped";
+import { availableWrapYears } from "@/lib/yearWrapped";
 import { WeeklyReviewFlow } from "@/components/WeeklyReview";
 import { CoachInsightCard } from "@/components/Coach";
 
@@ -30,6 +32,8 @@ export default function ReportsPage() {
   const [period, setPeriod] = useState<Period>("week");
   const [recap, setRecap] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [wrapYear, setWrapYear] = useState<number | null>(null);
+  const wrapYears = useMemo(() => availableWrapYears(data, d.history), [data, d.history]);
 
   const anchor = weekAnchor(todayISO());
   const thisWeekReviewed = data.weeklyReviews.some((r) => r.weekOf === anchor);
@@ -71,6 +75,11 @@ export default function ReportsPage() {
         subtitle={t("Automatic summaries of your week and month.")}
         action={
           <div className="flex items-center gap-2">
+            {wrapYears.length > 0 && (
+              <Button onClick={() => setWrapYear(wrapYears[0])}>
+                <Gift size={16} /> {t("Year in review")}
+              </Button>
+            )}
             <Button variant="soft" onClick={() => setRecap(true)}>
               <Sparkles size={16} /> {t("Play recap")}
             </Button>
@@ -93,6 +102,7 @@ export default function ReportsPage() {
       </div>
 
       {recap && <RecapOverlay mode={period} refDate={todayISO()} onClose={() => setRecap(false)} />}
+      {wrapYear != null && <YearWrappedOverlay year={wrapYear} onClose={() => setWrapYear(null)} />}
       {reviewOpen && <WeeklyReviewFlow anchor={anchor} onClose={() => setReviewOpen(false)} />}
 
       <Card>

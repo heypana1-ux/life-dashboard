@@ -112,6 +112,8 @@ export function emptyData(): AppData {
     journal: [],
     goals: [],
     weight: [],
+    measurements: [],
+    wheelChecks: [],
     health: [],
     focus: [],
     finances: emptyFinances(),

@@ -11,6 +11,8 @@ import React, {
 } from "react";
 import {
   AppData,
+  BodyMeasurement,
+  WheelCheck,
   Budget,
   SavingsGoal,
   DailyReview,
@@ -102,6 +104,8 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     journal: parsed.journal ?? [],
     goals: parsed.goals ?? [],
     weight: parsed.weight ?? [],
+    measurements: parsed.measurements ?? [],
+    wheelChecks: parsed.wheelChecks ?? [],
     health: parsed.health ?? [],
     focus: parsed.focus ?? [],
     finances: {
@@ -156,6 +160,12 @@ interface StoreCtx {
   updateProfile: (patch: Partial<Profile>) => void;
   saveWeight: (w: WeightLog) => void;
   removeWeight: (date: string) => void;
+  /* body measurements */
+  saveMeasurement: (m: BodyMeasurement) => void;
+  removeMeasurement: (site: string, date: string) => void;
+  /* wheel of life */
+  saveWheelCheck: (w: WheelCheck) => WheelCheck;
+  removeWheelCheck: (id: string) => void;
   /* health */
   saveHealth: (h: HealthLog) => void;
   /* focus (morning top 3) */
@@ -489,6 +499,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }),
       removeWeight: (date) =>
         mutate((d) => ({ ...d, weight: d.weight.filter((x) => x.date !== date) })),
+
+      /* body measurements */
+      saveMeasurement: (m) =>
+        mutate((d) => {
+          const others = d.measurements.filter((x) => !(x.site === m.site && x.date === m.date));
+          return { ...d, measurements: [...others, m].sort((a, b) => (a.date < b.date ? -1 : 1)) };
+        }),
+      removeMeasurement: (site, date) =>
+        mutate((d) => ({ ...d, measurements: d.measurements.filter((x) => !(x.site === site && x.date === date)) })),
+
+      /* wheel of life */
+      saveWheelCheck: (w) => {
+        const check: WheelCheck = w.id ? w : { ...w, id: uid("wheel") };
+        mutate((d) => {
+          const others = d.wheelChecks.filter((x) => x.id !== check.id);
+          return { ...d, wheelChecks: [...others, check].sort((a, b) => (a.date < b.date ? -1 : 1)) };
+        });
+        return check;
+      },
+      removeWheelCheck: (id) =>
+        mutate((d) => ({ ...d, wheelChecks: d.wheelChecks.filter((x) => x.id !== id) })),
 
       /* health */
       saveHealth: (h) =>

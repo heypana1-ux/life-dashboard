@@ -42,9 +42,14 @@ export function HabitForm({
   onClose: () => void;
   editing?: Habit;
 }) {
-  const { addHabit, updateHabit } = useStore();
+  const { data, addHabit, updateHabit } = useStore();
   const t = useT();
   const [draft, setDraft] = useState<Draft>(editing ? { ...editing } : blank());
+
+  // Existing routine names for quick reuse (habit-stacking).
+  const groups = Array.from(
+    new Set(data.habits.map((h) => h.group?.trim()).filter((g): g is string => !!g)),
+  ).sort();
 
   // reset when opening for a different target
   const key = editing?.id ?? "new";
@@ -271,6 +276,21 @@ export function HabitForm({
             />
           </Field>
         )}
+
+        <Field label={t("Routine (optional)")} hint={t("Group habits into a routine, e.g. \"Evening routine\", to do them together.")}>
+          <input
+            className={inputCls}
+            list="habit-groups"
+            placeholder={t("e.g. Evening routine")}
+            value={draft.group ?? ""}
+            onChange={(e) => set({ group: e.target.value || undefined })}
+          />
+          <datalist id="habit-groups">
+            {groups.map((g) => (
+              <option key={g} value={g} />
+            ))}
+          </datalist>
+        </Field>
 
         <Field label={t("Color")}>
           <div className="flex flex-wrap gap-2">

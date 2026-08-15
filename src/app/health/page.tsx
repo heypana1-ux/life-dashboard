@@ -8,8 +8,12 @@ import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom } from "@/lib/health";
 import { analyzeCycle, FLOW_LABEL } from "@/lib/cycle";
 import { addDays, fmtLong, fmtShort, todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
+import { BODY_SITES, muscleForSite } from "@/lib/bodySites";
+import { muscleVolume } from "@/lib/trainingStats";
+import { MUSCLE_LABEL, Muscle } from "@/lib/exercises";
 import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle } from "@/components/ui";
-import { TrendLine } from "@/components/charts";
+import { TrendLine, MiniSpark } from "@/components/charts";
+import { Ruler, Dumbbell } from "lucide-react";
 import clsx from "clsx";
 
 const blank = (date: string): HealthLog => ({ date, wellbeing: 7, symptoms: {}, sick: false });
@@ -175,6 +179,8 @@ export default function HealthPage() {
 
       <BodyMetricsCard />
 
+      <MeasurementsCard />
+
       <WaterCard />
 
       <CycleCard />
@@ -249,6 +255,123 @@ function BodyMetricsCard() {
         <div className="mt-4">
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Weight · last 90 days")}</div>
           <TrendLine data={wTrend} color="var(--info)" unit="kg" name={t("Weight (kg)")} />
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/* ---------------- Body measurements (circumferences) ---------------- */
+
+function MeasurementsCard() {
+  const { data, saveMeasurement, removeMeasurement } = useStore();
+  const t = useT();
+  const today = todayISO();
+  const [site, setSite] = useState<string>("biceps");
+  const [cm, setCm] = useState("");
+
+  // Muscle-group training volume (last 30 days) to cross-reference against girth.
+  const vol = useMemo(() => {
+    const m = new Map<string, { volume: number; sets: number }>();
+    for (const v of muscleVolume(data.workouts, 30)) m.set(v.muscle, { volume: v.volume, sets: v.sets });
+    return m;
+  }, [data.workouts]);
+
+  // Group measurements per site, sorted by date.
+  const bySite = useMemo(() => {
+    const m = new Map<string, { date: string; cm: number }[]>();
+    for (const x of data.measurements) {
+      if (!m.has(x.site)) m.set(x.site, []);
+      m.get(x.site)!.push({ date: x.date, cm: x.cm });
+    }
+    for (const arr of m.values()) arr.sort((a, b) => (a.date < b.date ? -1 : 1));
+    return m;
+  }, [data.measurements]);
+
+  const measuredSites = BODY_SITES.filter((s) => bySite.has(s.key));
+
+  function save() {
+    const v = Number(cm);
+    if (v > 0) {
+      saveMeasurement({ date: today, site, cm: Math.round(v * 10) / 10 });
+      setCm("");
+    }
+  }
+
+  return (
+    <Card>
+      <SectionTitle right={<Ruler size={16} className="text-[var(--text-faint)]" />}>{t("Body measurements")}</SectionTitle>
+      <p className="mb-3 text-xs text-[var(--text-muted)]">
+        {t("Track circumferences (cm). Sites linked to a muscle show your recent training on it side by side.")}
+      </p>
+      <div className="flex flex-wrap items-end gap-2">
+        <Field label={t("Site")} className="min-w-[9rem] flex-1">
+          <select className={inputCls} value={site} onChange={(e) => setSite(e.target.value)}>
+            {BODY_SITES.map((s) => (
+              <option key={s.key} value={s.key}>{t(s.label)}</option>
+            ))}
+          </select>
+        </Field>
+        <Field label={t("Measurement (cm)")} className="w-32">
+          <input type="number" inputMode="decimal" min={0} step="0.1" className={inputCls} value={cm} onChange={(e) => setCm(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") save(); }} />
+        </Field>
+        <Button variant="soft" onClick={save} disabled={!cm}>{t("Save")}</Button>
+      </div>
+
+      {measuredSites.length === 0 ? (
+        <p className="mt-4 text-sm text-[var(--text-muted)]">{t("No measurements yet. Pick a site and log your first one.")}</p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {measuredSites.map((s) => {
+            const series = bySite.get(s.key)!;
+            const latest = series[series.length - 1];
+            const first = series[0];
+            const change = series.length >= 2 ? Math.round((latest.cm - first.cm) * 10) / 10 : 0;
+            const muscle = muscleForSite(s.key) as Muscle | undefined;
+            const mv = muscle ? vol.get(muscle) : undefined;
+            return (
+              <div key={s.key} className="tile p-3">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{t(s.label)}</span>
+                      {change !== 0 && (
+                        <span className={clsx("text-xs font-semibold tabular-nums", change > 0 ? "text-[var(--good)]" : "text-[var(--info)]")}>
+                          {change > 0 ? "+" : ""}{change} cm
+                        </span>
+                      )}
+                    </div>
+                    {muscle && (
+                      <div className="mt-0.5 flex items-center gap-1 text-[11px] text-[var(--text-faint)]">
+                        <Dumbbell size={11} />
+                        {mv && mv.sets > 0
+                          ? `${t(MUSCLE_LABEL[muscle])}: ${mv.sets} ${t("sets")} · ${mv.volume.toLocaleString()} ${t("kg (30d)")}`
+                          : `${t(MUSCLE_LABEL[muscle])}: ${t("no training logged (30d)")}`}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-right">
+                      <div className="num text-base font-bold">{latest.cm} cm</div>
+                      <div className="text-[10px] text-[var(--text-faint)]">{fmtShort(latest.date)}</div>
+                    </div>
+                    <button
+                      onClick={() => removeMeasurement(s.key, latest.date)}
+                      className="text-[var(--text-faint)] hover:text-[var(--bad)]"
+                      aria-label={t("Delete")}
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                </div>
+                {series.length >= 2 && (
+                  <div className="mt-2 w-full">
+                    <MiniSpark data={series.map((p) => ({ date: p.date, value: p.cm }))} color="var(--accent)" height={34} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
     </Card>

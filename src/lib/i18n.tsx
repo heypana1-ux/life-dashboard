@@ -1550,6 +1550,120 @@ const DE: Record<string, string> = {
   "Create an account to keep the same data on your phone and PC. Optional — you can also do this later in Settings.":
     "Erstelle ein Konto, um dieselben Daten auf Handy und PC zu haben. Optional — du kannst das auch später in den Einstellungen machen.",
   "Skip for now": "Erstmal überspringen",
+
+  // --- Dashboard: anomalies + customization ---
+  "Heads up": "Auffälligkeiten",
+  "Nothing unusual — your recent numbers are close to your norm.":
+    "Nichts Ungewöhnliches — deine letzten Werte liegen nah an deinem Normalbereich.",
+  now: "jetzt",
+  usual: "üblich",
+  "Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.":
+    "Letzte 7 Tage vs. die 3 Wochen davor. Nur beschreibend — keine medizinische Bewertung.",
+  Customize: "Anpassen",
+  "Hidden cards": "Ausgeblendete Karten",
+  "Move up": "Nach oben",
+  "Move down": "Nach unten",
+  Hide: "Ausblenden",
+
+  // --- Habit stacking / routines ---
+  "Routine (optional)": "Routine (optional)",
+  'Group habits into a routine, e.g. "Evening routine", to do them together.':
+    "Fasse Gewohnheiten zu einer Routine zusammen, z. B. „Abendroutine“, um sie gemeinsam zu erledigen.",
+  "e.g. Evening routine": "z. B. Abendroutine",
+  Routines: "Routinen",
+  "not today": "nicht heute",
+  "All done today 🎉": "Heute alles erledigt 🎉",
+  "Complete all today": "Alle heute erledigen",
+
+  // --- Body measurements ---
+  "Track circumferences (cm). Sites linked to a muscle show your recent training on it side by side.":
+    "Miss Umfänge (cm). Stellen mit Muskelbezug zeigen dein aktuelles Training dazu direkt daneben.",
+  Site: "Stelle",
+  "Measurement (cm)": "Maß (cm)",
+  "No measurements yet. Pick a site and log your first one.":
+    "Noch keine Maße. Wähle eine Stelle und trag dein erstes ein.",
+  "kg (30d)": "kg (30 T.)",
+  "no training logged (30d)": "kein Training erfasst (30 T.)",
+  Neck: "Nacken",
+  Waist: "Taille",
+  Hips: "Hüfte",
+  "Biceps (flexed)": "Bizeps (angespannt)",
+  Forearm: "Unterarm",
+  Thigh: "Oberschenkel",
+  Calf: "Wade",
+
+  // --- Wheel of Life ---
+  "Wheel of Life": "Lebensrad",
+  "Rate 8 areas of your life 1–10 to see your balance and how it shifts over time.":
+    "Bewerte 8 Lebensbereiche von 1–10, um deine Balance und ihre Entwicklung zu sehen.",
+  "New check-in": "Neuer Check-in",
+  "Update today": "Heute aktualisieren",
+  "Your wheel": "Dein Rad",
+  "Avg {n}": "Ø {n}",
+  "Dashed = previous check-in ({d})": "Gestrichelt = vorheriger Check-in ({d})",
+  "Update today's check-in": "Heutigen Check-in aktualisieren",
+  "Be honest — this is a private snapshot, not a test.":
+    "Sei ehrlich — das ist eine private Momentaufnahme, kein Test.",
+  "Coach: your balance": "Coach: deine Balance",
+  "Health & fitness": "Gesundheit & Fitness",
+  "Career & work": "Karriere & Arbeit",
+  Money: "Geld",
+  Relationships: "Beziehungen",
+  "Personal growth": "Persönliches Wachstum",
+  "Fun & recreation": "Spaß & Erholung",
+  "Home & environment": "Zuhause & Umfeld",
+  "Meaning & purpose": "Sinn & Ziel",
+  Social: "Sozial",
+  Growth: "Wachstum",
+  Home: "Zuhause",
+  Meaning: "Sinn",
+
+  // --- Subscription audit ---
+  "Subscription audit": "Abo-Check",
+  "Add recurring expenses (Netflix, gym, insurance…) to see what they cost you per year.":
+    "Füge wiederkehrende Ausgaben hinzu (Netflix, Fitnessstudio, Versicherung…), um zu sehen, was sie dich pro Jahr kosten.",
+  "Active / month": "Aktiv / Monat",
+  "Active / year": "Aktiv / Jahr",
+  mo: "Mon.",
+  yr: "Jahr",
+  Cancelled: "Gekündigt",
+  "Tip: mark a subscription Cancelled to remove it from your totals without deleting the rule.":
+    "Tipp: Markiere ein Abo als gekündigt, um es aus den Summen zu nehmen, ohne die Regel zu löschen.",
+
+  // --- Year in review (Wrapped) ---
+  "Year in review": "Jahresrückblick",
+  "Your year in review": "Dein Jahresrückblick",
+  "{n} days logged": "{n} Tage erfasst",
+  "Best day {d} · {n}": "Bester Tag {d} · {n}",
+  "Longest streak (days)": "Längste Serie (Tage)",
+  "Consistency compounds.": "Beständigkeit summiert sich.",
+  "Your top habit": "Deine Top-Gewohnheit",
+  "Done {n} times": "{n}-mal erledigt",
+  "Your strongest area": "Dein stärkster Bereich",
+  "Your best month": "Dein bester Monat",
+  "Average sleep": "Durchschnittlicher Schlaf",
+  "Avg sleep {d}": "Ø Schlaf {d}",
+  "Where you finished": "Wo du gelandet bist",
+  "{xp} XP · {a} achievements": "{xp} XP · {a} Erfolge",
+  Wrapped: "Rückblick",
+  Previous: "Zurück",
+
+  // --- AI goal breakdown ---
+  "Break it down with AI": "Mit KI aufschlüsseln",
+  "Let the coach suggest milestones and habits for this goal.":
+    "Lass den Coach Meilensteine und Gewohnheiten für dieses Ziel vorschlagen.",
+  "Turn this goal into a concrete, personal plan.":
+    "Mach aus diesem Ziel einen konkreten, persönlichen Plan.",
+  "Suggest a plan": "Plan vorschlagen",
+  "Thinking…": "Denkt nach…",
+  "The AI coach isn't set up yet.": "Der KI-Coach ist noch nicht eingerichtet.",
+  "Couldn't build a plan right now — try again.":
+    "Konnte gerade keinen Plan erstellen — versuch es nochmal.",
+  "Suggested milestones": "Vorgeschlagene Meilensteine",
+  "Add all": "Alle hinzufügen",
+  "Suggested habits": "Vorgeschlagene Gewohnheiten",
+  "Start over": "Von vorn",
+  "AI suggestions — review before adding.": "KI-Vorschläge — vor dem Hinzufügen prüfen.",
 };
 
 const DICTS: Record<Language, Record<string, string>> = { en: {}, de: DE };

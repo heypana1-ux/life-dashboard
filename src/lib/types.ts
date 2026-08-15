@@ -67,6 +67,8 @@ export interface Habit {
   /** For "reduce" habits: how heavily an occurrence hurts the score (1..5). */
   severity?: number;
   color?: string;
+  /** Optional habit-stacking group (a routine name, e.g. "Evening routine"). */
+  group?: string;
   archived: boolean;
   createdAt: string; // ISO date
 }
@@ -171,6 +173,22 @@ export interface Profile {
 export interface WeightLog {
   date: string; // YYYY-MM-DD
   kg: number;
+}
+
+/** A body circumference measurement (biceps, waist, chest…) kept as a time series.
+ *  `site` keys map to a muscle group so girth can be shown next to training progress. */
+export interface BodyMeasurement {
+  date: string; // YYYY-MM-DD
+  site: string; // BodySite key, e.g. "biceps", "waist"
+  cm: number;
+}
+
+/** A Wheel of Life self-assessment: 1..10 per life dimension, taken periodically. */
+export interface WheelCheck {
+  id: string;
+  date: string; // YYYY-MM-DD
+  scores: Record<string, number>; // dimension key -> 1..10
+  note?: string;
 }
 
 /** Daily health check — tracked and correlated, but never part of the Life Score. */
@@ -489,6 +507,8 @@ export interface Settings {
   avatar?: AvatarConfig;
   /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */
   about?: Record<string, string>;
+  /** Dashboard personalization: hidden card ids and a custom card order. */
+  dashboard?: { hidden?: string[]; order?: string[] };
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */
@@ -508,6 +528,8 @@ export interface AppData {
   journal: JournalEntry[];
   goals: Goal[];
   weight: WeightLog[];
+  measurements: BodyMeasurement[];
+  wheelChecks: WheelCheck[];
   health: HealthLog[];
   focus: FocusDay[];
   finances: Finances;

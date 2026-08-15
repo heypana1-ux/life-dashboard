@@ -230,6 +230,73 @@ export function Bars({
   );
 }
 
+/** Theme-aware inline-SVG radar/spider chart (0..max per axis). Optionally overlays a
+ *  previous snapshot for comparison. No external chart lib — full control, tiny footprint. */
+export function RadarChart({
+  axes,
+  values,
+  prev,
+  max = 10,
+  size = 260,
+}: {
+  axes: string[];
+  values: number[];
+  prev?: number[];
+  max?: number;
+  size?: number;
+}) {
+  const cx = size / 2;
+  const cy = size / 2;
+  const r = size / 2 - 46;
+  const n = axes.length;
+  const angle = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const point = (i: number, radius: number) => ({
+    x: cx + Math.cos(angle(i)) * radius,
+    y: cy + Math.sin(angle(i)) * radius,
+  });
+  const poly = (vals: number[]) =>
+    vals
+      .map((v, i) => {
+        const p = point(i, (Math.max(0, Math.min(max, v)) / max) * r);
+        return `${p.x.toFixed(1)},${p.y.toFixed(1)}`;
+      })
+      .join(" ");
+
+  const rings = [0.25, 0.5, 0.75, 1];
+
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width="100%" style={{ maxWidth: size, margin: "0 auto", display: "block" }}>
+      {rings.map((f) => (
+        <polygon
+          key={f}
+          points={axes.map((_, i) => { const p = point(i, r * f); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(" ")}
+          fill="none"
+          stroke="var(--border)"
+          strokeWidth={1}
+        />
+      ))}
+      {axes.map((_, i) => {
+        const p = point(i, r);
+        return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--border)" strokeWidth={1} />;
+      })}
+      {prev && (
+        <polygon points={poly(prev)} fill="var(--text-faint)" fillOpacity={0.12} stroke="var(--text-faint)" strokeWidth={1.5} strokeDasharray="4 3" />
+      )}
+      <polygon points={poly(values)} fill="var(--accent)" fillOpacity={0.22} stroke="var(--accent)" strokeWidth={2} />
+      {values.map((_, i) => { const p = point(i, (Math.max(0, Math.min(max, values[i])) / max) * r); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="var(--accent)" />; })}
+      {axes.map((label, i) => {
+        const p = point(i, r + 18);
+        const anchor = Math.abs(p.x - cx) < 8 ? "middle" : p.x > cx ? "start" : "end";
+        return (
+          <text key={i} x={p.x} y={p.y} textAnchor={anchor} dominantBaseline="middle" fontSize={10.5} fill="var(--text-muted)">
+            {label}
+          </text>
+        );
+      })}
+    </svg>
+  );
+}
+
 interface ScatterTipProps {
   active?: boolean;
   payload?: { payload?: { x: number; y: number } }[];

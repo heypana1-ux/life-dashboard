@@ -1,8 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo } from "react";
-import { ArrowUpRight, ChevronRight, Flame, Sparkles, Target, Trophy } from "lucide-react";
+import { useMemo, useState } from "react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpRight,
+  ChevronRight,
+  Eye,
+  EyeOff,
+  Flame,
+  SlidersHorizontal,
+  Sparkles,
+  Target,
+  Trophy,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived, useTodayComputation } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
@@ -11,9 +24,10 @@ import { dayHasEntry } from "@/lib/dayActivity";
 import { areaColor } from "@/lib/areaStyle";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges } from "@/lib/challenges";
+import { detectAnomalies } from "@/lib/anomalies";
 import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
-import { AreaKey } from "@/lib/types";
+import { AreaKey, Settings } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile } from "@/components/ui";
 import { ScoreRing, Meter } from "@/components/ScoreRing";
@@ -22,12 +36,23 @@ import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing } from "@/components/Coach";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
 
+/** Dashboard blocks the user can reorder / hide. Hero, coach briefing and the streak nudge stay pinned. */
+const MOVABLE = ["anomalies", "level", "catInsights", "activity", "goals"] as const;
+type CardId = (typeof MOVABLE)[number];
+
+function orderedCards(settings: Settings): CardId[] {
+  const saved = (settings.dashboard?.order ?? []).filter((id): id is CardId => (MOVABLE as readonly string[]).includes(id));
+  const rest = MOVABLE.filter((id) => !saved.includes(id));
+  return [...saved, ...rest];
+}
+
 export default function DashboardPage() {
-  const { data } = useStore();
+  const { data, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
   const todayComp = useTodayComputation();
   const name = data.settings.profile.name?.trim();
+  const [editMode, setEditMode] = useState(false);
 
   // Only surface areas that actually have data (live today or anywhere in history),
   // so an enabled-but-empty area never shows a misleading "0".
@@ -68,6 +93,159 @@ export default function DashboardPage() {
   const challenges = useMemo(() => weeklyChallenges(data, d.byDate, d.today), [data, d.byDate, d.today]);
   const chDone = challenges.filter((c) => c.done).length;
   const nextChallenge = challenges.find((c) => !c.done);
+  const anomalies = useMemo(() => detectAnomalies(data, d.history), [data, d.history]);
+
+  const order = orderedCards(data.settings);
+  const hidden = new Set(data.settings.dashboard?.hidden ?? []);
+
+  function persist(nextOrder: CardId[], nextHidden: Set<string>) {
+    updateSettings({ dashboard: { order: nextOrder, hidden: [...nextHidden] } });
+  }
+  function move(id: CardId, dir: -1 | 1) {
+    const arr = [...order];
+    const i = arr.indexOf(id);
+    const j = i + dir;
+    if (j < 0 || j >= arr.length) return;
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+    persist(arr, hidden);
+  }
+  function toggleHide(id: CardId) {
+    const next = new Set(hidden);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    persist(order, next);
+  }
+
+  const blocks: Record<CardId, React.ReactNode> = {
+    anomalies: (anomalies.length > 0 || editMode) && (
+      <Card>
+        <SectionTitle right={<AlertTriangle size={16} className="text-[var(--warn)]" />}>{t("Heads up")}</SectionTitle>
+        {anomalies.length === 0 ? (
+          <p className="py-2 text-sm text-[var(--text-muted)]">{t("Nothing unusual — your recent numbers are close to your norm.")}</p>
+        ) : (
+          <div className="flex flex-col gap-2.5">
+            {anomalies.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 rounded-[13px] bg-[var(--surface-2)] p-[13px]">
+                <span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white"
+                  style={{ background: a.tone === "good" ? "var(--good)" : "var(--warn)" }}
+                >
+                  {a.dir === "up" ? <ArrowUp size={16} /> : <ArrowDown size={16} />}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[13.5px] font-medium">
+                    {t(a.metric)}{" "}
+                    <span style={{ color: a.tone === "good" ? "var(--good)" : "var(--warn)" }}>
+                      {a.dir === "up" ? "▲" : "▼"} {a.pct}%
+                    </span>
+                  </div>
+                  <div className="text-[12px] text-[var(--text-muted)]">
+                    {t("now")} {a.recent} · {t("usual")} {a.usual}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="mt-3 text-[11px] leading-[1.5] text-[var(--text-faint)]">
+          {t("Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.")}
+        </p>
+      </Card>
+    ),
+    level: (
+      <Link href="/achievements" className="block">
+        <Card className="flex items-center gap-4 !py-4 transition hover:border-[var(--accent)]">
+          <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+            <span className="text-[9px] font-semibold uppercase leading-none tracking-wide">{t("Level")}</span>
+            <span className="num text-lg font-bold leading-tight">{level.level}</span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="mb-1 flex items-center justify-between text-[13px]">
+              <span className="font-semibold">{t(level.title)}</span>
+              <span className="text-[var(--text-faint)]">{level.pct}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+              <div className="grad h-full rounded-full" style={{ width: `${level.pct}%` }} />
+            </div>
+            <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+              <Target size={12} className="shrink-0 text-[var(--accent)]" />
+              {nextChallenge ? (
+                <span className="truncate">{challengeShort(nextChallenge, t)}</span>
+              ) : (
+                <span>{t("All challenges done this week 🎉")}</span>
+              )}
+              <span className="ml-auto shrink-0 text-[var(--text-faint)]">{chDone}/{challenges.length}</span>
+            </div>
+          </div>
+          <ChevronRight size={18} className="shrink-0 text-[var(--text-faint)]" />
+        </Card>
+      </Link>
+    ),
+    catInsights: (
+      <div className="grid gap-[18px] lg:grid-cols-[1.4fr_1fr]">
+        <Card>
+          <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
+            {t("Categories")}
+          </SectionTitle>
+          <div className="flex flex-col">
+            {enabledAreas.map((a) => (
+              <CategoryRow key={a.key} area={a.key} derived={d} live={todayComp.categories[a.key]} />
+            ))}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
+          <div className="flex flex-col gap-2.5">
+            {d.insights.slice(0, 4).map((ins) => (
+              <div key={ins.id} className="flex gap-[11px] rounded-[13px] bg-[var(--surface-2)] p-[13px]">
+                <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: toneColor(ins.tone) }} />
+                <p className="text-[13px] leading-[1.5]">{ins.text}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-[14px] text-[11px] leading-[1.5] text-[var(--text-faint)]">
+            {t("Observations from your own logs. These are associations, not medical or causal claims.")}
+          </p>
+        </Card>
+      </div>
+    ),
+    activity: (
+      <Card>
+        <SectionTitle right={<Link href="/calendar" className="text-xs text-[var(--accent)]">{t("Calendar →")}</Link>}>
+          {t("Activity")}
+        </SectionTitle>
+        <MiniHeatmap />
+      </Card>
+    ),
+    goals: (
+      <Card>
+        <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
+          {t("Today's goals")}
+        </SectionTitle>
+        {todayGoals.length === 0 ? (
+          <EmptyState
+            title={t("No habits scheduled today")}
+            hint={t("Add habits to start building your daily plan.")}
+            action={
+              <Link href="/habits">
+                <Button variant="soft" size="sm">{t("Add habits")}</Button>
+              </Link>
+            }
+          />
+        ) : (
+          <div className="grid gap-x-[26px] sm:grid-cols-2">
+            {todayGoals.map((g) => (
+              <HabitRow key={g.habit.id} item={g} date={d.today} />
+            ))}
+          </div>
+        )}
+      </Card>
+    ),
+  };
+
+  const visible = order.filter((id) => !hidden.has(id));
+  const hiddenList = order.filter((id) => hidden.has(id));
 
   return (
     <div>
@@ -75,9 +253,14 @@ export default function DashboardPage() {
         title={name ? `${t("Dashboard")} · ${name}` : t("Dashboard")}
         subtitle={fmtLong(d.today)}
         action={
-          <Link href="/today" className="hidden sm:block">
-            <Button variant="soft">{t("Log today")}</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Button variant={editMode ? "primary" : "ghost"} size="sm" onClick={() => setEditMode((e) => !e)}>
+              <SlidersHorizontal size={15} /> {editMode ? t("Done") : t("Customize")}
+            </Button>
+            <Link href="/today" className="hidden sm:block">
+              <Button variant="soft">{t("Log today")}</Button>
+            </Link>
+          </div>
         }
       />
 
@@ -99,7 +282,7 @@ export default function DashboardPage() {
           </Link>
         )}
 
-        {/* Hero row: score card + 2x2 stat tiles */}
+        {/* Hero row: score card + 2x2 stat tiles (always pinned) */}
         <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">
           <Card className="flex flex-col items-center gap-6 !p-[26px] sm:flex-row sm:gap-[26px]">
             <ScoreRing
@@ -140,95 +323,74 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Level & weekly challenge strip */}
-        <Link href="/achievements" className="block">
-          <Card className="flex items-center gap-4 !py-4 transition hover:border-[var(--accent)]">
-            <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-              <span className="text-[9px] font-semibold uppercase leading-none tracking-wide">{t("Level")}</span>
-              <span className="num text-lg font-bold leading-tight">{level.level}</span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="mb-1 flex items-center justify-between text-[13px]">
-                <span className="font-semibold">{t(level.title)}</span>
-                <span className="text-[var(--text-faint)]">{level.pct}%</span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
-                <div className="grad h-full rounded-full" style={{ width: `${level.pct}%` }} />
-              </div>
-              <div className="mt-1.5 flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
-                <Target size={12} className="shrink-0 text-[var(--accent)]" />
-                {nextChallenge ? (
-                  <span className="truncate">{challengeShort(nextChallenge, t)}</span>
-                ) : (
-                  <span>{t("All challenges done this week 🎉")}</span>
-                )}
-                <span className="ml-auto shrink-0 text-[var(--text-faint)]">{chDone}/{challenges.length}</span>
-              </div>
-            </div>
-            <ChevronRight size={18} className="shrink-0 text-[var(--text-faint)]" />
-          </Card>
-        </Link>
+        {/* Reorderable / hideable blocks */}
+        {visible.map((id) =>
+          blocks[id] ? (
+            <MovableBlock key={id} id={id} editMode={editMode} onMove={move} onHide={() => toggleHide(id)} t={t}>
+              {blocks[id]}
+            </MovableBlock>
+          ) : null,
+        )}
 
-        {/* Categories + Insights */}
-        <div className="grid gap-[18px] lg:grid-cols-[1.4fr_1fr]">
-          <Card>
-            <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
-              {t("Categories")}
-            </SectionTitle>
-            <div className="flex flex-col">
-              {enabledAreas.map((a) => (
-                <CategoryRow key={a.key} area={a.key} derived={d} live={todayComp.categories[a.key]} />
+        {/* Hidden tray (edit mode only) */}
+        {editMode && hiddenList.length > 0 && (
+          <Card className="!bg-[var(--surface-2)]">
+            <SectionTitle>{t("Hidden cards")}</SectionTitle>
+            <div className="flex flex-wrap gap-2">
+              {hiddenList.map((id) => (
+                <button
+                  key={id}
+                  onClick={() => toggleHide(id)}
+                  className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)]"
+                >
+                  <Eye size={14} /> {t(CARD_LABELS[id])}
+                </button>
               ))}
             </div>
           </Card>
+        )}
+      </div>
+    </div>
+  );
+}
 
-          <Card>
-            <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
-            <div className="flex flex-col gap-2.5">
-              {d.insights.slice(0, 4).map((ins) => (
-                <div key={ins.id} className="flex gap-[11px] rounded-[13px] bg-[var(--surface-2)] p-[13px]">
-                  <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: toneColor(ins.tone) }} />
-                  <p className="text-[13px] leading-[1.5]">{ins.text}</p>
-                </div>
-              ))}
-            </div>
-            <p className="mt-[14px] text-[11px] leading-[1.5] text-[var(--text-faint)]">
-              {t("Observations from your own logs. These are associations, not medical or causal claims.")}
-            </p>
-          </Card>
-        </div>
+const CARD_LABELS: Record<CardId, string> = {
+  anomalies: "Heads up",
+  level: "Level",
+  catInsights: "Categories",
+  activity: "Activity",
+  goals: "Today's goals",
+};
 
-        {/* Activity heatmap */}
-        <Card>
-          <SectionTitle right={<Link href="/calendar" className="text-xs text-[var(--accent)]">{t("Calendar →")}</Link>}>
-            {t("Activity")}
-          </SectionTitle>
-          <MiniHeatmap />
-        </Card>
-
-        {/* Today's goals */}
-        <Card>
-          <SectionTitle right={<Link href="/today" className="text-xs text-[var(--accent)]">{t("Open →")}</Link>}>
-            {t("Today's goals")}
-          </SectionTitle>
-          {todayGoals.length === 0 ? (
-            <EmptyState
-              title={t("No habits scheduled today")}
-              hint={t("Add habits to start building your daily plan.")}
-              action={
-                <Link href="/habits">
-                  <Button variant="soft" size="sm">{t("Add habits")}</Button>
-                </Link>
-              }
-            />
-          ) : (
-            <div className="grid gap-x-[26px] sm:grid-cols-2">
-              {todayGoals.map((g) => (
-                <HabitRow key={g.habit.id} item={g} date={d.today} />
-              ))}
-            </div>
-          )}
-        </Card>
+function MovableBlock({
+  id,
+  editMode,
+  onMove,
+  onHide,
+  t,
+  children,
+}: {
+  id: CardId;
+  editMode: boolean;
+  onMove: (id: CardId, dir: -1 | 1) => void;
+  onHide: () => void;
+  t: (k: string) => string;
+  children: React.ReactNode;
+}) {
+  if (!editMode) return <>{children}</>;
+  return (
+    <div className="relative rounded-2xl outline-2 outline-dashed outline-[var(--accent)]/40">
+      <div className="pointer-events-none opacity-90">{children}</div>
+      <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-full border border-[var(--border)] bg-[var(--surface)] p-1 shadow-[var(--shadow)]">
+        <button onClick={() => onMove(id, -1)} className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)]" aria-label={t("Move up")}>
+          <ArrowUp size={15} />
+        </button>
+        <button onClick={() => onMove(id, 1)} className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--surface-2)]" aria-label={t("Move down")}>
+          <ArrowDown size={15} />
+        </button>
+        <button onClick={onHide} className="rounded-full p-1.5 text-[var(--text-muted)] hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]" aria-label={t("Hide")}>
+          <EyeOff size={15} />
+        </button>
       </div>
     </div>
   );

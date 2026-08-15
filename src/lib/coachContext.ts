@@ -9,6 +9,9 @@ import { computeLevel } from "./level";
 import { weeklyChallenges } from "./challenges";
 import { computeAchievements } from "./achievements";
 import { evaluateExperiment } from "./experiments";
+import { detectAnomalies } from "./anomalies";
+import { WHEEL_DIMS, latestWheel, wheelAverage } from "./wheel";
+import { siteLabel } from "./bodySites";
 import { AREA_LABELS } from "./defaults";
 import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
 import { weekAnchor } from "./recap";
@@ -216,6 +219,36 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   const ch = weeklyChallenges(data, byDate, today);
   const openCh = ch.filter((c) => !c.done);
   L.push(line([`This week's challenges: ${ch.length - openCh.length}/${ch.length} done.`, openCh.length ? `Still open: ${openCh.map((c) => c.title).join(", ")}.` : ""]));
+
+  // Recent anomalies (last 7 days vs the prior 3 weeks)
+  const anomalies = detectAnomalies(data, history);
+  if (anomalies.length) {
+    L.push(
+      "Recent anomalies (7d vs prior 3 weeks): " +
+        anomalies.map((a) => `${a.metric} ${a.dir === "up" ? "up" : "down"} ${a.pct}% (now ${a.recent} vs usual ${a.usual})`).join("; ") +
+        ".",
+    );
+  }
+
+  // Body measurements (latest girths) & weight
+  if (data.measurements.length) {
+    const bySite = new Map<string, { date: string; cm: number }>();
+    for (const m of data.measurements) {
+      const cur = bySite.get(m.site);
+      if (!cur || m.date > cur.date) bySite.set(m.site, { date: m.date, cm: m.cm });
+    }
+    const parts = [...bySite.entries()].map(([site, v]) => `${siteLabel(site)} ${v.cm}cm`);
+    if (parts.length) L.push(`Latest body measurements: ${parts.join(", ")}.`);
+  }
+  const latestWeight = [...data.weight].sort((a, b) => (a.date < b.date ? 1 : -1))[0];
+  if (latestWeight) L.push(`Latest weight: ${latestWeight.kg}kg (${latestWeight.date}).`);
+
+  // Wheel of Life (self-assessment of life balance)
+  const wheel = latestWheel(data.wheelChecks);
+  if (wheel) {
+    const dims = WHEEL_DIMS.map((dm) => `${dm.label} ${wheel.scores[dm.key] ?? "?"}`).join(", ");
+    L.push(`Wheel of Life (self-rated 1-10, ${wheel.date}): avg ${wheelAverage(wheel.scores).toFixed(1)} — ${dims}.`);
+  }
 
   // Analysis engine conclusions — the important part.
   L.push(`\nAnalysis engine summary: ${report.verdict.summary}`);

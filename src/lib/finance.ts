@@ -36,6 +36,29 @@ export function fixedCostsMonthly(recurring: RecurringTx[]): { total: number; it
   return { total: Math.round(items.reduce((s, r) => s + r.amount, 0)), items };
 }
 
+/** Subscription audit: annualize every recurring expense so pricey/overlooked ones stand out. */
+export interface SubAuditItem {
+  id: string;
+  category: string;
+  note?: string;
+  active: boolean;
+  monthly: number;
+  yearly: number;
+}
+export function subscriptionAudit(recurring: RecurringTx[]): {
+  items: SubAuditItem[];
+  monthlyActive: number;
+  yearlyActive: number;
+} {
+  const items = recurring
+    .filter((r) => r.type === "expense")
+    .map((r) => ({ id: r.id, category: r.category, note: r.note, active: r.active, monthly: r.amount, yearly: r.amount * 12 }))
+    .sort((a, b) => b.yearly - a.yearly);
+  const active = items.filter((i) => i.active);
+  const monthlyActive = Math.round(active.reduce((s, i) => s + i.monthly, 0));
+  return { items, monthlyActive, yearlyActive: monthlyActive * 12 };
+}
+
 /*
   Finance helpers. The market-data layer is intentionally modular: today it is a manual /
   mock provider (prices come from the user or a stub), and a real API provider can be

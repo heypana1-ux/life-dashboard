@@ -31,6 +31,7 @@ import {
   monthLabel,
   portfolioSummary,
   shiftMonth,
+  subscriptionAudit,
 } from "@/lib/finance";
 import { todayISO } from "@/lib/date";
 import {
@@ -636,6 +637,8 @@ function BudgetTab({ cur }: { cur: string }) {
         )}
       </Card>
 
+      <SubscriptionAuditCard cur={cur} />
+
       <TransactionModal
         open={modal}
         onClose={() => setModal(false)}
@@ -738,6 +741,61 @@ function QuickAdd({
           {t("More options")}
         </button>
       </div>
+    </Card>
+  );
+}
+
+/* ---------------- Subscription audit ---------------- */
+
+function SubscriptionAuditCard({ cur }: { cur: string }) {
+  const { data, saveRecurring } = useStore();
+  const t = useT();
+  const audit = useMemo(() => subscriptionAudit(data.finances.recurring), [data.finances.recurring]);
+
+  return (
+    <Card>
+      <SectionTitle right={<Repeat size={16} className="text-[var(--text-faint)]" />}>{t("Subscription audit")}</SectionTitle>
+      {audit.items.length === 0 ? (
+        <p className="py-6 text-center text-sm text-[var(--text-muted)]">
+          {t("Add recurring expenses (Netflix, gym, insurance…) to see what they cost you per year.")}
+        </p>
+      ) : (
+        <>
+          <div className="mb-3 grid grid-cols-2 gap-3">
+            <div className="tile p-3">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t("Active / month")}</div>
+              <div className="num mt-0.5 text-xl font-bold">{fmtMoney(audit.monthlyActive, cur)}</div>
+            </div>
+            <div className="tile p-3">
+              <div className="text-[10px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t("Active / year")}</div>
+              <div className="num mt-0.5 text-xl font-bold text-[var(--bad)]">{fmtMoney(audit.yearlyActive, cur)}</div>
+            </div>
+          </div>
+          <div className="divide-y divide-[var(--border)]">
+            {audit.items.map((s) => (
+              <div key={s.id} className={`flex items-center justify-between py-2.5 ${s.active ? "" : "opacity-55"}`}>
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium">
+                    {t(categoryLabel(s.category))}{s.note ? ` · ${s.note}` : ""}
+                  </div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {fmtMoney(s.monthly, cur)}/{t("mo")} · <span className="font-medium">{fmtMoney(s.yearly, cur)}/{t("yr")}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => saveRecurring({ ...data.finances.recurring.find((r) => r.id === s.id)!, active: !s.active })}
+                  className={`shrink-0 rounded-lg px-2.5 py-1 text-xs font-medium ${s.active ? "text-[var(--good)] hover:bg-[var(--surface-2)]" : "text-[var(--text-faint)] hover:bg-[var(--surface-2)]"}`}
+                >
+                  {s.active ? t("Active") : t("Cancelled")}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="mt-3 text-[11px] text-[var(--text-faint)]">
+            {t("Tip: mark a subscription Cancelled to remove it from your totals without deleting the rule.")}
+          </p>
+        </>
+      )}
     </Card>
   );
 }

@@ -4,6 +4,7 @@ import {
   Brain,
   CalendarCheck,
   CalendarDays,
+  Compass,
   Dumbbell,
   FileText,
   FlaskConical,
@@ -45,6 +46,7 @@ export const NAV: NavItem[] = [
   { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/analysis", label: "Analysis", icon: Brain },
+  { href: "/wheel", label: "Wheel of Life", icon: Compass },
   { href: "/coach", label: "Coach", icon: Sparkles },
   { href: "/about", label: "About you", icon: UserCircle },
   { href: "/reports", label: "Reports", icon: FileText },
@@ -68,7 +70,7 @@ export function pinnedNav(pinned?: string[]): NavItem[] {
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/analysis", "/coach", "/reports", "/achievements", "/scoreboard"] },
+  { label: "Insights", hrefs: ["/statistics", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/about", "/settings"] },
 ];
