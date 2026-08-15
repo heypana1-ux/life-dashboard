@@ -469,6 +469,8 @@ export interface Settings {
   tourDone?: boolean;
   /** Opt-in: send derived (never raw) data to the AI coach provider. Off until enabled. */
   aiCoachEnabled?: boolean;
+  /** Opt-in: also let the AI read your journal entries (text, mood, tags) for deeper help. */
+  aiJournalAccess?: boolean;
   /** Cached once-per-day coach briefing so it isn't re-generated on every visit. */
   coachBriefing?: { date: string; text: string };
   /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */

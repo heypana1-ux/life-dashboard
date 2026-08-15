@@ -1,11 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { BookOpen, ChevronLeft, ChevronRight, ImagePlus, Plus, Save, Search, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { BookOpen, ChevronLeft, ChevronRight, ImagePlus, Lightbulb, Mic, Plus, Save, Search, Shuffle, Sparkles, Trash2, X } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { useDerived } from "@/lib/useDerived";
 import { JournalEntry } from "@/lib/types";
-import { fmtLong, todayISO } from "@/lib/date";
+import { addDays, fmtLong, fmtShort, todayISO, weekdayOf } from "@/lib/date";
 import { resizeImageToDataUrl } from "@/lib/image";
+import { promptForDate, JOURNAL_PROMPTS } from "@/lib/journalPrompts";
+import { buildCoachContext } from "@/lib/coachContext";
+import { coachAsk, checkCoachConfigured } from "@/lib/ai";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
@@ -91,6 +95,8 @@ export default function JournalPage() {
           </Button>
         }
       />
+
+      <MoodHeatmap />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Entry list */}
@@ -181,6 +187,9 @@ export default function JournalPage() {
                 />
               </div>
               <div className="px-6 py-5">
+                <PromptBar
+                  onUse={(p) => setDraft({ ...active, body: active.body ? `${active.body}\n\n${p}\n` : `${p}\n` })}
+                />
                 <textarea
                   className="min-h-[45vh] w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-[var(--text-faint)]"
                   placeholder={t("Write freely…")}
@@ -193,6 +202,9 @@ export default function JournalPage() {
                     lineHeight: "28px",
                   }}
                 />
+                <div className="mt-2 flex items-center gap-2">
+                  <DictateButton onText={(txt) => setDraft({ ...active, body: (active.body ? active.body + " " : "") + txt })} />
+                </div>
                 {/* Photos */}
                 {(active.photos?.length ?? 0) > 0 && (
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -287,6 +299,8 @@ export default function JournalPage() {
                   />
                 </label>
               </div>
+              {active.id && <ReflectCard entry={active} />}
+
               <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-3">
                 <div className="flex items-center gap-3">
                   <Button onClick={save} disabled={!active.title && !active.body}>
@@ -308,6 +322,197 @@ export default function JournalPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ---------------- Mood heatmap (last year) ---------------- */
+
+function moodColor(m: number): string {
+  if (m <= 3) return "var(--bad)";
+  if (m <= 5) return "var(--warn)";
+  if (m <= 7) return "var(--info)";
+  return "var(--good)";
+}
+
+function MoodHeatmap() {
+  const { data } = useStore();
+  const t = useT();
+
+  const { cells, count } = useMemo(() => {
+    // Mood per day: journal mood wins, else the daily check-in mood.
+    const byDate = new Map<string, number>();
+    for (const r of data.reviews) if (typeof r.mood === "number") byDate.set(r.date, r.mood);
+    for (const j of data.journal) if (typeof j.mood === "number") byDate.set(j.date, j.mood);
+
+    const today = todayISO();
+    const weeks = 53;
+    const lead = weekdayOf(today);
+    const total = weeks * 7;
+    const start = addDays(today, -(total - 1 - (6 - lead)));
+    const out: { date: string; mood: number | null; future: boolean }[] = [];
+    for (let i = 0; i < total; i++) {
+      const date = addDays(start, i);
+      out.push({ date, mood: byDate.get(date) ?? null, future: date > today });
+    }
+    return { cells: out, count: byDate.size };
+  }, [data.journal, data.reviews]);
+
+  if (count === 0) return null;
+
+  return (
+    <Card>
+      <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+        <Sparkles size={15} className="text-[var(--accent)]" /> {t("Mood over the year")}
+      </div>
+      <div className="overflow-x-auto">
+        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ width: "max-content" }}>
+          {cells.map((c) => (
+            <span
+              key={c.date}
+              title={c.mood != null ? `${fmtShort(c.date)}: ${c.mood}/10` : ""}
+              className="h-[11px] w-[11px] rounded-[2px]"
+              style={{ background: c.future ? "transparent" : c.mood != null ? moodColor(c.mood) : "var(--surface-3)" }}
+            />
+          ))}
+        </div>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--text-faint)]">
+        {t("Low")}
+        {["var(--bad)", "var(--warn)", "var(--info)", "var(--good)"].map((c) => (
+          <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+        ))}
+        {t("High")}
+      </div>
+    </Card>
+  );
+}
+
+/* ---------------- Prompt of the day ---------------- */
+
+function PromptBar({ onUse }: { onUse: (prompt: string) => void }) {
+  const t = useT();
+  const [idx, setIdx] = useState<number | null>(null);
+  const prompt = idx == null ? promptForDate(todayISO()) : JOURNAL_PROMPTS[idx];
+  return (
+    <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--surface-2)] px-3 py-2">
+      <Lightbulb size={15} className="shrink-0 text-[var(--accent)]" />
+      <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-muted)]">{t(prompt)}</span>
+      <button onClick={() => setIdx(Math.floor(Math.random() * JOURNAL_PROMPTS.length))} className="shrink-0 text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Shuffle")}>
+        <Shuffle size={14} />
+      </button>
+      <button onClick={() => onUse(t(prompt))} className="shrink-0 rounded-lg bg-[var(--surface)] px-2 py-1 text-xs font-medium hover:text-[var(--accent)]">
+        {t("Use")}
+      </button>
+    </div>
+  );
+}
+
+/* ---------------- Dictation ---------------- */
+
+function DictateButton({ onText }: { onText: (text: string) => void }) {
+  const t = useT();
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const recRef = useRef<any>(null);
+
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSupported(!!SR);
+  }, []);
+
+  function toggle() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    if (listening) {
+      recRef.current?.stop();
+      return;
+    }
+    const rec = new SR();
+    rec.lang = navigator.language || "en-US";
+    rec.interimResults = false;
+    rec.continuous = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      let txt = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      if (txt.trim()) onText(txt.trim());
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    rec.start();
+    setListening(true);
+  }
+
+  if (!supported) return null;
+  return (
+    <button
+      onClick={toggle}
+      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+        listening ? "border-[var(--bad)] bg-[var(--bad)]/10 text-[var(--bad)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+      }`}
+    >
+      <Mic size={14} /> {listening ? t("Listening… tap to stop") : t("Dictate")}
+    </button>
+  );
+}
+
+/* ---------------- AI reflection ---------------- */
+
+function ReflectCard({ entry }: { entry: JournalEntry }) {
+  const { data, updateSettings } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const enabled = !!data.settings.aiCoachEnabled && !!data.settings.aiJournalAccess;
+  const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState(false);
+
+  async function reflect() {
+    setErr(false);
+    setLoading(true);
+    const ok = await checkCoachConfigured();
+    if (!ok) { setLoading(false); setErr(true); return; }
+    const ctx = buildCoachContext(data, d.history).text;
+    const prompt = `Reflect warmly on my journal entry from ${entry.date}${entry.mood ? ` (mood ${entry.mood}/10)` : ""}. In 2-3 sentences: acknowledge what I wrote, gently point out one pattern or reframe, and one small encouraging suggestion. Entry: "${(entry.title ? entry.title + ". " : "") + (entry.body ?? "")}".`;
+    const res = await coachAsk(prompt, ctx, data.settings.language);
+    setLoading(false);
+    if (res.reply) setText(res.reply);
+    else setErr(true);
+  }
+
+  if (!enabled) {
+    return (
+      <div className="mx-6 mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--accent-soft)]/40 px-3 py-2.5">
+        <span className="text-xs text-[var(--text-muted)]">{t("Let the AI coach reflect on your entries (needs journal access).")}</span>
+        <Button size="sm" variant="soft" onClick={() => updateSettings({ aiCoachEnabled: true, aiJournalAccess: true })}>{t("Enable")}</Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-6 mb-3 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3">
+      <div className="mb-1.5 flex items-center justify-between">
+        <span className="flex items-center gap-1.5 text-sm font-semibold"><Sparkles size={14} className="text-[var(--accent)]" /> {t("Coach reflection")}</span>
+        {(text || err) && <button onClick={reflect} disabled={loading} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]">{t("Regenerate")}</button>}
+      </div>
+      {loading ? (
+        <div className="space-y-2 py-1"><div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" /><div className="h-3 w-4/5 animate-pulse rounded bg-[var(--surface-2)]" /></div>
+      ) : text ? (
+        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">{text}</p>
+      ) : err ? (
+        <div className="flex items-center justify-between gap-2"><span className="text-xs text-[var(--bad)]">{t("Couldn't reach the AI service. Check your connection and try again.")}</span><Button size="sm" variant="soft" onClick={reflect}>{t("Try again")}</Button></div>
+      ) : (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-[var(--text-muted)]">{t("Save the entry, then get a short, kind reflection.")}</span>
+          <Button size="sm" onClick={reflect}><Sparkles size={14} /> {t("Reflect")}</Button>
+        </div>
+      )}
     </div>
   );
 }

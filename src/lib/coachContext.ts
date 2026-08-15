@@ -171,7 +171,7 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
     }
   }
 
-  // Journal — mood & tags only, never the written contents
+  // Journal — mood & tags always; full entries only if the user opted in.
   if (data.journal.length) {
     const rj = data.journal.filter((j) => j.date >= addDays(today, -30));
     if (rj.length) {
@@ -181,7 +181,22 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
       const jp = [`${rj.length} entries in 30 days`];
       if (moods.length) jp.push(`avg mood ${(moods.reduce((a, b) => a + b, 0) / moods.length).toFixed(1)}/10`);
       if (tagFreq.size) jp.push(`common tags: ${[...tagFreq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5).map(([k]) => k).join(", ")}`);
-      L.push(`Journal: ${jp.join("; ")} (written contents kept private).`);
+      L.push(`Journal: ${jp.join("; ")}${data.settings.aiJournalAccess ? "" : " (written contents kept private)"}.`);
+
+      if (data.settings.aiJournalAccess) {
+        const entries = [...rj].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 12);
+        const lines = entries.map((j) => {
+          const parts = [j.date];
+          if (j.mood != null) parts.push(`mood ${j.mood}/10`);
+          if (j.title) parts.push(`"${j.title}"`);
+          const body = (j.body ?? "").replace(/\s+/g, " ").trim().slice(0, 400);
+          if (body) parts.push(body);
+          if (j.highlight) parts.push(`highlight: ${j.highlight}`);
+          if (j.tags?.length) parts.push(`[${j.tags.join(", ")}]`);
+          return `- ${parts.join(" — ")}`;
+        });
+        L.push("Recent journal entries (shared with your permission):\n" + lines.join("\n"));
+      }
     }
   }
 
