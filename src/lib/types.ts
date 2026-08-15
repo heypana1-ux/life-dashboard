@@ -428,6 +428,16 @@ export interface DayFlowSettings {
   lastGuidedReview?: string;
 }
 
+export interface AvatarConfig {
+  skin: string;
+  hair: string;
+  hairColor: string;
+  face: string;
+  shirt: string;
+  hat: string;
+  glasses: string;
+}
+
 export interface Settings {
   onboardingComplete: boolean;
   theme: "light" | "dark" | "system";
@@ -475,6 +485,8 @@ export interface Settings {
   aiJournalAccess?: boolean;
   /** Cached once-per-day coach briefing so it isn't re-generated on every visit. */
   coachBriefing?: { date: string; text: string };
+  /** Cosmetic character/avatar the user builds and unlocks items for. */
+  avatar?: AvatarConfig;
   /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */
   about?: Record<string, string>;
 }

@@ -21,6 +21,8 @@ import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing } from "@/components/Coach";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
+import { Avatar } from "@/components/Avatar";
+import { defaultAvatar } from "@/lib/avatar";
 
 export default function DashboardPage() {
   const { data } = useStore();
@@ -143,9 +145,9 @@ export default function DashboardPage() {
         {/* Level & weekly challenge strip */}
         <Link href="/achievements" className="block">
           <Card className="flex items-center gap-4 !py-4 transition hover:border-[var(--accent)]">
-            <div className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
-              <span className="text-[9px] font-semibold uppercase leading-none tracking-wide">{t("Level")}</span>
-              <span className="num text-lg font-bold leading-tight">{level.level}</span>
+            <div className="relative flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-[var(--accent-soft)]">
+              <Avatar config={data.settings.avatar ?? defaultAvatar()} size={46} />
+              <span className="absolute -bottom-0.5 right-0 rounded-md bg-[var(--accent)] px-1 text-[9px] font-bold text-white">{level.level}</span>
             </div>
             <div className="min-w-0 flex-1">
               <div className="mb-1 flex items-center justify-between text-[13px]">
