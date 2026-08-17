@@ -11,7 +11,10 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const DEFAULT_BASE = "https://api.groq.com/openai/v1";
-const DEFAULT_MODEL = "llama-3.3-70b-versatile";
+// Groq deprecated llama-3.3-70b-versatile (announced 2026-06-17) and decommissioned it,
+// which made every request fail with a provider error. gpt-oss-120b is Groq's recommended
+// successor. Override with AI_MODEL / GROQ_MODEL if you point AI_BASE_URL at another provider.
+const DEFAULT_MODEL = "openai/gpt-oss-120b";
 
 interface ChatMsg {
   role: "user" | "assistant";
@@ -88,6 +91,7 @@ export async function POST(req: NextRequest) {
       });
       if (!res.ok) {
         const detail = await res.text().catch(() => "");
+        console.error(`[coach] provider error (goalplan) ${res.status}: ${detail.slice(0, 500)}`);
         const status = res.status === 429 ? 429 : 502;
         return NextResponse.json(
           { error: res.status === 429 ? "rate_limited" : "provider_error", detail: detail.slice(0, 300) },
@@ -145,6 +149,7 @@ export async function POST(req: NextRequest) {
 
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
+      console.error(`[coach] provider error (chat) ${res.status}: ${detail.slice(0, 500)}`);
       const status = res.status === 429 ? 429 : 502;
       return NextResponse.json(
         { error: res.status === 429 ? "rate_limited" : "provider_error", detail: detail.slice(0, 300) },
