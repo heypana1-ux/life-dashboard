@@ -10,6 +10,10 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 export const metadata: Metadata = {
   title: "Life Dashboard",
   description: "A personal operating system for your habits, health, focus and finances.",
+  applicationName: "Life Dashboard",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Life" },
+  icons: { apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = {

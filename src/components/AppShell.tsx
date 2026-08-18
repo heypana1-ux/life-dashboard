@@ -17,6 +17,7 @@ import { WeeklyReviewGate } from "@/components/WeeklyReview";
 import { CoachLauncher } from "@/components/Coach";
 import { CommandPalette, CommandPaletteButton, openCommandPalette } from "@/components/CommandPalette";
 import { Tour } from "@/components/Tour";
+import { PWARegister } from "@/components/PWA";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
@@ -165,6 +166,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* Main */}
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
+          <PWARegister />
           <Reminders />
           <Tour />
           <DayFlow />

@@ -1265,6 +1265,16 @@ const DE: Record<string, string> = {
   "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
     "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
   // --- Weather & spending insights ---
+  // --- Install as app (PWA) ---
+  "Install the app": "App installieren",
+  "Installed — you're running the app.": "Installiert – du nutzt die App.",
+  "Add Life Dashboard to your home screen to open it full-screen like a normal app, and to use it offline.":
+    "Füge Life Dashboard zu deinem Home-Bildschirm hinzu, um es wie eine normale App im Vollbild zu öffnen und offline zu nutzen.",
+  "Install app": "App installieren",
+  "In Safari, tap the Share button, then “Add to Home Screen”.":
+    "Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“.",
+  "Open your browser menu and choose “Install app” or “Add to Home screen”.":
+    "Öffne das Browser-Menü und wähle „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.",
   // --- Weekly planner ---
   "This week's plan": "Plan für diese Woche",
   Plan: "Planen",

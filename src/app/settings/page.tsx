@@ -23,6 +23,7 @@ import { generateDemo, clearDemo } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
 import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
+import { InstallAppCard } from "@/components/PWA";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
 
@@ -71,6 +72,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
+
+      {/* Install as an app (PWA) */}
+      <InstallAppCard />
 
       {/* Account & cloud sync (only when Supabase is configured) */}
       <AccountCard />
