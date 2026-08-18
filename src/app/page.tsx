@@ -25,6 +25,7 @@ import { areaColor } from "@/lib/areaStyle";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges } from "@/lib/challenges";
 import { detectAnomalies } from "@/lib/anomalies";
+import { earlyWarning, predictTomorrow } from "@/lib/forecast";
 import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AreaKey, Settings } from "@/lib/types";
@@ -105,6 +106,8 @@ export default function DashboardPage() {
   const chDone = challenges.filter((c) => c.done).length;
   const nextChallenge = challenges.find((c) => !c.done);
   const anomalies = useMemo(() => detectAnomalies(data, d.history), [data, d.history]);
+  const warning = useMemo(() => earlyWarning(d.history), [d.history]);
+  const prediction = useMemo(() => predictTomorrow(d.history), [d.history]);
   const weeklyFocus = useMemo(
     () => [...data.weeklyReviews].filter((r) => r.focus?.trim()).sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0] ?? null,
     [data.weeklyReviews],
@@ -324,6 +327,24 @@ export default function DashboardPage() {
           </Link>
         )}
 
+        {/* Early warning: a dip forming right now (pinned, only when active) */}
+        {warning && (
+          <Link href="/statistics" className="block">
+            <div className="flex items-center gap-3 rounded-2xl border border-[var(--bad)]/40 bg-[var(--bad)]/10 p-4 transition hover:border-[var(--bad)]">
+              <AlertTriangle size={22} className="shrink-0 text-[var(--bad)]" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold">{t("Heads up — a dip is forming")}</div>
+                <div className="text-xs text-[var(--text-muted)]">
+                  {warning.kind === "slide"
+                    ? t("Your score has slipped {n} days running. A small win today can turn it around.", { n: warning.magnitude })
+                    : t("The last days are running {n} points below your usual. Worth a gentle reset.", { n: warning.magnitude })}
+                </div>
+              </div>
+              <ArrowUpRight size={18} className="shrink-0 text-[var(--text-faint)]" />
+            </div>
+          </Link>
+        )}
+
         {/* Hero row: score card + 2x2 stat tiles (always pinned) */}
         <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">
           <Card className="flex flex-col items-center gap-6 !p-[26px] sm:flex-row sm:gap-[26px]">
@@ -354,6 +375,13 @@ export default function DashboardPage() {
                   <div className="mt-[3px]"><Delta value={vsAvg} className="!text-[15px]" /></div>
                 </div>
               </div>
+              {prediction && (
+                <p className="mt-[14px] text-[11px] text-[var(--text-faint)]">
+                  {t("Tomorrow, likely around")}{" "}
+                  <span className="num font-semibold text-[var(--text-muted)]">{prediction.value}</span>{" "}
+                  {prediction.trend > 0 ? "↗" : prediction.trend < 0 ? "↘" : "→"}
+                </p>
+              )}
             </div>
           </Card>
 

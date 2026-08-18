@@ -4,6 +4,7 @@ import { habitsForToday } from "./habitView";
 import { symptomCount } from "./health";
 import { activityStreak } from "./streak";
 import { sleepDurationMinutes, weekdayLabel, weekdayOf, addDays } from "./date";
+import { earlyWarning } from "./forecast";
 import { translate } from "./i18n";
 
 /*
@@ -625,6 +626,21 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     positive: driverList.filter((x) => x.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 6),
     negative: driverList.filter((x) => x.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 6),
   };
+
+  // ---------- Early warning (live forming trend) ----------
+  const ew = earlyWarning(history);
+  if (ew) {
+    F.push({
+      id: "early-warning",
+      kind: "watch",
+      title: t("Heads up"),
+      detail:
+        ew.kind === "slide"
+          ? t("Your Life Score has dropped {n} days running (around {recent} now vs {baseline} lately). A small reset today can stop the slide.", { n: ew.magnitude, recent: ew.recent, baseline: ew.baseline })
+          : t("The last couple of days are running about {n} points below your recent baseline ({recent} vs {baseline}). Worth a gentle course-correct.", { n: ew.magnitude, recent: ew.recent, baseline: ew.baseline }),
+      weight: 95,
+    });
+  }
 
   // ---------- Streak ----------
   const streak = activityStreak(history, data.settings);

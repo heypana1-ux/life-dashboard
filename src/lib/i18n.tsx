@@ -1613,6 +1613,17 @@ const DE: Record<string, string> = {
   "Heads up": "Auffälligkeiten",
   "Nothing unusual — your recent numbers are close to your norm.":
     "Nichts Ungewöhnliches — deine letzten Werte liegen nah an deinem Normalbereich.",
+  // --- Early warning & prediction (forecast) ---
+  "Your Life Score has dropped {n} days running (around {recent} now vs {baseline} lately). A small reset today can stop the slide.":
+    "Dein Life Score ist {n} Tage in Folge gefallen (aktuell um {recent} statt zuletzt {baseline}). Ein kleiner Neustart heute kann die Talfahrt stoppen.",
+  "The last couple of days are running about {n} points below your recent baseline ({recent} vs {baseline}). Worth a gentle course-correct.":
+    "Die letzten Tage liegen rund {n} Punkte unter deinem jüngsten Schnitt ({recent} statt {baseline}). Ein sanftes Gegensteuern lohnt sich.",
+  "Heads up — a dip is forming": "Achtung – eine Talfahrt bahnt sich an",
+  "Your score has slipped {n} days running. A small win today can turn it around.":
+    "Dein Score ist {n} Tage in Folge gefallen. Ein kleiner Erfolg heute kann das drehen.",
+  "The last days are running {n} points below your usual. Worth a gentle reset.":
+    "Die letzten Tage liegen {n} Punkte unter deinem Üblichen. Ein sanfter Neustart lohnt sich.",
+  "Tomorrow, likely around": "Morgen voraussichtlich um",
   now: "jetzt",
   usual: "üblich",
   "Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.":
