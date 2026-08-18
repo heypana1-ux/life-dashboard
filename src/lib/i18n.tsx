@@ -1639,6 +1639,10 @@ const DE: Record<string, string> = {
   "{pct}% of habits done": "{pct}% der Gewohnheiten erledigt",
   "Along the way: {list}.": "Nebenbei: {list}.",
   "Next week: {tip}": "Nächste Woche: {tip}",
+  // --- Mood & energy trend ---
+  "Mood & energy": "Stimmung & Energie",
+  "From your daily check-ins (1-10), over the selected range.":
+    "Aus deinen täglichen Check-ins (1–10), über den gewählten Zeitraum.",
   now: "jetzt",
   usual: "üblich",
   "Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.":

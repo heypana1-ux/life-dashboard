@@ -69,6 +69,17 @@ export default function StatisticsPage() {
     ? Math.round(scoped.reduce((a, b) => a + b.lifeScore, 0) / scoped.length)
     : 0;
 
+  // Mood & energy from check-ins within the selected range.
+  const moodEnergy = useMemo(() => {
+    const start = scoped.length ? scoped[0].date : "9999";
+    return data.reviews
+      .filter((r) => r.date >= start)
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .map((r) => ({ date: r.date, mood: r.mood, energy: r.energy }));
+  }, [data.reviews, scoped]);
+  const meAvg = (k: "mood" | "energy") =>
+    moodEnergy.length ? Math.round((moodEnergy.reduce((a, r) => a + r[k], 0) / moodEnergy.length) * 10) / 10 : 0;
+
   return (
     <div className="space-y-6">
       <PageHeader title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
@@ -165,6 +176,34 @@ export default function StatisticsPage() {
         <EloStat label={t("90-day")} delta={elo - eloAt(90)} />
         <EloStat label={t("All-time")} delta={elo - data.settings.eloStart} />
       </div>
+
+      {/* Mood & energy trend */}
+      {moodEnergy.length >= 3 && (
+        <Card>
+          <SectionTitle
+            right={
+              <span className="flex gap-3 text-xs text-[var(--text-muted)]">
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--accent)]" />{t("Mood")} {meAvg("mood")}</span>
+                <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[var(--good)]" />{t("Energy")} {meAvg("energy")}</span>
+              </span>
+            }
+          >
+            {t("Mood & energy")}
+          </SectionTitle>
+          <MultiLine
+            data={moodEnergy}
+            domain={[0, 10]}
+            height={240}
+            series={[
+              { key: "mood", name: t("Mood"), color: "var(--accent)" },
+              { key: "energy", name: t("Energy"), color: "var(--good)" },
+            ]}
+          />
+          <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+            {t("From your daily check-ins (1-10), over the selected range.")}
+          </p>
+        </Card>
+      )}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Weekday pattern */}
