@@ -1264,6 +1264,20 @@ const DE: Record<string, string> = {
   "Wellbeing ↔ your day": "Wohlbefinden ↔ dein Tag",
   "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
     "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
+  // --- Weather & spending insights ---
+  "Weather ↔ mood": "Wetter ↔ Stimmung",
+  "On sunny days your mood runs about {diff}/10 higher.": "An sonnigen Tagen ist deine Stimmung rund {diff}/10 höher.",
+  "Your mood actually dips about {diff}/10 on sunny days — sunshine isn't what lifts you.":
+    "Deine Stimmung sinkt an sonnigen Tagen sogar um rund {diff}/10 – Sonne ist nicht das, was dich hebt.",
+  "Weather ↔ your day": "Wetter ↔ dein Tag",
+  "Sunny days end with a Life Score about {diff} points higher.": "Sonnige Tage enden mit einem rund {diff} Punkte höheren Life Score.",
+  "Spending ↔ mood": "Ausgaben ↔ Stimmung",
+  "On your higher-spending days your mood is about {diff}/10 lower — worth noticing what drives the spending.":
+    "An Tagen mit höheren Ausgaben ist deine Stimmung rund {diff}/10 niedriger – achte darauf, was die Ausgaben antreibt.",
+  "Your higher-spending days come with a {diff}/10 better mood.": "Deine Tage mit höheren Ausgaben gehen mit {diff}/10 besserer Stimmung einher.",
+  "On higher-spending days your Life Score runs about {diff} points lower.":
+    "An Tagen mit höheren Ausgaben ist dein Life Score rund {diff} Punkte niedriger.",
+  "Higher-spending days come with a {diff}-point higher Life Score.": "Tage mit höheren Ausgaben gehen mit einem {diff} Punkte höheren Life Score einher.",
   "Symptoms ↔ productivity": "Beschwerden ↔ Produktivität",
   "On days with symptoms, your productivity runs about {pct}% lower.":
     "An Tagen mit Beschwerden ist deine Produktivität rund {pct}% niedriger.",

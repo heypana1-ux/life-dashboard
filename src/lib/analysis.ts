@@ -599,6 +599,67 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     }
   }
 
+  // ---------- Weather ↔ mood (from journal weather) ----------
+  {
+    const weatherOf = new Map(
+      data.journal.filter((j) => j.weather).map((j) => [j.date, normalizeWeather(j.weather!)] as const),
+    );
+    if (weatherOf.size >= 2 * MIN) {
+      const wDates = [...weatherOf.keys()];
+      const isSunny = (d: string) => weatherOf.get(d) === "sunny";
+      if (refl) {
+        const wm = assoc(isSunny, mood, wDates.filter((d) => reviewOf.has(d)));
+        if (wm && Math.abs(wm.diff) >= 0.5) {
+          F.push({
+            id: "weather-mood",
+            kind: "insight",
+            title: t("Weather ↔ mood"),
+            detail: wm.diff > 0
+              ? t("On sunny days your mood runs about {diff}/10 higher.", { diff: wm.diff.toFixed(1) })
+              : t("Your mood actually dips about {diff}/10 on sunny days — sunshine isn't what lifts you.", { diff: Math.abs(wm.diff).toFixed(1) }),
+            weight: 44 + Math.abs(wm.diff) * 5,
+          });
+        }
+      } else {
+        const wl = assoc(isSunny, life, wDates.filter((d) => byDate.has(d)));
+        if (wl && wl.diff >= 3) {
+          F.push({ id: "weather-life", kind: "insight", title: t("Weather ↔ your day"), detail: t("Sunny days end with a Life Score about {diff} points higher.", { diff: Math.round(wl.diff) }), weight: 44 + wl.diff });
+        }
+      }
+    }
+  }
+
+  // ---------- Spending ↔ wellbeing ----------
+  {
+    const spend = new Map<string, number>();
+    for (const tx of data.finances.transactions) if (tx.type === "expense") spend.set(tx.date, (spend.get(tx.date) ?? 0) + tx.amount);
+    const spendDates = [...spend.keys()];
+    if (spendDates.length >= 2 * MIN) {
+      const vals = [...spend.values()].sort((a, b) => a - b);
+      const med = vals[Math.floor(vals.length / 2)];
+      const hi = (d: string) => (spend.get(d) ?? 0) > med;
+      const metric = refl ? mood : life;
+      const sw = assoc(hi, metric, spendDates.filter((d) => metric(d) != null));
+      const min = refl ? 0.5 : 3;
+      if (sw && Math.abs(sw.diff) >= min) {
+        const worse = sw.diff < 0;
+        F.push({
+          id: "spend-wellbeing",
+          kind: worse ? "watch" : "insight",
+          title: t("Spending ↔ mood"),
+          detail: refl
+            ? worse
+              ? t("On your higher-spending days your mood is about {diff}/10 lower — worth noticing what drives the spending.", { diff: Math.abs(sw.diff).toFixed(1) })
+              : t("Your higher-spending days come with a {diff}/10 better mood.", { diff: sw.diff.toFixed(1) })
+            : worse
+              ? t("On higher-spending days your Life Score runs about {diff} points lower.", { diff: Math.round(Math.abs(sw.diff)) })
+              : t("Higher-spending days come with a {diff}-point higher Life Score.", { diff: Math.round(sw.diff) }),
+          weight: 50 + Math.abs(sw.diff) * 3,
+        });
+      }
+    }
+  }
+
   // ---------- "What drives my score?" — ranked positive & negative associations ----------
   const driverFactors: { label: string; pred: (d: string) => boolean }[] = [];
   if (has("sport")) driverFactors.push({ label: t("Training"), pred: (d) => trained.has(d) });
@@ -687,4 +748,14 @@ function fmtH(min: number): string {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
   return `${h}h ${String(m).padStart(2, "0")}m`;
+}
+
+/** Normalize a free-text weather string (EN or DE) into a coarse category. */
+function normalizeWeather(w: string): "sunny" | "cloudy" | "rainy" | "snowy" | "other" {
+  const s = w.toLowerCase();
+  if (/(sun|clear|sonne|sonnig|klar|heiter)/.test(s)) return "sunny";
+  if (/(rain|regen|shower|schauer|drizzle|niesel)/.test(s)) return "rainy";
+  if (/(snow|schnee)/.test(s)) return "snowy";
+  if (/(cloud|wolke|bewölkt|bedeckt|overcast|grau)/.test(s)) return "cloudy";
+  return "other";
 }
