@@ -42,7 +42,8 @@ import {
 } from "./types";
 import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
 import { dueRecurring } from "./finance";
-import { todayISO } from "./date";
+import { todayISO, addDays, weekdayOf } from "./date";
+import type { Accent } from "./types";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
 import type { Session } from "@supabase/supabase-js";
 
@@ -124,6 +125,8 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     rewards: {
       items: parsed.rewards?.items ?? [],
       redemptions: parsed.rewards?.redemptions ?? [],
+      owned: parsed.rewards?.owned ?? [],
+      challengeClaims: parsed.rewards?.challengeClaims ?? [],
     },
   };
 }
@@ -211,6 +214,10 @@ interface StoreCtx {
   removeReward: (id: string) => void;
   redeemReward: (item: RewardItem) => void;
   undoRedemption: (id: string) => void;
+  /** Claim a completed weekly challenge for XP (idempotent per week). */
+  claimChallenge: (id: string) => void;
+  /** Buy a cosmetic accent theme with points; deducts points and marks it owned + applies it. */
+  buyCosmetic: (accent: Accent, cost: number, name: string) => void;
   /* cloud sync */
   sync: SyncState;
   /* bulk */
@@ -764,6 +771,28 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }),
       undoRedemption: (id) =>
         mutate((d) => ({ ...d, rewards: { ...d.rewards, redemptions: d.rewards.redemptions.filter((x) => x.id !== id) } })),
+      claimChallenge: (id) =>
+        mutate((d) => {
+          const week = addDays(todayISO(), -weekdayOf(todayISO())); // this week's Sunday anchor
+          const claims = d.rewards.challengeClaims ?? [];
+          if (claims.some((c) => c.week === week && c.id === id)) return d;
+          return { ...d, rewards: { ...d.rewards, challengeClaims: [...claims, { week, id }] } };
+        }),
+      buyCosmetic: (accent, cost, name) =>
+        mutate((d) => {
+          const owned = d.rewards.owned ?? [];
+          if (owned.includes(accent)) return d;
+          const redemption: Redemption = { id: uid("rd"), name, cost, date: new Date().toISOString() };
+          return {
+            ...d,
+            settings: { ...d.settings, accent },
+            rewards: {
+              ...d.rewards,
+              owned: [...owned, accent],
+              redemptions: [...d.rewards.redemptions, redemption],
+            },
+          };
+        }),
 
       sync: {
         configured: isSyncConfigured,

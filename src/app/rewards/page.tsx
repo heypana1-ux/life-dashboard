@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Coins, Gift, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Check, Coins, Gift, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { fmtShort } from "@/lib/date";
+import { computeLevel } from "@/lib/level";
+import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import {
   REWARD_TEMPLATES,
   pointsBalance,
@@ -15,15 +17,19 @@ import {
 } from "@/lib/rewardShop";
 import { Card, PageHeader, SectionTitle, Button, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
 import { HintCard } from "@/components/HintCard";
+import clsx from "clsx";
 
 export default function RewardsPage() {
-  const { data, saveReward, removeReward, redeemReward, undoRedemption } = useStore();
+  const { data, saveReward, removeReward, redeemReward, undoRedemption, buyCosmetic, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
 
   const earned = useMemo(() => pointsEarned(d.history), [d.history]);
   const balance = useMemo(() => pointsBalance(d.history, data.rewards.redemptions), [d.history, data.rewards.redemptions]);
   const rate = useMemo(() => dailyRate(d.history), [d.history]);
+  const level = useMemo(() => computeLevel(data, d.history), [data, d.history]);
+  const owned = data.rewards.owned ?? [];
+  const cosmetics = ACCENT_REWARDS.filter((r) => r.cost > 0);
 
   const items = [...data.rewards.items].sort((a, b) => a.cost - b.cost);
   const redemptions = [...data.rewards.redemptions].sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -137,6 +143,56 @@ export default function RewardsPage() {
               </button>
             ))}
           </div>
+        </div>
+      </Card>
+
+      {/* Cosmetics */}
+      <Card>
+        <SectionTitle right={<Palette size={16} className="text-[var(--text-faint)]" />}>{t("Cosmetics")}</SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          {t("Spend points on accent themes. Purely cosmetic — they never touch your data or score.")}
+        </p>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {cosmetics.map((r) => {
+            const isOwned = accentOwned(r.accent, level.level, owned);
+            const active = (data.settings.accent ?? "calm") === r.accent;
+            const affordable = balance >= r.cost;
+            const days = daysToAfford(r.cost, balance, rate);
+            return (
+              <div
+                key={r.accent}
+                className={clsx(
+                  "flex items-center gap-3 rounded-xl border p-3",
+                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                <span className="h-9 w-9 shrink-0 rounded-lg" style={{ background: ACCENT_SWATCH[r.accent] }} />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{t(r.name)}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {isOwned
+                      ? t("Owned")
+                      : `${r.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
+                  </div>
+                </div>
+                {isOwned ? (
+                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ accent: r.accent })}>
+                    {active ? (
+                      <>
+                        <Check size={14} /> {t("Active")}
+                      </>
+                    ) : (
+                      t("Apply")
+                    )}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={!affordable} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
+                    {affordable ? t("Buy") : t("Locked")}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
         </div>
       </Card>
 

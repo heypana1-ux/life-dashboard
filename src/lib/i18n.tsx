@@ -979,6 +979,22 @@ const DE: Record<string, string> = {
   "Hit {n}% of your habits": "{n}% deiner Gewohnheiten schaffen",
   "Write 3 journal entries": "3 Tagebuch-Einträge schreiben",
   "Check in on 5 days": "An 5 Tagen einchecken",
+  "Complete a challenge, then claim it for {n} XP.": "Schließe eine Challenge ab und sichere dir {n} XP.",
+  "Claim {n} XP": "{n} XP sichern",
+  // --- Cosmetics / reward shop ---
+  Cosmetics: "Kosmetik",
+  "Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.":
+    "Schalte Akzent-Themes durch Aufsteigen frei oder kaufe sie im Belohnungsshop. Rein kosmetisch.",
+  "Spend points on accent themes. Purely cosmetic — they never touch your data or score.":
+    "Gib Punkte für Akzent-Themes aus. Rein kosmetisch – sie beeinflussen weder deine Daten noch deinen Score.",
+  Owned: "Freigeschaltet",
+  Buy: "Kaufen",
+  Ocean: "Ozean",
+  Mint: "Minze",
+  Gold: "Gold",
+  Grape: "Traube",
+  Crimson: "Karmesin",
+  Midnight: "Mitternacht",
   // --- Dashboard activity ---
   Activity: "Aktivität",
   "Calendar →": "Kalender →",

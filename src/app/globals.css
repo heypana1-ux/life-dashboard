@@ -103,6 +103,24 @@
 /* Rose: rose → violet (unlockable) */
 :root[data-accent="rose"] { --accent:#e11d48; --accent-soft:#ffe4e6; --grad:linear-gradient(135deg,#f43f5e,#a855f7); --grad-a:#f43f5e; --grad-b:#a855f7; }
 .dark[data-accent="rose"] { --accent:#fb7185; --accent-soft:#3a1620; --grad:linear-gradient(135deg,#fb7185,#c084fc); --grad-a:#fb7185; --grad-b:#c084fc; }
+/* Ocean: sky → blue (shop) */
+:root[data-accent="ocean"] { --accent:#0284c7; --accent-soft:#e0f2fe; --grad:linear-gradient(135deg,#0ea5e9,#2563eb); --grad-a:#0ea5e9; --grad-b:#2563eb; }
+.dark[data-accent="ocean"] { --accent:#38bdf8; --accent-soft:#0c2733; --grad:linear-gradient(135deg,#38bdf8,#3b82f6); --grad-a:#38bdf8; --grad-b:#3b82f6; }
+/* Mint: emerald → cyan (shop) */
+:root[data-accent="mint"] { --accent:#059669; --accent-soft:#d1fae5; --grad:linear-gradient(135deg,#10b981,#06b6d4); --grad-a:#10b981; --grad-b:#06b6d4; }
+.dark[data-accent="mint"] { --accent:#34d399; --accent-soft:#0c2a22; --grad:linear-gradient(135deg,#34d399,#22d3ee); --grad-a:#34d399; --grad-b:#22d3ee; }
+/* Gold: amber → orange (shop) */
+:root[data-accent="gold"] { --accent:#d97706; --accent-soft:#fef3c7; --grad:linear-gradient(135deg,#f59e0b,#d97706); --grad-a:#f59e0b; --grad-b:#d97706; }
+.dark[data-accent="gold"] { --accent:#fbbf24; --accent-soft:#33240a; --grad:linear-gradient(135deg,#fbbf24,#f59e0b); --grad-a:#fbbf24; --grad-b:#f59e0b; }
+/* Grape: violet → indigo (shop) */
+:root[data-accent="grape"] { --accent:#7c3aed; --accent-soft:#ede9fe; --grad:linear-gradient(135deg,#8b5cf6,#6366f1); --grad-a:#8b5cf6; --grad-b:#6366f1; }
+.dark[data-accent="grape"] { --accent:#a78bfa; --accent-soft:#241a3a; --grad:linear-gradient(135deg,#a78bfa,#818cf8); --grad-a:#a78bfa; --grad-b:#818cf8; }
+/* Crimson: red → dark red (shop) */
+:root[data-accent="crimson"] { --accent:#dc2626; --accent-soft:#fee2e2; --grad:linear-gradient(135deg,#ef4444,#b91c1c); --grad-a:#ef4444; --grad-b:#b91c1c; }
+.dark[data-accent="crimson"] { --accent:#f87171; --accent-soft:#2a1414; --grad:linear-gradient(135deg,#f87171,#ef4444); --grad-a:#f87171; --grad-b:#ef4444; }
+/* Midnight: indigo → slate (shop) */
+:root[data-accent="midnight"] { --accent:#4338ca; --accent-soft:#e0e7ff; --grad:linear-gradient(135deg,#4f46e5,#1e293b); --grad-a:#4f46e5; --grad-b:#1e293b; }
+.dark[data-accent="midnight"] { --accent:#818cf8; --accent-soft:#1a1f33; --grad:linear-gradient(135deg,#818cf8,#334155); --grad-a:#818cf8; --grad-b:#334155; }
 
 @theme inline {
   --color-bg: var(--bg);

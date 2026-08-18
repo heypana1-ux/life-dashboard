@@ -30,6 +30,9 @@ function titleForLevel(level: number): string {
   return "Beginner";
 }
 
+/** XP granted for claiming one completed weekly challenge. */
+export const CHALLENGE_XP = 40;
+
 export function totalXP(data: AppData, history: DayScore[]): number {
   const loggedDays = history.filter((h) => h.lifeScore > 0);
   const scoreXP = loggedDays.reduce((s, h) => s + h.lifeScore, 0); // up to 100/day
@@ -37,7 +40,8 @@ export function totalXP(data: AppData, history: DayScore[]): number {
   const journalXP = data.journal.length * 10;
   const goalsDone = data.goals.filter((g) => g.progress >= 100).length * 150;
   const achievementsXP = computeAchievements(data, history).filter((a) => a.unlocked).length * 75;
-  return scoreXP + workoutXP + journalXP + goalsDone + achievementsXP;
+  const challengeXP = (data.rewards.challengeClaims?.length ?? 0) * CHALLENGE_XP;
+  return scoreXP + workoutXP + journalXP + goalsDone + achievementsXP + challengeXP;
 }
 
 export function computeLevel(data: AppData, history: DayScore[]): LevelInfo {

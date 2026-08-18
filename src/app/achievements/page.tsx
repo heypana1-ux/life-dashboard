@@ -1,31 +1,20 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { computeAchievements, computeRecords } from "@/lib/achievements";
-import { computeLevel } from "@/lib/level";
+import { computeLevel, CHALLENGE_XP } from "@/lib/level";
 import { weeklyChallenges, Challenge } from "@/lib/challenges";
-import { ACCENT_REWARDS } from "@/lib/rewards";
-import { Accent } from "@/lib/types";
-import { Lock } from "lucide-react";
-import { todayISO } from "@/lib/date";
+import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
+import { Lock, Sparkles, Coins } from "lucide-react";
+import { todayISO, addDays, weekdayOf } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
 import clsx from "clsx";
 
-const ACCENT_SWATCH: Record<Accent, string> = {
-  calm: "linear-gradient(135deg,#6366f1,#4f46e5)",
-  aurora: "linear-gradient(135deg,#06b6d4,#4f46e5)",
-  mono: "linear-gradient(135deg,#52525b,#27272a)",
-  sunset: "linear-gradient(135deg,#f97316,#db2777)",
-  forest: "linear-gradient(135deg,#22c55e,#0d9488)",
-  rose: "linear-gradient(135deg,#f43f5e,#a855f7)",
-};
-
 export default function AchievementsPage() {
-  const { data, updateSettings } = useStore();
+  const { data, updateSettings, claimChallenge } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -35,6 +24,12 @@ export default function AchievementsPage() {
   const challenges = useMemo(() => weeklyChallenges(data, d.byDate, todayISO()), [data, d.byDate]);
   const unlocked = achievements.filter((a) => a.unlocked).length;
   const challengesDone = challenges.filter((c) => c.done).length;
+
+  const owned = data.rewards.owned ?? [];
+  const weekAnchorToday = addDays(todayISO(), -weekdayOf(todayISO()));
+  const claimedIds = new Set(
+    (data.rewards.challengeClaims ?? []).filter((c) => c.week === weekAnchorToday).map((c) => c.id),
+  );
 
   return (
     <div className="space-y-6">
@@ -71,9 +66,17 @@ export default function AchievementsPage() {
         <SectionTitle right={<Badge tone="accent">{challengesDone}/{challenges.length} {t("done")}</Badge>}>
           {t("This week's challenges")}
         </SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          {t("Complete a challenge, then claim it for {n} XP.", { n: CHALLENGE_XP })}
+        </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {challenges.map((c) => (
-            <ChallengeRow key={c.id} c={c} />
+            <ChallengeRow
+              key={c.id}
+              c={c}
+              claimed={claimedIds.has(c.id)}
+              onClaim={() => claimChallenge(c.id)}
+            />
           ))}
         </div>
       </Card>
@@ -81,28 +84,33 @@ export default function AchievementsPage() {
       {/* Cosmetic rewards */}
       <Card>
         <SectionTitle right={<Badge tone="accent">{t("Level {n}", { n: level.level })}</Badge>}>{t("Rewards")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Unlock accent themes as you level up. Purely cosmetic.")}</p>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.")}</p>
         <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
           {ACCENT_REWARDS.map((r) => {
-            const unlocked = level.level >= r.unlockLevel;
+            const isOwned = accentOwned(r.accent, level.level, owned);
             const activeAccent = (data.settings.accent ?? "calm") === r.accent;
+            const levelGated = r.unlockLevel <= 99;
             return (
               <button
                 key={r.accent}
-                disabled={!unlocked}
+                disabled={!isOwned}
                 onClick={() => updateSettings({ accent: r.accent })}
                 className={clsx(
                   "flex items-center gap-2.5 rounded-xl border p-3 text-left transition",
                   activeAccent ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)]",
-                  unlocked ? "hover:border-[var(--accent)]" : "opacity-60",
+                  isOwned ? "hover:border-[var(--accent)]" : "opacity-60",
                 )}
               >
                 <span className="h-8 w-8 shrink-0 rounded-lg" style={{ background: ACCENT_SWATCH[r.accent] }} />
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{t(r.name)}</div>
                   <div className="text-[11px] text-[var(--text-faint)]">
-                    {unlocked ? (activeAccent ? t("Active") : t("Apply")) : (
+                    {isOwned ? (
+                      activeAccent ? t("Active") : t("Apply")
+                    ) : levelGated ? (
                       <span className="inline-flex items-center gap-1"><Lock size={10} /> {t("Level {n}", { n: r.unlockLevel })}</span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1"><Coins size={10} /> {r.cost} {t("pts")}</span>
                     )}
                   </div>
                 </div>
@@ -170,7 +178,7 @@ export default function AchievementsPage() {
   );
 }
 
-function ChallengeRow({ c }: { c: Challenge }) {
+function ChallengeRow({ c, claimed, onClaim }: { c: Challenge; claimed: boolean; onClaim: () => void }) {
   const t = useT();
   const label = challengeLabel(c, t);
   const pct = Math.min(100, Math.round((c.current / c.target) * 100));
@@ -187,9 +195,16 @@ function ChallengeRow({ c }: { c: Challenge }) {
         <div className="flex items-center justify-between gap-2">
           <span className="text-sm font-medium">{label}</span>
           {c.done ? (
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--good)] text-white">
-              <Check size={12} strokeWidth={3} />
-            </span>
+            claimed ? (
+              <Badge tone="good">+{CHALLENGE_XP} XP</Badge>
+            ) : (
+              <button
+                onClick={onClaim}
+                className="grad flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
+              >
+                <Sparkles size={11} /> {t("Claim {n} XP", { n: CHALLENGE_XP })}
+              </button>
+            )
           ) : (
             <span className="shrink-0 text-xs tabular-nums text-[var(--text-faint)]">{fmt(c.current)}/{fmt(c.target)}</span>
           )}

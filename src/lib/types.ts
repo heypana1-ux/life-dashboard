@@ -434,9 +434,19 @@ export interface Redemption {
   date: string; // ISO timestamp
 }
 
+/** A completed weekly challenge the user claimed for XP. One per (week, challenge). */
+export interface ChallengeClaim {
+  week: string; // the Sunday anchor (YYYY-MM-DD) of the week it was earned in
+  id: string; // the challenge id (e.g. "train", "sleep")
+}
+
 export interface RewardsState {
   items: RewardItem[];
   redemptions: Redemption[];
+  /** Cosmetic ids (accent themes) bought with points. Owned = unlocked-by-level OR here. */
+  owned?: string[];
+  /** Weekly challenges claimed for XP (idempotent per week). */
+  challengeClaims?: ChallengeClaim[];
 }
 
 /* ---------------- Settings ---------------- */
@@ -451,7 +461,20 @@ export interface ReminderSettings {
   firedToday: string[];
 }
 
-export type Accent = "calm" | "aurora" | "mono" | "sunset" | "forest" | "rose";
+export type Accent =
+  | "calm"
+  | "aurora"
+  | "mono"
+  | "sunset"
+  | "forest"
+  | "rose"
+  // Cosmetic themes bought with reward points (see rewards.ts / the Reward shop).
+  | "ocean"
+  | "gold"
+  | "crimson"
+  | "mint"
+  | "grape"
+  | "midnight";
 
 /** Optional guided day-flow overlays (evening wrap-up + morning sleep prompt). */
 export interface DayFlowSettings {

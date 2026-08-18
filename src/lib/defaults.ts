@@ -121,7 +121,7 @@ export function emptyData(): AppData {
     workoutPlans: [],
     projects: [],
     experiments: [],
-    rewards: { items: [], redemptions: [] },
+    rewards: { items: [], redemptions: [], owned: [], challengeClaims: [] },
   };
 }
 

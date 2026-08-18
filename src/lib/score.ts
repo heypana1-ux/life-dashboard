@@ -22,8 +22,11 @@ import { addDays, isoRange, parseISO, sleepDurationMinutes, weekdayOf } from "./
         are never punished as "missed training".
       * sleep: from the manual sleep log (duration vs. personal target + quality).
       * reflection: from the daily check-in (average of the 1..10 metrics).
-  - The Life Score is the weight-normalized average of the areas that HAVE data that day
-    (an area with nothing logged is excluded and its weight redistributed).
+  - The Life Score is the weight-normalized average of the areas that HAVE data that day,
+    then scaled by a COVERAGE factor: of the areas you were set up to act on today, how many
+    did you actually engage? Touching only a sliver of what's in play dampens the day, so a
+    barely-there day (e.g. one habit ticked, nothing else logged) can no longer post a high
+    score just because the little it measured went well.
   - Because a reduce-habit slip only lowers its own area's average (bounded by that area's
     weight), a single bad day dents the score without wrecking it; long-term movement is
     captured by ELO, not by the daily number.
@@ -65,6 +68,11 @@ const OVERFILL_CAP = 0.15;
 /** Max Life-Score bonus for completing the optional morning "top 3" focus. */
 const FOCUS_BONUS = 2;
 
+/** Lowest fraction of the raw score a full lack of coverage can leave (1.0 = full coverage,
+ *  no penalty). At 0.65 a day where you engaged none of what was in play keeps 65% of its
+ *  adherence score; a fully-covered day keeps 100%. */
+const COVERAGE_FLOOR = 0.65;
+
 /**
  * Credit for a single completed occurrence: 1.0 normally, slightly more when the logged
  * amount (minutes or value) exceeds the habit's target. The bonus is small and capped, so
@@ -101,6 +109,18 @@ function weeklyFraction(habit: Habit, dateISO: string, logs: HabitLog[]): number
   let sum = 0;
   for (const d of window) sum += fulfillment(habit, logFor(logs, habit.id, d));
   return Math.min(1 + OVERFILL_CAP, sum / target);
+}
+
+/** Whether a habit-driven area had anything expected of the user on a given day
+ *  (a habit due today, or any weekly-target habit). Used for the coverage factor. */
+function habitAreaExpected(area: AreaKey, dateISO: string, habits: Habit[]): boolean {
+  return habits.some(
+    (h) =>
+      h.area === area &&
+      !h.archived &&
+      parseISO(h.createdAt) <= parseISO(dateISO) &&
+      (h.schedule.type === "weekly" || isDueOn(h, dateISO)),
+  );
 }
 
 /** Score (0..100) for one habit-driven area on a day, or null if the area has no habits in scope. */
@@ -213,9 +233,27 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
 
   const slips = reduceSlips(dateISO, habits, habitLogs);
 
+  // Coverage: of the areas you were set up to act on today, how many did you engage?
+  // Habit areas count when a habit was due (or is a weekly target); sleep and reflection
+  // count every day they're enabled (you can always log sleep and check in). Engaging only a
+  // fraction scales the day down toward COVERAGE_FLOOR, so light days can't post full scores.
+  let expected = 0;
+  let engaged = 0;
+  for (const area of enabled) {
+    let expectedToday = false;
+    if (area.key === "sleep" || area.key === "reflection") expectedToday = true;
+    else if (area.key === "finances" || area.key === "health") expectedToday = false;
+    else expectedToday = habitAreaExpected(area.key, dateISO, habits);
+    if (!expectedToday) continue;
+    expected++;
+    if (categories[area.key] != null) engaged++;
+  }
+  const coverage = expected > 0 ? engaged / expected : 1;
+  const coverageFactor = COVERAGE_FLOOR + (1 - COVERAGE_FLOOR) * coverage;
+
   let lifeScore: number | null = null;
   if (weightSum > 0) {
-    lifeScore = Math.round(clamp(weighted / weightSum));
+    lifeScore = Math.round(clamp((weighted / weightSum) * coverageFactor));
     // Optional morning "top 3" focus: a small, capped bonus for finishing what you set out to do.
     const focus = data.focus?.find((f) => f.date === dateISO);
     if (focus && focus.items.length > 0) {
@@ -229,9 +267,11 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
 
 /* ---------------- ELO ---------------- */
 
-const ELO_K = 0.9;
-const ELO_CLAMP = 25;
-const ELO_TRAILING = 14;
+// Tuned for a rating that reacts faster to good and bad phases instead of holding rank:
+// bigger daily deltas (K), a wider per-day cap (CLAMP), and a slightly shorter baseline window.
+const ELO_K = 1.5;
+const ELO_CLAMP = 40;
+const ELO_TRAILING = 12;
 
 /**
  * Compute the full day-by-day history (Life Score + ELO) over an inclusive date range.
