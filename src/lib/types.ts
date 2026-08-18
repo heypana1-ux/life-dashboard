@@ -562,6 +562,8 @@ export interface Settings {
   aiJournalAccess?: boolean;
   /** Cached once-per-day coach briefing so it isn't re-generated on every visit. */
   coachBriefing?: { date: string; text: string };
+  /** Short history of recent daily briefings so the coach can follow up on past advice. */
+  coachHistory?: { date: string; text: string }[];
   /** Cosmetic character/avatar the user builds and unlocks items for. */
   avatar?: AvatarConfig;
   /** Selected Score-ring skin id (see cosmetics.ts). Undefined = the default accent ring. */

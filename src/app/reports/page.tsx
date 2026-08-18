@@ -10,6 +10,7 @@ import { fmtDuration } from "@/lib/date";
 import { fmtMoney } from "@/lib/finance";
 import { weekAnchor } from "@/lib/recap";
 import { buildInsights } from "@/lib/insights";
+import { weeklyNarrative } from "@/lib/narrative";
 import { translate } from "@/lib/i18n";
 import { downloadReportImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
@@ -67,6 +68,7 @@ export default function ReportsPage() {
     () => buildInsights(data, d.history, lang).slice(0, 3),
     [data, d.history, lang],
   );
+  const narrative = useMemo(() => weeklyNarrative(data, d.history, lang), [data, d.history, lang]);
 
   return (
     <div className="space-y-6">
@@ -104,6 +106,13 @@ export default function ReportsPage() {
       {recap && <RecapOverlay mode={period} refDate={todayISO()} onClose={() => setRecap(false)} />}
       {wrapYear != null && <YearWrappedOverlay year={wrapYear} onClose={() => setWrapYear(null)} />}
       {reviewOpen && <WeeklyReviewFlow anchor={anchor} onClose={() => setReviewOpen(false)} />}
+
+      {period === "week" && (
+        <Card>
+          <SectionTitle right={<Badge tone="accent">{t("Auto-written")}</Badge>}>{t("Your week in words")}</SectionTitle>
+          <p className="text-sm leading-relaxed text-[var(--text-muted)]">{narrative}</p>
+        </Card>
+      )}
 
       <Card>
         <SectionTitle

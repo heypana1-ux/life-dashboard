@@ -250,7 +250,11 @@ export function CoachBriefing() {
     setLoading(false);
     if (res.reply) {
       setText(res.reply);
-      updateSettings({ coachBriefing: { date: today, text: res.reply } });
+      const hist = (data.settings.coachHistory ?? []).filter((h) => h.date !== today);
+      updateSettings({
+        coachBriefing: { date: today, text: res.reply },
+        coachHistory: [...hist, { date: today, text: res.reply }].slice(-6),
+      });
     }
   }
 

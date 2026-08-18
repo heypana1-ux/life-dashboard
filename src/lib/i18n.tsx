@@ -1624,6 +1624,21 @@ const DE: Record<string, string> = {
   "The last days are running {n} points below your usual. Worth a gentle reset.":
     "Die letzten Tage liegen {n} Punkte unter deinem Üblichen. Ein sanfter Neustart lohnt sich.",
   "Tomorrow, likely around": "Morgen voraussichtlich um",
+  // --- Weekly narrative (auto-written recap) ---
+  "Your week in words": "Deine Woche in Worten",
+  "Auto-written": "Automatisch verfasst",
+  "Log a few more days and a written weekly recap will appear here.":
+    "Erfasse ein paar Tage mehr, dann erscheint hier ein geschriebener Wochenrückblick.",
+  "This week your Life Score averaged {a} ({trend}).": "Diese Woche lag dein Life Score im Schnitt bei {a} ({trend}).",
+  "up from {p}": "gestiegen von {p}",
+  "down from {p}": "gefallen von {p}",
+  "about steady": "etwa stabil",
+  "Your standout day was {day} ({date}) at {score}.": "Dein stärkster Tag war {day} ({date}) mit {score}.",
+  "{n} workout(s)": "{n} Training(s)",
+  "~{h}h average sleep": "~{h} h Schlaf im Schnitt",
+  "{pct}% of habits done": "{pct}% der Gewohnheiten erledigt",
+  "Along the way: {list}.": "Nebenbei: {list}.",
+  "Next week: {tip}": "Nächste Woche: {tip}",
   now: "jetzt",
   usual: "üblich",
   "Last 7 days vs the 3 weeks before. Descriptive only — not a medical assessment.":

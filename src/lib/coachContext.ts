@@ -13,6 +13,7 @@ import { detectAnomalies } from "./anomalies";
 import { WHEEL_DIMS, latestWheel, wheelAverage } from "./wheel";
 import { dataWheelScores } from "./dataWheel";
 import { weekdayFeelings } from "./weekdayStats";
+import { earlyWarning, predictTomorrow } from "./forecast";
 import { siteLabel } from "./bodySites";
 import { AREA_LABELS } from "./defaults";
 import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
@@ -79,6 +80,18 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   // Recent 14-day series (compact)
   const series = history.slice(-14).map((h) => (h.lifeScore > 0 ? h.lifeScore : "–")).join(", ");
   if (scored.length) L.push(`Last 14 days of Life Score: ${series}.`);
+
+  // Forward view: early-warning + rough next-day estimate (engine, not the model).
+  const warn = earlyWarning(history);
+  if (warn) {
+    L.push(
+      warn.kind === "slide"
+        ? `Live trend: the score has declined ${warn.magnitude} days in a row (now ~${warn.recent} vs baseline ${warn.baseline}) — a slide is forming.`
+        : `Live trend: the last 2 days sit ~${warn.magnitude} points below the recent baseline (${warn.recent} vs ${warn.baseline}).`,
+    );
+  }
+  const pred = predictTomorrow(history);
+  if (pred) L.push(`Rough model estimate for tomorrow's Life Score: ~${pred.value} (recent slope ${pred.trend >= 0 ? "+" : ""}${pred.trend}/day).`);
 
   // Today's category scores
   if (todayScore && Object.keys(todayScore.categories).length) {
@@ -290,6 +303,12 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
       (m) => `${m.label}: ${order.map((wd, idx) => `${weekdayLabel(wd, true)} ${wf.n[idx] ? m.avg[idx] : "–"}`).join(", ")}`,
     );
     L.push("Average check-in feelings by weekday (1-10):\n" + rows.map((r) => `- ${r}`).join("\n"));
+  }
+
+  // Coach memory: the most recent previous briefing, so advice can build on itself.
+  const prevNote = (data.settings.coachHistory ?? []).filter((h) => h.date < today).slice(-1)[0];
+  if (prevNote) {
+    L.push(`Your previous coaching note to the user (${prevNote.date}): "${prevNote.text}" — if it's still relevant, briefly follow up on whether it helped.`);
   }
 
   // Analysis engine conclusions — the important part.
