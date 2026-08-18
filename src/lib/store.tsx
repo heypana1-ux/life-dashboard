@@ -173,6 +173,8 @@ interface StoreCtx {
   /* body measurements */
   saveMeasurement: (m: BodyMeasurement) => void;
   removeMeasurement: (site: string, date: string) => void;
+  /** Set (or clear, with target<=0) a target for weight ("weight") or a body site. */
+  setMeasurementTarget: (key: string, target: number) => void;
   /* wheel of life */
   saveWheelCheck: (w: WheelCheck) => WheelCheck;
   removeWheelCheck: (id: string) => void;
@@ -531,6 +533,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         }),
       removeMeasurement: (site, date) =>
         mutate((d) => ({ ...d, measurements: d.measurements.filter((x) => !(x.site === site && x.date === date)) })),
+      setMeasurementTarget: (key, target) =>
+        mutate((d) => {
+          const others = (d.settings.measurementGoals ?? []).filter((g) => g.key !== key);
+          const next = target > 0 ? [...others, { key, target: Math.round(target * 10) / 10 }] : others;
+          return { ...d, settings: { ...d.settings, measurementGoals: next } };
+        }),
 
       /* wheel of life */
       saveWheelCheck: (w) => {

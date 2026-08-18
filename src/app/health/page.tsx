@@ -10,6 +10,7 @@ import { addDays, fmtLong, fmtShort, todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { BODY_SITES, muscleForSite } from "@/lib/bodySites";
 import { muscleVolume } from "@/lib/trainingStats";
+import { measurementForecast } from "@/lib/goalForecast";
 import { MUSCLE_LABEL, Muscle } from "@/lib/exercises";
 import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle, EmptyState } from "@/components/ui";
 import { TrendLine, MiniSpark } from "@/components/charts";
@@ -262,7 +263,44 @@ function BodyMetricsCard() {
           <TrendLine data={wTrend} color="var(--info)" unit="kg" name={t("Weight (kg)")} />
         </div>
       )}
+      <MeasureTarget metricKey="weight" unit=" kg" points={wTrend} />
     </Card>
+  );
+}
+
+/** A target input for a body metric (weight or a site) plus its progress/ETA line. */
+function MeasureTarget({ metricKey, unit, points }: { metricKey: string; unit: string; points: { date: string; value: number }[] }) {
+  const { data, setMeasurementTarget } = useStore();
+  const t = useT();
+  const goal = (data.settings.measurementGoals ?? []).find((g) => g.key === metricKey);
+  const [val, setVal] = useState(goal ? String(goal.target) : "");
+  const f = goal ? measurementForecast(points, goal.target) : null;
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Target")}</span>
+      <input
+        type="number"
+        inputMode="decimal"
+        step="0.1"
+        placeholder={unit.trim()}
+        className={`${inputCls} w-20 !py-1 text-sm`}
+        value={val}
+        onChange={(e) => setVal(e.target.value)}
+        onBlur={() => setMeasurementTarget(metricKey, Number(val) || 0)}
+      />
+      {goal &&
+        (f?.reached ? (
+          <Badge tone="good">{t("Target reached 🎯")}</Badge>
+        ) : f ? (
+          <span className="text-[11px] text-[var(--text-faint)]">
+            {Math.abs(f.toGo)}
+            {unit} {t("to go")}
+            {f.etaDate ? ` · ${t("by")} ${fmtShort(f.etaDate)}` : ""}
+          </span>
+        ) : (
+          <span className="text-[11px] text-[var(--text-faint)]">{t("Log a couple to see progress.")}</span>
+        ))}
+    </div>
   );
 }
 
@@ -376,6 +414,7 @@ function MeasurementsCard() {
                     <MiniSpark data={series.map((p) => ({ date: p.date, value: p.cm }))} color="var(--accent)" height={34} />
                   </div>
                 )}
+                <MeasureTarget metricKey={s.key} unit=" cm" points={series.map((p) => ({ date: p.date, value: p.cm }))} />
               </div>
             );
           })}

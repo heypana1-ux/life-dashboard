@@ -1265,6 +1265,11 @@ const DE: Record<string, string> = {
   "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
     "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
   // --- Weather & spending insights ---
+  // --- Body-metric targets ---
+  "to go": "übrig",
+  by: "bis",
+  "Target reached 🎯": "Ziel erreicht 🎯",
+  "Log a couple to see progress.": "Trag ein paar ein, um Fortschritt zu sehen.",
   // --- Goal ETA / pace ---
   "At your pace, done around {date}": "In deinem Tempo fertig etwa am {date}",
   "on track": "im Plan",

@@ -550,6 +550,8 @@ export interface Settings {
   weeklyKmGoal?: number;
   /** Opt-in daily water goal (glasses); shown as a quick tracker on Health. */
   waterGoalGlasses?: number;
+  /** Target values for body metrics: key "weight" (kg) or a BodySite key (cm). */
+  measurementGoals?: { key: string; target: number }[];
   /** Dates that shouldn't break streaks (vacation / planned rest). */
   restDays?: string[];
   /** How many missed days a streak tolerates before breaking (streak protection). */
