@@ -12,6 +12,7 @@ import { evaluateExperiment } from "./experiments";
 import { detectAnomalies } from "./anomalies";
 import { WHEEL_DIMS, latestWheel, wheelAverage } from "./wheel";
 import { dataWheelScores } from "./dataWheel";
+import { weekdayFeelings } from "./weekdayStats";
 import { siteLabel } from "./bodySites";
 import { AREA_LABELS } from "./defaults";
 import { addDays, ageFrom, fmtDuration, sleepDurationMinutes, todayISO, weekdayLabel, weekdayOf } from "./date";
@@ -279,6 +280,16 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
       return `${dm.label} ${dv}${fv != null ? ` (feels ${fv})` : ""}`;
     });
     L.push(`Wheel of Life — data-driven (1-10 from last 30d): ${parts.join(", ")}.`);
+  }
+
+  // How the user feels by weekday (from check-ins) — surfaces "Mondays drain you" patterns.
+  const wf = weekdayFeelings(data.reviews);
+  if (wf.enough) {
+    const order = [1, 2, 3, 4, 5, 6, 0];
+    const rows = wf.metrics.map(
+      (m) => `${m.label}: ${order.map((wd, idx) => `${weekdayLabel(wd, true)} ${wf.n[idx] ? m.avg[idx] : "–"}`).join(", ")}`,
+    );
+    L.push("Average check-in feelings by weekday (1-10):\n" + rows.map((r) => `- ${r}`).join("\n"));
   }
 
   // Analysis engine conclusions — the important part.

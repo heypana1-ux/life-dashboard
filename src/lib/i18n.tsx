@@ -1769,6 +1769,14 @@ const DE: Record<string, string> = {
     "Im Schnitt ist {best} dein stärkster und {worst} dein schwächster Tag.",
   "Average Life Score per weekday, from all your logged days.":
     "Durchschnittlicher Life Score pro Wochentag, aus allen erfassten Tagen.",
+  "How you feel by weekday": "Wie du dich pro Wochentag fühlst",
+  "Your {metric} varies most across the week — highest on {best}, lowest on {worst}.":
+    "Deine {metric} schwankt am stärksten über die Woche – am höchsten {best}, am niedrigsten {worst}.",
+  "Average of each check-in metric per weekday (1-10).":
+    "Durchschnitt jeder Check-in-Kennzahl pro Wochentag (1–10).",
+  "What your week says": "Was deine Woche verrät",
+  "Looking at how my mood and energy vary by weekday in my check-in data, tell me which days I tend to feel best and worst, and give one practical suggestion for planning my week. Keep it to 2-3 sentences.":
+    "Schau dir anhand meiner Check-in-Daten an, wie Stimmung und Energie über die Wochentage schwanken, sag mir, an welchen Tagen ich mich am besten und am schlechtesten fühle, und gib einen praktischen Tipp für meine Wochenplanung. Halte es bei 2–3 Sätzen.",
 
   // --- What-if simulator ---
   "What if you slept…": "Was wäre, wenn du schläfst…",

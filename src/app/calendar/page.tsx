@@ -31,7 +31,8 @@ function dayMarks(data: AppData, date: string): (typeof DAY_MARKS)[number][] {
   return out;
 }
 import { useDerived } from "@/lib/useDerived";
-import { weekdayPatterns } from "@/lib/weekdayStats";
+import { weekdayPatterns, weekdayFeelings, feelingHighlight } from "@/lib/weekdayStats";
+import { CoachInsightCard } from "@/components/Coach";
 import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Modal, Badge, Button } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
@@ -151,6 +152,8 @@ export default function CalendarPage() {
 
       <WeekdayCard />
 
+      <WeekdayFeelingsCard />
+
       <DayDetail date={selected} onClose={() => setSelected(null)} />
     </div>
   );
@@ -196,6 +199,73 @@ function WeekdayCard() {
         })}
       </div>
       <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Average Life Score per weekday, from all your logged days.")}</p>
+    </Card>
+  );
+}
+
+const FEEL_WD = [1, 2, 3, 4, 5, 6, 0];
+
+function WeekdayFeelingsCard() {
+  const { data } = useStore();
+  const t = useT();
+  const f = useMemo(() => weekdayFeelings(data.reviews), [data.reviews]);
+  if (!f.enough) return null;
+  const hi = feelingHighlight(f);
+  const cols = "72px repeat(7, 1fr)";
+  return (
+    <Card className="mx-auto max-w-[760px]">
+      <SectionTitle>{t("How you feel by weekday")}</SectionTitle>
+      {hi && (
+        <p className="mb-3 text-sm text-[var(--text-muted)]">
+          {t("Your {metric} varies most across the week — highest on {best}, lowest on {worst}.", {
+            metric: t(hi.metricLabel).toLowerCase(),
+            best: t(weekdayLabel(hi.bestWd)),
+            worst: t(weekdayLabel(hi.worstWd)),
+          })}
+        </p>
+      )}
+      <div className="overflow-x-auto">
+        <div className="min-w-[440px]">
+          <div className="grid gap-1 pb-1" style={{ gridTemplateColumns: cols }}>
+            <div />
+            {FEEL_WD.map((wd) => (
+              <div key={wd} className="text-center text-[11px] font-medium uppercase text-[var(--text-faint)]">
+                {t(weekdayLabel(wd)).slice(0, 2)}
+              </div>
+            ))}
+          </div>
+          {f.metrics.map((m) => (
+            <div key={m.key} className="grid items-center gap-1 py-0.5" style={{ gridTemplateColumns: cols }}>
+              <div className="truncate pr-2 text-xs font-medium text-[var(--text-muted)]">{t(m.label)}</div>
+              {m.avg.map((v, idx) => {
+                const has = f.n[idx] > 0;
+                const col = v >= 6.5 ? "var(--good)" : v >= 4.5 ? "var(--warn)" : "var(--bad)";
+                return (
+                  <div
+                    key={idx}
+                    className="num flex h-8 items-center justify-center rounded-md text-[11px] font-semibold"
+                    style={{
+                      background: has ? `color-mix(in srgb, ${col} 26%, var(--surface))` : "var(--surface-2)",
+                      color: has ? "var(--text)" : "var(--text-faint)",
+                    }}
+                  >
+                    {has ? v.toFixed(1) : "–"}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+        {t("Average of each check-in metric per weekday (1-10).")}
+      </p>
+      <div className="mt-4">
+        <CoachInsightCard
+          title={t("What your week says")}
+          prompt={t("Looking at how my mood and energy vary by weekday in my check-in data, tell me which days I tend to feel best and worst, and give one practical suggestion for planning my week. Keep it to 2-3 sentences.")}
+        />
+      </div>
     </Card>
   );
 }
