@@ -2,17 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Bot, Send, Shield, Sparkles, X } from "lucide-react";
+import Link from "next/link";
+import { Bot, MessageCircle, Send, Shield, Sparkles, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { buildCoachContext } from "@/lib/coachContext";
 import { askCoach, coachAsk, checkCoachConfigured, CoachTurn } from "@/lib/ai";
 import { todayISO } from "@/lib/date";
+import { weekAnchor } from "@/lib/recap";
 import { Button } from "@/components/ui";
 
 const BRIEFING_PROMPT =
   "Write a short daily briefing of 2-3 sentences: how I'm doing based on my recent data, and one concrete thing to focus on today. Be warm, specific and encouraging. Do not start with a greeting.";
+
+const WEEKLY_CHECKIN_PROMPT =
+  "Write a short, warm weekly check-in of 2-3 sentences. Follow up on what I've been working on — reference my last weekly focus or your previous coaching note if it's relevant — and end with exactly one specific question inviting me to reflect on the past week. Do not start with a greeting.";
 
 const QUICK_PROMPTS = [
   "How is my week going?",
@@ -293,6 +298,72 @@ export function CoachBriefing() {
         </div>
       ) : (
         <p className="text-sm leading-relaxed text-[var(--text-muted)]">{text}</p>
+      )}
+    </div>
+  );
+}
+
+/* ---------------- Proactive weekly check-in ---------------- */
+
+export function CoachWeeklyCheckin() {
+  const { data, updateSettings } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const enabled = !!data.settings.aiCoachEnabled;
+  const week = weekAnchor(todayISO());
+  const cached = data.settings.coachCheckin;
+  const [text, setText] = useState(cached?.week === week ? cached.text : "");
+  const [loading, setLoading] = useState(false);
+  const startedRef = useRef(false);
+
+  async function generate() {
+    setLoading(true);
+    const ok = await checkCoachConfigured();
+    if (!ok) {
+      setLoading(false);
+      return;
+    }
+    const ctx = buildCoachContext(data, d.history).text;
+    const res = await coachAsk(WEEKLY_CHECKIN_PROMPT, ctx, data.settings.language);
+    setLoading(false);
+    if (res.reply) {
+      setText(res.reply);
+      updateSettings({ coachCheckin: { week, text: res.reply } });
+    }
+  }
+
+  useEffect(() => {
+    if (!enabled || text || startedRef.current) return;
+    if (cached?.week === week) return; // already generated this week
+    startedRef.current = true;
+    void generate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled]);
+
+  if (!enabled || (!text && !loading)) return null;
+
+  return (
+    <div className="card border-[var(--accent)]/25">
+      <div className="mb-1.5 flex items-center gap-2">
+        <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+          <MessageCircle size={15} />
+        </span>
+        <span className="text-sm font-semibold">{t("Weekly check-in")}</span>
+      </div>
+      {loading && !text ? (
+        <div className="space-y-2 py-1">
+          <div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" />
+          <div className="h-3 w-3/4 animate-pulse rounded bg-[var(--surface-2)]" />
+        </div>
+      ) : (
+        <>
+          <p className="text-sm leading-relaxed text-[var(--text-muted)]">{text}</p>
+          <Link href="/coach">
+            <Button variant="soft" size="sm" className="mt-3">
+              <Sparkles size={14} /> {t("Reply to your coach")}
+            </Button>
+          </Link>
+        </>
       )}
     </div>
   );

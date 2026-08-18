@@ -1683,6 +1683,8 @@ const DE: Record<string, string> = {
   "Along the way: {list}.": "Nebenbei: {list}.",
   "Next week: {tip}": "Nächste Woche: {tip}",
   // --- Monthly State of You ---
+  "Weekly check-in": "Wöchentlicher Check-in",
+  "Reply to your coach": "Deinem Coach antworten",
   "State of You": "Dein Zustand",
   "Made with Life Dashboard": "Erstellt mit Life Dashboard",
   "Log a few more days this month and your State of You will appear here.":

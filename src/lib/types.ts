@@ -564,6 +564,8 @@ export interface Settings {
   coachBriefing?: { date: string; text: string };
   /** Short history of recent daily briefings so the coach can follow up on past advice. */
   coachHistory?: { date: string; text: string }[];
+  /** Cached once-a-week proactive coach check-in (keyed by the week's Sunday anchor). */
+  coachCheckin?: { week: string; text: string };
   /** Cosmetic character/avatar the user builds and unlocks items for. */
   avatar?: AvatarConfig;
   /** Selected Score-ring skin id (see cosmetics.ts). Undefined = the default accent ring. */

@@ -34,7 +34,7 @@ import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatT
 import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
-import { CoachBriefing } from "@/components/Coach";
+import { CoachBriefing, CoachWeeklyCheckin } from "@/components/Coach";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
 import { HintCard } from "@/components/HintCard";
 
@@ -310,8 +310,9 @@ export default function DashboardPage() {
           {t("Tap Customize to reorder or hide cards. The new Heads up card flags anything unusual in your recent data — tap it to jump to the details.")}
         </HintCard>
 
-        {/* Proactive coach briefing (only when AI coach is on) */}
+        {/* Proactive coach briefing + weekly check-in (only when AI coach is on) */}
         <CoachBriefing />
+        <CoachWeeklyCheckin />
 
         {/* Streak at risk: nudge to log something today */}
         {streak >= 2 && !dayHasEntry(data, d.today) && (
