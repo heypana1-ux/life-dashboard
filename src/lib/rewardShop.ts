@@ -1,4 +1,5 @@
 import { AppData, DayScore, Redemption } from "./types";
+import { QUEST_POINTS } from "./quests";
 
 /*
   A transparent points economy for rewards (real-life ones the user defines, plus cosmetics).
@@ -43,10 +44,12 @@ export function dayPoints(data: AppData, date: string, lifeScore: number): numbe
   return (activityByDate(data).get(date) ?? 0) + qualityBonus(lifeScore);
 }
 
-/** Total points ever earned across the history. */
+/** Total points ever earned = activity + quality across history, plus claimed daily quests. */
 export function pointsEarned(history: DayScore[], data: AppData): number {
   const act = activityByDate(data);
-  return history.reduce((s, h) => s + (act.get(h.date) ?? 0) + qualityBonus(h.lifeScore), 0);
+  const fromDays = history.reduce((s, h) => s + (act.get(h.date) ?? 0) + qualityBonus(h.lifeScore), 0);
+  const fromQuests = (data.rewards.questClaims?.length ?? 0) * QUEST_POINTS;
+  return fromDays + fromQuests;
 }
 
 /** Current spendable balance = earned − redeemed. */

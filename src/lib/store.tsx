@@ -127,6 +127,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
       redemptions: parsed.rewards?.redemptions ?? [],
       owned: parsed.rewards?.owned ?? [],
       challengeClaims: parsed.rewards?.challengeClaims ?? [],
+      questClaims: parsed.rewards?.questClaims ?? [],
     },
   };
 }
@@ -216,6 +217,8 @@ interface StoreCtx {
   undoRedemption: (id: string) => void;
   /** Claim a completed weekly challenge for XP (idempotent per week). */
   claimChallenge: (id: string) => void;
+  /** Claim a completed daily quest for points (idempotent per day). */
+  claimQuest: (id: string) => void;
   /** Buy a cosmetic accent theme with points; deducts points and marks it owned + applies it. */
   buyCosmetic: (accent: Accent, cost: number, name: string) => void;
   /** Buy any prefixed cosmetic id (e.g. "ring:ember", "title:iron") with points; marks it owned. */
@@ -779,6 +782,13 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const claims = d.rewards.challengeClaims ?? [];
           if (claims.some((c) => c.week === week && c.id === id)) return d;
           return { ...d, rewards: { ...d.rewards, challengeClaims: [...claims, { week, id }] } };
+        }),
+      claimQuest: (id) =>
+        mutate((d) => {
+          const date = todayISO();
+          const claims = d.rewards.questClaims ?? [];
+          if (claims.some((c) => c.date === date && c.id === id)) return d;
+          return { ...d, rewards: { ...d.rewards, questClaims: [...claims, { date, id }] } };
         }),
       buyCosmetic: (accent, cost, name) =>
         mutate((d) => {

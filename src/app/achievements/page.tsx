@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 import { computeAchievements, computeRecords } from "@/lib/achievements";
 import { computeLevel, CHALLENGE_XP } from "@/lib/level";
 import { weeklyChallenges, Challenge } from "@/lib/challenges";
+import { dailyQuests, Quest, QUEST_POINTS } from "@/lib/quests";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import { titleName, badgeEmoji } from "@/lib/cosmetics";
 import { Lock, Sparkles, Coins } from "lucide-react";
@@ -15,7 +16,7 @@ import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
 import clsx from "clsx";
 
 export default function AchievementsPage() {
-  const { data, updateSettings, claimChallenge } = useStore();
+  const { data, updateSettings, claimChallenge, claimQuest } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -23,13 +24,18 @@ export default function AchievementsPage() {
   const records = useMemo(() => computeRecords(data, d.history), [data, d.history]);
   const level = useMemo(() => computeLevel(data, d.history), [data, d.history]);
   const challenges = useMemo(() => weeklyChallenges(data, d.byDate, todayISO()), [data, d.byDate]);
+  const quests = useMemo(() => dailyQuests(data, todayISO()), [data]);
   const unlocked = achievements.filter((a) => a.unlocked).length;
   const challengesDone = challenges.filter((c) => c.done).length;
+  const questsDone = quests.filter((q) => q.done).length;
 
   const owned = data.rewards.owned ?? [];
   const weekAnchorToday = addDays(todayISO(), -weekdayOf(todayISO()));
   const claimedIds = new Set(
     (data.rewards.challengeClaims ?? []).filter((c) => c.week === weekAnchorToday).map((c) => c.id),
+  );
+  const claimedQuestIds = new Set(
+    (data.rewards.questClaims ?? []).filter((c) => c.date === todayISO()).map((c) => c.id),
   );
 
   return (
@@ -66,6 +72,26 @@ export default function AchievementsPage() {
           {level.intoLevel.toLocaleString()} / {level.span.toLocaleString()} {t("XP to level {n}", { n: level.level + 1 })}
         </div>
       </div>
+
+      {/* Daily quests */}
+      <Card>
+        <SectionTitle right={<Badge tone="accent">{questsDone}/{quests.length} {t("done")}</Badge>}>
+          {t("Today's quests")}
+        </SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          {t("Small daily tasks — claim each for {n} points.", { n: QUEST_POINTS })}
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {quests.map((q) => (
+            <QuestRow
+              key={q.id}
+              q={q}
+              claimed={claimedQuestIds.has(q.id)}
+              onClaim={() => claimQuest(q.id)}
+            />
+          ))}
+        </div>
+      </Card>
 
       {/* Weekly challenges */}
       <Card>
@@ -217,6 +243,44 @@ function ChallengeRow({ c, claimed, onClaim }: { c: Challenge; claimed: boolean;
         </div>
         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
           <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.done ? "var(--good)" : "var(--accent)" }} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuestRow({ q, claimed, onClaim }: { q: Quest; claimed: boolean; onClaim: () => void }) {
+  const t = useT();
+  const label = q.id === "habits3" ? t("Complete {n} habits today", { n: q.target }) : t(q.title);
+  const pct = Math.min(100, Math.round((q.current / Math.max(1, q.target)) * 100));
+  return (
+    <div
+      className={clsx(
+        "flex items-center gap-3 rounded-xl border p-3 transition",
+        q.done ? "border-[var(--good)] bg-[var(--good)]/10" : "border-[var(--border)] bg-[var(--surface-2)]",
+      )}
+    >
+      <div className={clsx("text-2xl", !q.done && "opacity-70")}>{q.icon}</div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm font-medium">{label}</span>
+          {q.done ? (
+            claimed ? (
+              <Badge tone="good">+{QUEST_POINTS} {t("pts")}</Badge>
+            ) : (
+              <button
+                onClick={onClaim}
+                className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-white"
+              >
+                <Coins size={11} /> {t("Claim {n} pts", { n: QUEST_POINTS })}
+              </button>
+            )
+          ) : (
+            <span className="shrink-0 text-xs tabular-nums text-[var(--text-faint)]">{q.current}/{q.target}</span>
+          )}
+        </div>
+        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
+          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: q.done ? "var(--good)" : "var(--accent)" }} />
         </div>
       </div>
     </div>

@@ -440,6 +440,12 @@ export interface ChallengeClaim {
   id: string; // the challenge id (e.g. "train", "sleep")
 }
 
+/** A completed daily quest the user claimed for points. One per (date, quest). */
+export interface QuestClaim {
+  date: string; // YYYY-MM-DD it was earned on
+  id: string; // the quest id (e.g. "sleep", "checkin")
+}
+
 export interface RewardsState {
   items: RewardItem[];
   redemptions: Redemption[];
@@ -447,6 +453,8 @@ export interface RewardsState {
   owned?: string[];
   /** Weekly challenges claimed for XP (idempotent per week). */
   challengeClaims?: ChallengeClaim[];
+  /** Daily quests claimed for points (idempotent per day). */
+  questClaims?: QuestClaim[];
 }
 
 /* ---------------- Settings ---------------- */

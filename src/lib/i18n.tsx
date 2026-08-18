@@ -981,6 +981,18 @@ const DE: Record<string, string> = {
   "Check in on 5 days": "An 5 Tagen einchecken",
   "Complete a challenge, then claim it for {n} XP.": "Schließe eine Challenge ab und sichere dir {n} XP.",
   "Claim {n} XP": "{n} XP sichern",
+  // --- Daily quests ---
+  "Today's quests": "Heutige Quests",
+  "Small daily tasks — claim each for {n} points.": "Kleine Tagesaufgaben – sichere dir je {n} Punkte.",
+  "Claim {n} pts": "{n} Pkt sichern",
+  "Complete {n} habits today": "Erledige heute {n} Gewohnheiten",
+  "Complete every habit today": "Erledige heute alle Gewohnheiten",
+  "Do today's check-in": "Mach heute deinen Check-in",
+  "Log your sleep": "Trag deinen Schlaf ein",
+  "Write a journal entry": "Schreib einen Tagebuch-Eintrag",
+  "Log a workout": "Trag ein Training ein",
+  "Finish your morning focus": "Schließe deinen Morgen-Fokus ab",
+  "Avoid your watch-list today": "Vermeide heute deine Beobachtungsliste",
   // --- Cosmetics / reward shop ---
   Cosmetics: "Kosmetik",
   "Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.":
