@@ -1,14 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Coins, CircleDot, Gift, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Award, BadgeCheck, Check, Coins, CircleDot, Gift, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { fmtShort } from "@/lib/date";
 import { computeLevel } from "@/lib/level";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
-import { RING_SKINS, ringOwned } from "@/lib/cosmetics";
+import { RING_SKINS, ringOwned, TITLES, titleOwned, BADGES, badgeOwned } from "@/lib/cosmetics";
 import {
   REWARD_TEMPLATES,
   pointsBalance,
@@ -251,6 +251,100 @@ export default function RewardsPage() {
             );
           })}
         </div>
+      </Card>
+
+      {/* Titles */}
+      <Card>
+        <SectionTitle right={<Award size={16} className="text-[var(--text-faint)]" />}>{t("Titles")}</SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Wear a title next to your level. Purely cosmetic.")}</p>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {TITLES.filter((x) => x.id !== "none").map((x) => {
+            const isOwned = titleOwned(x.id, owned);
+            const active = (data.settings.title ?? "none") === x.id;
+            const affordable = balance >= x.cost;
+            const days = daysToAfford(x.cost, balance, rate);
+            return (
+              <div
+                key={x.id}
+                className={clsx(
+                  "flex items-center gap-3 rounded-xl border p-3",
+                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                <BadgeCheck size={18} className="shrink-0 text-[var(--accent)]" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{t(x.name)}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {isOwned
+                      ? t("Owned")
+                      : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
+                  </div>
+                </div>
+                {isOwned ? (
+                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ title: x.id })}>
+                    {active ? (<><Check size={14} /> {t("Active")}</>) : t("Apply")}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`title:${x.id}`, x.cost, `Title: ${x.name}`); updateSettings({ title: x.id }); }}>
+                    {affordable ? t("Buy") : t("Locked")}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {data.settings.title && data.settings.title !== "none" && (
+          <button onClick={() => updateSettings({ title: "none" })} className="mt-3 text-xs text-[var(--text-faint)] hover:text-[var(--text)]">
+            {t("Clear title")}
+          </button>
+        )}
+      </Card>
+
+      {/* Badges */}
+      <Card>
+        <SectionTitle right={<Coins size={16} className="text-[var(--text-faint)]" />}>{t("Badges")}</SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Pin an emoji badge next to your level. Purely cosmetic.")}</p>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {BADGES.filter((x) => x.id !== "none").map((x) => {
+            const isOwned = badgeOwned(x.id, owned);
+            const active = (data.settings.badge ?? "none") === x.id;
+            const affordable = balance >= x.cost;
+            const days = daysToAfford(x.cost, balance, rate);
+            return (
+              <div
+                key={x.id}
+                className={clsx(
+                  "flex items-center gap-3 rounded-xl border p-3",
+                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                <span className="w-6 shrink-0 text-center text-xl">{x.emoji}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{t(x.name)}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {isOwned
+                      ? t("Owned")
+                      : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
+                  </div>
+                </div>
+                {isOwned ? (
+                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ badge: x.id })}>
+                    {active ? (<><Check size={14} /> {t("Active")}</>) : t("Apply")}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`badge:${x.id}`, x.cost, `Badge: ${x.name}`); updateSettings({ badge: x.id }); }}>
+                    {affordable ? t("Buy") : t("Locked")}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+        {data.settings.badge && data.settings.badge !== "none" && (
+          <button onClick={() => updateSettings({ badge: "none" })} className="mt-3 text-xs text-[var(--text-faint)] hover:text-[var(--text)]">
+            {t("Clear badge")}
+          </button>
+        )}
       </Card>
 
       {/* History */}

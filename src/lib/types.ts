@@ -560,6 +560,8 @@ export interface Settings {
   ringSkin?: string;
   /** Selected profile title id shown next to the level (see cosmetics.ts). */
   title?: string;
+  /** Selected badge id (emoji flair) shown next to the level (see cosmetics.ts). */
+  badge?: string;
   /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */
   about?: Record<string, string>;
   /** Dashboard personalization: hidden card ids and a custom card order. */

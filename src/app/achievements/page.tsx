@@ -8,6 +8,7 @@ import { computeAchievements, computeRecords } from "@/lib/achievements";
 import { computeLevel, CHALLENGE_XP } from "@/lib/level";
 import { weeklyChallenges, Challenge } from "@/lib/challenges";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
+import { titleName, badgeEmoji } from "@/lib/cosmetics";
 import { Lock, Sparkles, Coins } from "lucide-react";
 import { todayISO, addDays, weekdayOf } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
@@ -45,7 +46,12 @@ export default function AchievementsPage() {
             <div className="text-sm font-medium opacity-85">{t("Level")}</div>
             <div className="mt-1 flex items-baseline gap-2.5">
               <span className="num text-[52px] font-bold leading-none">{level.level}</span>
-              <span className="text-lg font-semibold">{t(level.title)}</span>
+              <span className="text-lg font-semibold">
+                {badgeEmoji(data.settings.badge) && (
+                  <span className="mr-1">{badgeEmoji(data.settings.badge)}</span>
+                )}
+                {titleName(data.settings.title) ? t(titleName(data.settings.title)!) : t(level.title)}
+              </span>
             </div>
           </div>
           <div className="text-right">

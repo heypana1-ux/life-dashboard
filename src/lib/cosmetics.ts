@@ -34,3 +34,64 @@ export function ringOwned(id: string, owned: string[] = []): boolean {
 export function ringSkinById(id: string | undefined): RingSkin {
   return RING_SKINS.find((s) => s.id === id) ?? RING_SKINS[0];
 }
+
+/* ---------------- Profile titles ---------------- */
+
+export interface TitleCosmetic {
+  id: string; // stored owned as `title:${id}`; "none" is the free default
+  name: string; // English key — the displayed title text
+  cost: number;
+}
+
+export const TITLES: TitleCosmetic[] = [
+  { id: "none", name: "No title", cost: 0 },
+  { id: "rising", name: "Rising Star", cost: 150 },
+  { id: "earlybird", name: "Early Bird", cost: 300 },
+  { id: "nightowl", name: "Night Owl", cost: 300 },
+  { id: "iron", name: "Iron-Willed", cost: 500 },
+  { id: "zen", name: "Zen Master", cost: 600 },
+  { id: "relentless", name: "Relentless", cost: 800 },
+  { id: "machine", name: "The Machine", cost: 1000 },
+  { id: "legend", name: "Living Legend", cost: 1500 },
+];
+
+export function titleOwned(id: string, owned: string[] = []): boolean {
+  return id === "none" || owned.includes(`title:${id}`);
+}
+
+/** The displayed title text for a selected id, or null for the default/none. */
+export function titleName(id: string | undefined): string | null {
+  if (!id || id === "none") return null;
+  return TITLES.find((t) => t.id === id)?.name ?? null;
+}
+
+/* ---------------- Badges (emoji flair) ---------------- */
+
+export interface BadgeCosmetic {
+  id: string; // stored owned as `badge:${id}`; "none" is the free default
+  emoji: string;
+  name: string; // English key
+  cost: number;
+}
+
+export const BADGES: BadgeCosmetic[] = [
+  { id: "none", emoji: "", name: "No badge", cost: 0 },
+  { id: "flame", emoji: "🔥", name: "Flame", cost: 150 },
+  { id: "star", emoji: "⭐", name: "Star", cost: 200 },
+  { id: "bolt", emoji: "⚡", name: "Bolt", cost: 300 },
+  { id: "sparkle", emoji: "✨", name: "Sparkle", cost: 350 },
+  { id: "rocket", emoji: "🚀", name: "Rocket", cost: 500 },
+  { id: "trophy", emoji: "🏆", name: "Trophy", cost: 700 },
+  { id: "diamond", emoji: "💎", name: "Diamond", cost: 900 },
+  { id: "crown", emoji: "👑", name: "Crown", cost: 1200 },
+];
+
+export function badgeOwned(id: string, owned: string[] = []): boolean {
+  return id === "none" || owned.includes(`badge:${id}`);
+}
+
+/** The emoji for a selected badge id, or null for none. */
+export function badgeEmoji(id: string | undefined): string | null {
+  if (!id || id === "none") return null;
+  return BADGES.find((b) => b.id === id)?.emoji ?? null;
+}
