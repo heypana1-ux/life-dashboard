@@ -58,7 +58,7 @@ export default function HabitsPage() {
         action={
           <div className="flex items-center gap-2">
             <Button variant="soft" onClick={() => setTpl(true)}>
-              <LayoutTemplate size={16} /> {t("Templates")}
+              <LayoutTemplate size={16} /> {t("Library")}
             </Button>
             <Button
               onClick={() => {
@@ -157,11 +157,24 @@ function TemplatesModal({
   existing: Set<string>;
 }) {
   const t = useT();
+  const [q, setQ] = useState("");
+  const query = q.trim().toLowerCase();
+  const groups = HABIT_TEMPLATE_GROUPS.map((g) => ({
+    group: g.group,
+    items: g.items.filter((h) => !query || t(h.name).toLowerCase().includes(query) || h.name.toLowerCase().includes(query)),
+  })).filter((g) => g.items.length > 0);
   return (
-    <Modal open={open} onClose={onClose} title={t("Habit templates")} wide>
+    <Modal open={open} onClose={onClose} title={t("Habit library")} wide>
       <p className="mb-3 text-sm text-[var(--text-muted)]">{t("Add a ready-made habit, then tweak it any way you like.")}</p>
+      <input
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={t("Search habits…")}
+        className="mb-4 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm outline-none focus:border-[var(--accent)]"
+      />
       <div className="space-y-4">
-        {HABIT_TEMPLATE_GROUPS.map((g) => (
+        {groups.length === 0 && <p className="py-6 text-center text-sm text-[var(--text-muted)]">{t("Nothing found.")}</p>}
+        {groups.map((g) => (
           <div key={g.group}>
             <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">{t(g.group)}</div>
             <div className="flex flex-wrap gap-2">
