@@ -134,7 +134,7 @@ export default function TodayPage() {
       />
 
       <div className="grid items-start gap-[18px] lg:grid-cols-[1.3fr_1fr]">
-        <div className="flex flex-col gap-[18px]">
+        <div className="flex min-w-0 flex-col gap-[18px]">
           {/* Goals */}
           <Card>
             <SectionTitle
@@ -278,7 +278,7 @@ export default function TodayPage() {
         </div>
 
         {/* Sidebar: projected score + sleep */}
-        <div className="flex flex-col gap-[18px] lg:sticky lg:top-[92px]">
+        <div className="flex min-w-0 flex-col gap-[18px] lg:sticky lg:top-[92px]">
           <Card>
             <p className="slabel">{t("Projected score")}</p>
             <div className="mb-[18px] mt-1.5 flex items-baseline gap-2.5">
