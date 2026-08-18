@@ -218,7 +218,7 @@ function WeekdayFeelingsCard() {
       {hi && (
         <p className="mb-3 text-sm text-[var(--text-muted)]">
           {t("Your {metric} varies most across the week — highest on {best}, lowest on {worst}.", {
-            metric: t(hi.metricLabel).toLowerCase(),
+            metric: t(hi.metricLabel),
             best: t(weekdayLabel(hi.bestWd)),
             worst: t(weekdayLabel(hi.worstWd)),
           })}
