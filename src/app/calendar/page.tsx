@@ -259,6 +259,7 @@ function WeekdayFeelingsCard() {
       </div>
       <p className="mt-2 text-[11px] text-[var(--text-faint)]">
         {t("Average of each check-in metric per weekday (1-10).")}
+        {f.total < 14 && " " + t("More daily check-ins will sharpen this.")}
       </p>
       <div className="mt-4">
         <CoachInsightCard

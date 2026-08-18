@@ -1804,6 +1804,7 @@ const DE: Record<string, string> = {
     "Deine {metric} schwankt am stärksten über die Woche – am höchsten {best}, am niedrigsten {worst}.",
   "Average of each check-in metric per weekday (1-10).":
     "Durchschnitt jeder Check-in-Kennzahl pro Wochentag (1–10).",
+  "More daily check-ins will sharpen this.": "Mehr tägliche Check-ins schärfen das.",
   "What your week says": "Was deine Woche verrät",
   "Looking at how my mood and energy vary by weekday in my check-in data, tell me which days I tend to feel best and worst, and give one practical suggestion for planning my week. Keep it to 2-3 sentences.":
     "Schau dir anhand meiner Check-in-Daten an, wie Stimmung und Energie über die Wochentage schwanken, sag mir, an welchen Tagen ich mich am besten und am schlechtesten fühle, und gib einen praktischen Tipp für meine Wochenplanung. Halte es bei 2–3 Sätzen.",

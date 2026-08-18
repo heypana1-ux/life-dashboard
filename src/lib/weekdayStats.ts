@@ -37,11 +37,13 @@ export function weekdayPatterns(history: DayScore[]): WeekdayPatterns {
     return { wd, avg: c && c.n ? Math.round(c.total / c.n) : 0, n: c?.n ?? 0 };
   });
 
-  const withData = stats.filter((s) => s.n >= 2);
+  // Any weekday with at least one scored day counts; the card appears once a few weekdays
+  // have data instead of waiting for a large sample.
+  const withData = stats.filter((s) => s.n >= 1);
   const best = withData.length ? withData.reduce((m, s) => (s.avg > m.avg ? s : m)) : null;
   const worst = withData.length ? withData.reduce((m, s) => (s.avg < m.avg ? s : m)) : null;
 
-  return { stats, best, worst, enough: withData.length >= 4 };
+  return { stats, best, worst, enough: withData.length >= 3 };
 }
 
 /* ----------------- How you FEEL by weekday (from check-ins) ----------------- */
@@ -87,7 +89,9 @@ export function weekdayFeelings(reviews: DailyReview[]): WeekdayFeelings {
     avg: MON_FIRST.map((_, idx) => (n[idx] ? Math.round((sums[mi][idx] / n[idx]) * 10) / 10 : 0)),
   }));
   const daysWith = n.filter((x) => x > 0).length;
-  return { metrics, n, total: reviews.length, enough: reviews.length >= 10 && daysWith >= 4 };
+  // Show the grid once there are a handful of check-ins across a couple of weekdays; the card
+  // itself notes when more data would sharpen the pattern.
+  return { metrics, n, total: reviews.length, enough: reviews.length >= 4 && daysWith >= 2 };
 }
 
 export interface FeelingHighlight {
