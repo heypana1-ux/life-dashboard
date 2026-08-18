@@ -1685,6 +1685,25 @@ const DE: Record<string, string> = {
   // --- Monthly State of You ---
   "Weekly check-in": "Wöchentlicher Check-in",
   "Reply to your coach": "Deinem Coach antworten",
+  // --- AI quick logging ---
+  "Quick log": "Schnell-Eintrag",
+  "Type or speak your day in plain words — e.g. “slept 7h, mood 8, did meditation, ran 30 min”. The AI turns it into entries.":
+    "Tippe oder sprich deinen Tag in einfachen Worten – z. B. „7h geschlafen, Stimmung 8, meditiert, 30 min gelaufen“. Die KI macht daraus Einträge.",
+  "What happened today?": "Was ist heute passiert?",
+  "Log it": "Eintragen",
+  "Reading…": "Lese…",
+  "Logged for today": "Für heute eingetragen",
+  "Everything is dated today. Applying overwrites today's values for these entries.":
+    "Alles wird auf heute datiert. Übernehmen überschreibt die heutigen Werte für diese Einträge.",
+  "Quick note": "Kurznotiz",
+  "Check-in": "Check-in",
+  Weight: "Gewicht",
+  "Not done": "Nicht erledigt",
+  "The AI isn't set up yet. Add your Groq API key in the coach setup.":
+    "Die KI ist noch nicht eingerichtet. Füge deinen Groq-API-Key im Coach-Setup hinzu.",
+  "Couldn't read anything to log — try rephrasing.": "Konnte nichts zum Eintragen erkennen – formuliere es anders.",
+  "I couldn't find anything loggable in that — try naming a habit, your sleep, mood, a workout, water or weight.":
+    "Ich konnte darin nichts Eintragbares finden – nenne z. B. eine Gewohnheit, deinen Schlaf, deine Stimmung, ein Training, Wasser oder Gewicht.",
   "State of You": "Dein Zustand",
   "Made with Life Dashboard": "Erstellt mit Life Dashboard",
   "Log a few more days this month and your State of You will appear here.":

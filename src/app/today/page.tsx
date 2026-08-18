@@ -20,6 +20,7 @@ import {
   Badge,
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
+import { QuickLogButton } from "@/components/QuickLog";
 
 const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
   { key: "productivity", label: "Productivity" },
@@ -129,6 +130,7 @@ export default function TodayPage() {
                 {t("Today")}
               </Button>
             )}
+            <QuickLogButton className="!py-2" />
           </div>
         }
       />

@@ -78,6 +78,83 @@ export async function planGoal(goalText: string, context: string, language: stri
   return askCoach([{ role: "user", content: goalText }], context, language, "goalplan");
 }
 
+/* ---------------- AI natural-language quick logging ---------------- */
+
+export type ReviewKey = "mood" | "energy" | "productivity" | "satisfaction" | "discipline";
+
+export interface ParsedLog {
+  review?: Partial<Record<ReviewKey, number>>;
+  sleepHours?: number;
+  sleepQuality?: number;
+  habits?: { name: string; done: boolean }[];
+  workout?: { sport: string; minutes?: number };
+  water?: number;
+  weightKg?: number;
+  journal?: string;
+  note?: string;
+}
+
+/** Send free text + the user's habit names; the server returns structured JSON to apply. */
+export async function logFromText(text: string, habitNames: string, language: string): Promise<CoachResult> {
+  return askCoach([{ role: "user", content: text }], habitNames, language, "log");
+}
+
+const REVIEW_KEYS: ReviewKey[] = ["mood", "energy", "productivity", "satisfaction", "discipline"];
+const clampInt = (n: unknown, lo: number, hi: number): number | undefined => {
+  const v = Math.round(Number(n));
+  return Number.isFinite(v) && v >= lo && v <= hi ? v : undefined;
+};
+
+/** Leniently parse the model's quick-log JSON into a clean ParsedLog; null if unusable. */
+export function parseQuickLog(reply: string): ParsedLog | null {
+  let raw = reply.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+  let obj: Record<string, unknown>;
+  try {
+    obj = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const out: ParsedLog = {};
+
+  if (obj.review && typeof obj.review === "object") {
+    const r: Partial<Record<ReviewKey, number>> = {};
+    for (const k of REVIEW_KEYS) {
+      const v = clampInt((obj.review as Record<string, unknown>)[k], 1, 10);
+      if (v != null) r[k] = v;
+    }
+    if (Object.keys(r).length) out.review = r;
+  }
+  const sh = Number(obj.sleepHours);
+  if (Number.isFinite(sh) && sh > 0 && sh <= 24) out.sleepHours = Math.round(sh * 10) / 10;
+  const sq = clampInt(obj.sleepQuality, 1, 10);
+  if (sq != null) out.sleepQuality = sq;
+  if (Array.isArray(obj.habits)) {
+    const hs = (obj.habits as unknown[])
+      .filter((h): h is { name: string; done?: boolean } => !!h && typeof (h as { name?: unknown }).name === "string" && ((h as { name: string }).name).trim().length > 0)
+      .map((h) => ({ name: h.name.trim(), done: h.done !== false }));
+    if (hs.length) out.habits = hs.slice(0, 12);
+  }
+  if (obj.workout && typeof obj.workout === "object") {
+    const w = obj.workout as { sport?: unknown; minutes?: unknown };
+    if (typeof w.sport === "string" && w.sport.trim()) {
+      const minutes = Number(w.minutes);
+      out.workout = { sport: w.sport.trim().slice(0, 40), minutes: Number.isFinite(minutes) && minutes > 0 ? Math.round(minutes) : undefined };
+    }
+  }
+  const water = Number(obj.water);
+  if (Number.isFinite(water) && water > 0 && water <= 30) out.water = Math.round(water);
+  const kg = Number(obj.weightKg);
+  if (Number.isFinite(kg) && kg > 20 && kg < 400) out.weightKg = Math.round(kg * 10) / 10;
+  if (typeof obj.journal === "string" && obj.journal.trim().length > 1) out.journal = obj.journal.trim().slice(0, 2000);
+  if (typeof obj.note === "string" && obj.note.trim()) out.note = obj.note.trim().slice(0, 300);
+
+  const has = out.review || out.sleepHours || out.habits || out.workout || out.water != null || out.weightKg != null || out.journal;
+  return has ? out : null;
+}
+
 /** Leniently parse the model's JSON plan; returns null if it isn't usable. */
 export function parseGoalPlan(reply: string): GoalPlan | null {
   let raw = reply.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
