@@ -183,6 +183,92 @@ export function downloadWrappedImage(card: WrappedCard, filename = "year-in-revi
   a.click();
 }
 
+/* ---------------- Monthly "State of You" narrative card ---------------- */
+
+export interface StateCard {
+  kicker: string; // e.g. "STATE OF YOU"
+  month: string; // e.g. "August 2026"
+  text: string; // the written monthly recap
+  footer: string;
+}
+
+const NAR_FONT = "500 30px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif";
+
+export function renderStateOfYouImage(card: StateCard): string {
+  const maxW = W - PAD * 2;
+  const measure = document.createElement("canvas").getContext("2d")!;
+  measure.font = NAR_FONT;
+  const lines = wrapLines(measure, card.text, maxW);
+  const lineH = 46;
+  const top = 250;
+  const height = top + lines.length * lineH + 120;
+
+  const scale = 2;
+  const canvas = document.createElement("canvas");
+  canvas.width = W * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d")!;
+  ctx.scale(scale, scale);
+
+  const grad = ctx.createLinearGradient(0, 0, W, height);
+  grad.addColorStop(0, "#111427");
+  grad.addColorStop(1, "#241a3a");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, height);
+
+  const font = (size: number, weight = "400") =>
+    `${weight} ${size}px ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif`;
+
+  ctx.fillStyle = "#7c7bff";
+  ctx.font = font(26, "700");
+  ctx.fillText(card.kicker, PAD, PAD + 14);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = font(64, "800");
+  ctx.fillText(card.month, PAD, 180);
+
+  ctx.fillStyle = "#eef1f5";
+  ctx.font = NAR_FONT;
+  let cy = top;
+  for (const ln of lines) {
+    ctx.fillText(ln, PAD, cy);
+    cy += lineH;
+  }
+
+  ctx.fillStyle = "#6b7482";
+  ctx.font = font(22, "600");
+  ctx.fillText(card.footer, PAD, height - 50);
+
+  return canvas.toDataURL("image/png");
+}
+
+export function downloadStateOfYouImage(card: StateCard, filename = "state-of-you.png") {
+  const url = renderStateOfYouImage(card);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+}
+
+/** Split text into lines that fit maxWidth for the ctx's current font. */
+function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const out: string[] = [];
+  for (const para of text.split("\n")) {
+    const words = para.split(" ");
+    let line = "";
+    for (const word of words) {
+      const test = line ? `${line} ${word}` : word;
+      if (ctx.measureText(test).width > maxWidth && line) {
+        out.push(line);
+        line = word;
+      } else {
+        line = test;
+      }
+    }
+    out.push(line);
+  }
+  return out;
+}
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.moveTo(x + r, y);

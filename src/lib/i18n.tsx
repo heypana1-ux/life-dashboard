@@ -1682,6 +1682,22 @@ const DE: Record<string, string> = {
   "{pct}% of habits done": "{pct}% der Gewohnheiten erledigt",
   "Along the way: {list}.": "Nebenbei: {list}.",
   "Next week: {tip}": "Nächste Woche: {tip}",
+  // --- Monthly State of You ---
+  "State of You": "Dein Zustand",
+  "Made with Life Dashboard": "Erstellt mit Life Dashboard",
+  "Log a few more days this month and your State of You will appear here.":
+    "Erfasse diesen Monat ein paar Tage mehr, dann erscheint hier dein Zustand.",
+  "{month}: your Life Score averaged {a} across {n} logged days ({trend}).":
+    "{month}: Dein Life Score lag im Schnitt bei {a} über {n} erfasste Tage ({trend}).",
+  "up from {p} last month": "gestiegen von {p} im Vormonat",
+  "down from {p} last month": "gefallen von {p} im Vormonat",
+  "Most improved: {area}, up {d} points on last month.":
+    "Am meisten verbessert: {area}, {d} Punkte mehr als im Vormonat.",
+  "{n} workouts": "{n} Trainings",
+  "{n} journal entries": "{n} Tagebuch-Einträge",
+  "The month in numbers: {list}.": "Der Monat in Zahlen: {list}.",
+  "Your most consistent habit was “{name}” ({n} days).": "Deine beständigste Gewohnheit war „{name}“ ({n} Tage).",
+  "Going into next month: {tip}": "Für den nächsten Monat: {tip}",
   // --- Mood & energy trend ---
   "Mood & energy": "Stimmung & Energie",
   "From your daily check-ins (1-10), over the selected range.":

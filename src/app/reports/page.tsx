@@ -10,9 +10,9 @@ import { fmtDuration } from "@/lib/date";
 import { fmtMoney } from "@/lib/finance";
 import { weekAnchor } from "@/lib/recap";
 import { buildInsights } from "@/lib/insights";
-import { weeklyNarrative } from "@/lib/narrative";
+import { weeklyNarrative, monthlyNarrative } from "@/lib/narrative";
 import { translate } from "@/lib/i18n";
-import { downloadReportImage } from "@/lib/reportImage";
+import { downloadReportImage, downloadStateOfYouImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
 import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
@@ -69,6 +69,17 @@ export default function ReportsPage() {
     [data, d.history, lang],
   );
   const narrative = useMemo(() => weeklyNarrative(data, d.history, lang), [data, d.history, lang]);
+  const monthly = useMemo(() => monthlyNarrative(data, d.history, lang), [data, d.history, lang]);
+
+  function shareState() {
+    const now = new Date();
+    downloadStateOfYouImage({
+      kicker: t("State of You").toUpperCase(),
+      month: `${t(monthLabel(now.getMonth()))} ${now.getFullYear()}`,
+      text: monthly,
+      footer: t("Made with Life Dashboard"),
+    });
+  }
 
   return (
     <div className="space-y-6">
@@ -107,12 +118,24 @@ export default function ReportsPage() {
       {wrapYear != null && <YearWrappedOverlay year={wrapYear} onClose={() => setWrapYear(null)} />}
       {reviewOpen && <WeeklyReviewFlow anchor={anchor} onClose={() => setReviewOpen(false)} />}
 
-      {period === "week" && (
-        <Card>
-          <SectionTitle right={<Badge tone="accent">{t("Auto-written")}</Badge>}>{t("Your week in words")}</SectionTitle>
-          <p className="text-sm leading-relaxed text-[var(--text-muted)]">{narrative}</p>
-        </Card>
-      )}
+      <Card>
+        <SectionTitle
+          right={
+            period === "month" ? (
+              <Button variant="soft" size="sm" onClick={shareState}>
+                <ImageDown size={14} /> {t("Share as image")}
+              </Button>
+            ) : (
+              <Badge tone="accent">{t("Auto-written")}</Badge>
+            )
+          }
+        >
+          {period === "week" ? t("Your week in words") : t("State of You")}
+        </SectionTitle>
+        <p className="text-sm leading-relaxed text-[var(--text-muted)]">
+          {period === "week" ? narrative : monthly}
+        </p>
+      </Card>
 
       <Card>
         <SectionTitle

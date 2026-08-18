@@ -2,7 +2,9 @@ import { AppData, DayScore, Language } from "./types";
 import { analyze } from "./analysis";
 import { habitsForToday } from "./habitView";
 import { translate } from "./i18n";
-import { fmtShort, sleepDurationMinutes, weekdayLabel, weekdayOf } from "./date";
+import { AREA_LABELS } from "./defaults";
+import { AreaKey } from "./types";
+import { fmtShort, monthLabel, sleepDurationMinutes, weekdayLabel, weekdayOf } from "./date";
 
 /*
   A deterministic, no-AI weekly recap written straight from the engine's numbers. It reads like
@@ -64,6 +66,85 @@ export function weeklyNarrative(data: AppData, history: DayScore[], lang: Langua
   const tip = report.findings.find((f) => f.kind === "tip" || f.kind === "watch");
   if (strength) sentences.push(strength.detail);
   if (tip) sentences.push(t("Next week: {tip}", { tip: tip.detail }));
+
+  return sentences.join(" ");
+}
+
+const NAR_AREAS: AreaKey[] = ["productivity", "sport", "sleep", "habits", "learning", "creativity", "reflection"];
+
+/** A bigger, written monthly recap — the "State of You". */
+export function monthlyNarrative(data: AppData, history: DayScore[], lang: Language = "en"): string {
+  const t = (k: string, v?: Record<string, string | number>) => translate(lang, k, v);
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = today.getMonth();
+  const inMonth = (d: string) => Number(d.slice(0, 4)) === y && Number(d.slice(5, 7)) - 1 === m;
+  const inPrev = (d: string) => {
+    const py = m === 0 ? y - 1 : y;
+    const pm = m === 0 ? 11 : m - 1;
+    return Number(d.slice(0, 4)) === py && Number(d.slice(5, 7)) - 1 === pm;
+  };
+  const scored = history.filter((h) => h.lifeScore > 0);
+  const cur = scored.filter((h) => inMonth(h.date));
+  if (cur.length < 4) return t("Log a few more days this month and your State of You will appear here.");
+  const prev = scored.filter((h) => inPrev(h.date));
+
+  const avg = Math.round(mean(cur.map((h) => h.lifeScore)));
+  const prevAvg = prev.length ? Math.round(mean(prev.map((h) => h.lifeScore))) : null;
+  const trend = prevAvg != null ? avg - prevAvg : 0;
+  const monthSet = new Set(cur.map((h) => h.date));
+
+  const sentences: string[] = [];
+  const trendWord = trend >= 3 ? t("up from {p} last month", { p: prevAvg ?? 0 }) : trend <= -3 ? t("down from {p} last month", { p: prevAvg ?? 0 }) : t("about steady");
+  sentences.push(t("{month}: your Life Score averaged {a} across {n} logged days ({trend}).", { month: t(monthLabel(m)), a: avg, n: cur.length, trend: trendWord }));
+
+  // Most-improved area vs last month.
+  const areaAvg = (days: DayScore[], a: AreaKey) => {
+    const xs = days.map((h) => h.categories[a]).filter((v): v is number => v != null);
+    return xs.length >= 3 ? mean(xs) : null;
+  };
+  let improved: { a: AreaKey; delta: number } | null = null;
+  if (prev.length >= 4) {
+    for (const a of NAR_AREAS) {
+      const now = areaAvg(cur, a);
+      const before = areaAvg(prev, a);
+      if (now == null || before == null) continue;
+      const delta = now - before;
+      if (delta >= 6 && (!improved || delta > improved.delta)) improved = { a, delta: Math.round(delta) };
+    }
+  }
+  if (improved) sentences.push(t("Most improved: {area}, up {d} points on last month.", { area: t(AREA_LABELS[improved.a]), d: improved.delta }));
+
+  // Activity totals
+  const workouts = data.workouts.filter((w) => monthSet.has(w.date)).length;
+  const journal = data.journal.filter((j) => monthSet.has(j.date)).length;
+  const sleeps = data.sleep.filter((s) => monthSet.has(s.date));
+  const activity: string[] = [];
+  if (data.workouts.length) activity.push(t("{n} workouts", { n: workouts }));
+  if (data.journal.length) activity.push(t("{n} journal entries", { n: journal }));
+  if (sleeps.length) {
+    const h = mean(sleeps.map((s) => sleepDurationMinutes(s.bedTime, s.wakeTime, s.fallAsleepMinutes ?? 0))) / 60;
+    activity.push(t("~{h}h average sleep", { h: (Math.round(h * 10) / 10).toString() }));
+  }
+  if (activity.length) sentences.push(t("The month in numbers: {list}.", { list: activity.join(", ") }));
+
+  // Top habit this month (build only).
+  const buildIds = new Set(data.habits.filter((h) => h.kind === "build" && !h.archived).map((h) => h.id));
+  const counts = new Map<string, number>();
+  for (const l of data.habitLogs) if (monthSet.has(l.date) && l.done && buildIds.has(l.habitId)) counts.set(l.habitId, (counts.get(l.habitId) ?? 0) + 1);
+  let topHabit: { name: string; n: number } | null = null;
+  for (const [id, n] of counts) {
+    const hb = data.habits.find((x) => x.id === id);
+    if (hb && (!topHabit || n > topHabit.n)) topHabit = { name: hb.name, n };
+  }
+  if (topHabit && topHabit.n >= 5) sentences.push(t("Your most consistent habit was “{name}” ({n} days).", { name: topHabit.name, n: topHabit.n }));
+
+  // One engine takeaway + one suggestion.
+  const report = analyze(data, history, lang);
+  const strength = report.findings.find((f) => f.kind === "strength" || f.kind === "insight");
+  const tip = report.findings.find((f) => f.kind === "tip" || f.kind === "watch");
+  if (strength) sentences.push(strength.detail);
+  if (tip) sentences.push(t("Going into next month: {tip}", { tip: tip.detail }));
 
   return sentences.join(" ");
 }
