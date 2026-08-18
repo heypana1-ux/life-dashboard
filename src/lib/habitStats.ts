@@ -119,6 +119,53 @@ export function habitLifeScoreImpact(data: AppData, history: DayScore[], habit: 
   return { pct, nWith: withScores.length, nWithout: withoutScores.length };
 }
 
+/* -------- Momentum: build habits losing steam before the streak breaks -------- */
+
+/** Fraction of "mattering" days on track in the `days`-day window ending on `endISO`. */
+function onTrackRate(data: AppData, habit: Habit, endISO: string, days: number): { rate: number; n: number } {
+  const window = isoRange(endISO, days);
+  let n = 0;
+  let hit = 0;
+  for (const d of window) {
+    if (parseISO(d) < parseISO(habit.createdAt)) continue;
+    if (!isDueOn(habit, d)) continue; // daily/weekdays: only due days count
+    if (isRestDay(data.settings, d)) continue;
+    n++;
+    if (logOf(data, habit.id, d)?.done) hit++;
+  }
+  return { rate: n ? hit / n : 0, n };
+}
+
+export interface HabitMomentum {
+  id: string;
+  name: string;
+  recent: number; // 0..100 completion over the last 7 due days
+  prior: number; // 0..100 over the 7 due days before that
+  drop: number; // percentage points lost
+}
+
+/**
+ * Build daily/weekday habits that were going well but have clearly cooled off in the last week
+ * versus the week before — an early nudge before the streak actually breaks.
+ */
+export function habitMomentum(data: AppData): HabitMomentum[] {
+  const out: HabitMomentum[] = [];
+  const today = todayISO();
+  for (const h of data.habits) {
+    if (h.archived || h.kind !== "build") continue;
+    if (h.schedule.type === "weekly") continue; // weekly targets handled by their own window logic
+    const recent = onTrackRate(data, h, today, 7);
+    const prior = onTrackRate(data, h, addDays(today, -7), 7);
+    if (recent.n < 3 || prior.n < 3) continue;
+    const drop = Math.round((prior.rate - recent.rate) * 100);
+    // Was doing well (>=60%), has slipped by at least 30 points, and isn't already at zero forever.
+    if (prior.rate >= 0.6 && drop >= 30) {
+      out.push({ id: h.id, name: h.name, recent: Math.round(recent.rate * 100), prior: Math.round(prior.rate * 100), drop });
+    }
+  }
+  return out.sort((a, b) => b.drop - a.drop);
+}
+
 export type HeatLevel = "done" | "missed" | "none";
 
 export interface HeatCell {

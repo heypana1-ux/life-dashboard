@@ -9,13 +9,13 @@ import {
   Repeat,
   Trash2,
 } from "lucide-react";
-import { CheckCircle2, Circle, Layers, TrendingUp } from "lucide-react";
+import { CheckCircle2, Circle, Layers, TrendingUp, TrendingDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Habit } from "@/lib/types";
 import { fmtDuration, todayISO } from "@/lib/date";
 import { habitsForToday } from "@/lib/habitView";
 import { useDerived } from "@/lib/useDerived";
-import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact } from "@/lib/habitStats";
+import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact, habitMomentum } from "@/lib/habitStats";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
@@ -87,6 +87,8 @@ export default function HabitsPage() {
       <HintCard id="routines" title={t("Stack habits into routines")}>
         {t("Give related habits the same routine name (in the habit editor) — e.g. \"Evening routine\" — to group them and complete them together.")}
       </HintCard>
+
+      <MomentumCard />
 
       <RoutinesCard />
 
@@ -201,6 +203,35 @@ function TemplatesModal({
         <Button variant="ghost" onClick={onClose}>{t("Done")}</Button>
       </div>
     </Modal>
+  );
+}
+
+/* ---------------- Momentum warning ---------------- */
+
+function MomentumCard() {
+  const { data } = useStore();
+  const t = useT();
+  const fading = habitMomentum(data);
+  if (fading.length === 0) return null;
+  return (
+    <Card className="border-[var(--warn)]/40">
+      <SectionTitle right={<TrendingDown size={16} className="text-[var(--warn)]" />}>{t("Losing momentum")}</SectionTitle>
+      <p className="mb-2.5 text-xs text-[var(--text-muted)]">
+        {t("These were going well but have cooled off this week — a good moment to recommit before the streak breaks.")}
+      </p>
+      <div className="space-y-2">
+        {fading.slice(0, 4).map((f) => (
+          <div key={f.id} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+            <TrendingDown size={16} className="shrink-0 text-[var(--warn)]" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-medium">{f.name}</div>
+              <div className="text-xs text-[var(--text-faint)]">{t("{recent}% this week vs {prior}% before", { recent: f.recent, prior: f.prior })}</div>
+            </div>
+            <Badge tone="bad">−{f.drop}%</Badge>
+          </div>
+        ))}
+      </div>
+    </Card>
   );
 }
 

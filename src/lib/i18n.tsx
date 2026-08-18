@@ -1659,6 +1659,14 @@ const DE: Record<string, string> = {
   "The last days are running {n} points below your usual. Worth a gentle reset.":
     "Die letzten Tage liegen {n} Punkte unter deinem Üblichen. Ein sanfter Neustart lohnt sich.",
   "Tomorrow, likely around": "Morgen voraussichtlich um",
+  // --- Habit momentum warning ---
+  "Losing momentum": "Verliert an Schwung",
+  "These were going well but have cooled off this week — a good moment to recommit before the streak breaks.":
+    "Diese liefen gut, sind diese Woche aber abgeflaut – ein guter Moment, um dranzubleiben, bevor die Serie reißt.",
+  "{recent}% this week vs {prior}% before": "{recent}% diese Woche vs. {prior}% davor",
+  "Habit losing steam": "Gewohnheit verliert an Schwung",
+  "“{name}” has cooled to {recent}% this week (from {prior}%). Recommit before the streak breaks.":
+    "„{name}“ ist diese Woche auf {recent}% abgefallen (von {prior}%). Bleib dran, bevor die Serie reißt.",
   // --- Weekly narrative (auto-written recap) ---
   "Your week in words": "Deine Woche in Worten",
   "Auto-written": "Automatisch verfasst",

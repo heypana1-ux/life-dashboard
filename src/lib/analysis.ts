@@ -5,6 +5,7 @@ import { symptomCount } from "./health";
 import { activityStreak } from "./streak";
 import { sleepDurationMinutes, weekdayLabel, weekdayOf, addDays } from "./date";
 import { earlyWarning } from "./forecast";
+import { habitMomentum } from "./habitStats";
 import { translate } from "./i18n";
 
 /*
@@ -626,6 +627,19 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     positive: driverList.filter((x) => x.delta > 0).sort((a, b) => b.delta - a.delta).slice(0, 6),
     negative: driverList.filter((x) => x.delta < 0).sort((a, b) => a.delta - b.delta).slice(0, 6),
   };
+
+  // ---------- Habit losing momentum ----------
+  const fading = habitMomentum(data);
+  if (fading.length) {
+    const f = fading[0];
+    F.push({
+      id: "habit-momentum",
+      kind: "watch",
+      title: t("Habit losing steam"),
+      detail: t("“{name}” has cooled to {recent}% this week (from {prior}%). Recommit before the streak breaks.", { name: f.name, recent: f.recent, prior: f.prior }),
+      weight: 70,
+    });
+  }
 
   // ---------- Early warning (live forming trend) ----------
   const ew = earlyWarning(history);
