@@ -1265,6 +1265,12 @@ const DE: Record<string, string> = {
   "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
     "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
   // --- Weather & spending insights ---
+  // --- Goal ETA / pace ---
+  "At your pace, done around {date}": "In deinem Tempo fertig etwa am {date}",
+  "on track": "im Plan",
+  "behind deadline": "hinter der Deadline",
+  "No recent progress — a small step this week restarts your pace.":
+    "Zuletzt kein Fortschritt – ein kleiner Schritt diese Woche bringt dein Tempo zurück.",
   "Weather ↔ mood": "Wetter ↔ Stimmung",
   "On sunny days your mood runs about {diff}/10 higher.": "An sonnigen Tagen ist deine Stimmung rund {diff}/10 höher.",
   "Your mood actually dips about {diff}/10 on sunny days — sunshine isn't what lifts you.":

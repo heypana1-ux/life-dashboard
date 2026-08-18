@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, LayoutTemplate, Plus, Sparkles, Target, Trash2, Flag } from "lucide-react";
+import { Check, LayoutTemplate, Plus, Sparkles, Target, Trash2, Flag, TrendingUp } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { AreaKey, Goal } from "@/lib/types";
@@ -10,6 +10,7 @@ import { uid, HABIT_COLORS } from "@/lib/defaults";
 import { GOAL_TEMPLATES } from "@/lib/templates";
 import { useT } from "@/lib/i18n";
 import { habit30dRate } from "@/lib/habitStats";
+import { goalForecast } from "@/lib/goalForecast";
 import { buildCoachContext } from "@/lib/coachContext";
 import { planGoal, parseGoalPlan, checkCoachConfigured, GoalPlan } from "@/lib/ai";
 import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
@@ -170,6 +171,28 @@ export default function GoalsPage() {
                 </div>
                 <Meter value={g.progress} color="var(--accent)" />
               </div>
+
+              {(() => {
+                const f = goalForecast(g);
+                if (f.status === "done" || f.status === "unknown") return null;
+                if (f.status === "stalled")
+                  return (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
+                      <TrendingUp size={12} /> {t("No recent progress — a small step this week restarts your pace.")}
+                    </p>
+                  );
+                return (
+                  <p className="mt-2 flex flex-wrap items-center gap-1.5 text-xs text-[var(--text-faint)]">
+                    <TrendingUp size={12} className="text-[var(--accent)]" />
+                    {t("At your pace, done around {date}", { date: fmtShort(f.etaDate!) })}
+                    {f.status === "behind" ? (
+                      <Badge tone="bad">{t("behind deadline")}</Badge>
+                    ) : f.daysToDeadline != null ? (
+                      <Badge tone="good">{t("on track")}</Badge>
+                    ) : null}
+                  </p>
+                );
+              })()}
 
               {g.deadline && (
                 <p className="mt-2 flex items-center gap-1.5 text-xs text-[var(--text-faint)]">
