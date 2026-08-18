@@ -71,7 +71,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
   function onTouchStart(e: React.TouchEvent) {
     const el = e.target as HTMLElement;
-    if (el.closest('input,textarea,select,button,a,[role="slider"],.no-swipe')) {
+    // Only block the page swipe on elements that need their own horizontal drag/interaction
+    // (form controls, sliders, horizontal scrollers marked .no-swipe). Buttons and links are
+    // fine: a tap won't clear the 70px threshold, so cards/entries stay swipeable.
+    if (el.closest('input,textarea,select,[role="slider"],.no-swipe')) {
       touch.current = null;
       return;
     }

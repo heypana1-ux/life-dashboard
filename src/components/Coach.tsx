@@ -136,7 +136,7 @@ export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideH
   /* ---- Chat ---- */
   return (
     <Shell onClose={onClose} hideHeader={hideHeader} t={t}>
-      <div ref={scrollRef} className="flex-1 space-y-3 overflow-y-auto px-0.5 py-1">
+      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-0.5 py-1">
         {messages.length === 0 && (
           <div className="pt-2">
             <p className="mb-2 text-center text-sm text-[var(--text-muted)]">{t("Ask me anything about your data.")}</p>
@@ -209,7 +209,7 @@ export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideH
 /** Frame used by both the panel and the page (the page passes no onClose). */
 function Shell({ children, onClose, hideHeader, t }: { children: React.ReactNode; onClose?: () => void; hideHeader?: boolean; t: (k: string) => string }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {!hideHeader && (
         <div className="mb-2 flex items-center justify-between border-b border-[var(--border)] pb-2">
           <div className="flex items-center gap-2">
@@ -477,7 +477,7 @@ export function CoachLauncher() {
           {/* Mobile: a bottom sheet that stops short of the top so the blurred screen stays
               visible behind it. Desktop (sm+): the right-hand slide-over as before. */}
           <div
-            className="sheet-up card m-0 flex max-h-[88dvh] w-full max-w-md flex-col rounded-b-none rounded-t-2xl p-4 sm:m-3 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-2xl"
+            className="sheet-up card m-0 flex max-h-[88dvh] w-full max-w-md flex-col overflow-hidden rounded-b-none rounded-t-2xl p-4 sm:m-3 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <CoachChat onClose={() => setOpen(false)} />
