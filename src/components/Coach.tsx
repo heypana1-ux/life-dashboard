@@ -395,9 +395,14 @@ export function CoachLauncher() {
       )}
 
       {open && mounted && createPortal(
-        <div className="fixed inset-0 z-[65] flex justify-end bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)}>
+        <div
+          className="fixed inset-0 z-[65] flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-stretch sm:justify-end"
+          onClick={() => setOpen(false)}
+        >
+          {/* Mobile: a bottom sheet that stops short of the top so the blurred screen stays
+              visible behind it. Desktop (sm+): the right-hand slide-over as before. */}
           <div
-            className="card m-0 flex h-full w-full max-w-md flex-col rounded-none sm:m-3 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-2xl"
+            className="sheet-up card m-0 flex max-h-[88dvh] w-full max-w-md flex-col rounded-b-none rounded-t-2xl p-4 sm:m-3 sm:h-auto sm:max-h-[calc(100dvh-1.5rem)] sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <CoachChat onClose={() => setOpen(false)} />

@@ -71,9 +71,14 @@ export function buildYearWrapped(data: AppData, history: DayScore[], year: numbe
   const sleepsY = data.sleep.filter((s) => inYear(s.date));
   const sleepAvgMin = Math.round(mean(sleepsY.map((s) => sleepDurationMinutes(s.bedTime, s.wakeTime, s.fallAsleepMinutes ?? 0))));
 
-  // Top habit by completions in the year.
+  // Top habit by completions in the year. Only BUILD habits count: for a "reduce" habit a
+  // logged occurrence (done:true) is a *slip*, not an accomplishment, so counting those would
+  // wrongly crown a habit the user is trying to cut back on as their top habit.
+  const buildIds = new Set(data.habits.filter((h) => h.kind === "build").map((h) => h.id));
   const habitCounts = new Map<string, number>();
-  for (const l of data.habitLogs) if (inYear(l.date) && l.done) habitCounts.set(l.habitId, (habitCounts.get(l.habitId) ?? 0) + 1);
+  for (const l of data.habitLogs)
+    if (inYear(l.date) && l.done && buildIds.has(l.habitId))
+      habitCounts.set(l.habitId, (habitCounts.get(l.habitId) ?? 0) + 1);
   let topHabit: YearWrapped["topHabit"] = null;
   for (const [id, count] of habitCounts) {
     const h = data.habits.find((x) => x.id === id);
