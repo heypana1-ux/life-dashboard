@@ -995,6 +995,14 @@ const DE: Record<string, string> = {
   Grape: "Traube",
   Crimson: "Karmesin",
   Midnight: "Mitternacht",
+  // --- Score-ring skins ---
+  "Score-ring skins": "Score-Ring-Skins",
+  "Restyle the big Life Score ring on your dashboard. Purely cosmetic.":
+    "Gib dem großen Life-Score-Ring auf deinem Dashboard einen neuen Look. Rein kosmetisch.",
+  Classic: "Klassisch",
+  Ember: "Glut",
+  Neon: "Neon",
+  Prism: "Prisma",
   // --- Dashboard activity ---
   Activity: "Aktivität",
   "Calendar →": "Kalender →",

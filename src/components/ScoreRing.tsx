@@ -34,8 +34,9 @@ export function ScoreRing({
       <svg width={size} height={size} className="-rotate-90">
         <defs>
           <linearGradient id={gid} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="var(--grad-a)" />
-            <stop offset="1" stopColor="var(--grad-b)" />
+            {/* Falls back to the accent gradient; a chosen ring skin overrides --ring-grad-*. */}
+            <stop offset="0" stopColor="var(--ring-grad-a, var(--grad-a))" />
+            <stop offset="1" stopColor="var(--ring-grad-b, var(--grad-b))" />
           </linearGradient>
         </defs>
         <circle
@@ -56,7 +57,10 @@ export function ScoreRing({
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={charged ? c * (1 - pct) : c}
-          style={{ transition: "stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)" }}
+          style={{
+            transition: "stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)",
+            filter: "drop-shadow(0 0 8px var(--ring-glow, transparent))",
+          }}
         />
       </svg>
       <div className="absolute flex flex-col items-center">

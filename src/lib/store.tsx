@@ -218,6 +218,8 @@ interface StoreCtx {
   claimChallenge: (id: string) => void;
   /** Buy a cosmetic accent theme with points; deducts points and marks it owned + applies it. */
   buyCosmetic: (accent: Accent, cost: number, name: string) => void;
+  /** Buy any prefixed cosmetic id (e.g. "ring:ember", "title:iron") with points; marks it owned. */
+  purchaseCosmetic: (id: string, cost: number, name: string) => void;
   /* cloud sync */
   sync: SyncState;
   /* bulk */
@@ -789,6 +791,20 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             rewards: {
               ...d.rewards,
               owned: [...owned, accent],
+              redemptions: [...d.rewards.redemptions, redemption],
+            },
+          };
+        }),
+      purchaseCosmetic: (id, cost, name) =>
+        mutate((d) => {
+          const owned = d.rewards.owned ?? [];
+          if (owned.includes(id)) return d;
+          const redemption: Redemption = { id: uid("rd"), name, cost, date: new Date().toISOString() };
+          return {
+            ...d,
+            rewards: {
+              ...d.rewards,
+              owned: [...owned, id],
               redemptions: [...d.rewards.redemptions, redemption],
             },
           };

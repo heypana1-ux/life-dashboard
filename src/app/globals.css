@@ -122,6 +122,14 @@
 :root[data-accent="midnight"] { --accent:#4338ca; --accent-soft:#e0e7ff; --grad:linear-gradient(135deg,#4f46e5,#1e293b); --grad-a:#4f46e5; --grad-b:#1e293b; }
 .dark[data-accent="midnight"] { --accent:#818cf8; --accent-soft:#1a1f33; --grad:linear-gradient(135deg,#818cf8,#334155); --grad-a:#818cf8; --grad-b:#334155; }
 
+/* ---- Score-ring skins (independent of the accent; see cosmetics.ts) ---- */
+:root[data-ring="ember"]   { --ring-grad-a:#f59e0b; --ring-grad-b:#ef4444; --ring-glow:rgba(239,68,68,0.45); }
+:root[data-ring="ocean"]   { --ring-grad-a:#06b6d4; --ring-grad-b:#3b82f6; --ring-glow:rgba(6,182,212,0.45); }
+:root[data-ring="aurora"]  { --ring-grad-a:#22c55e; --ring-grad-b:#3b82f6; --ring-glow:rgba(34,197,94,0.4); }
+:root[data-ring="neon"]    { --ring-grad-a:#d946ef; --ring-grad-b:#22d3ee; --ring-glow:rgba(217,70,239,0.5); }
+:root[data-ring="gold"]    { --ring-grad-a:#fbbf24; --ring-grad-b:#d97706; --ring-glow:rgba(251,191,36,0.5); }
+:root[data-ring="rainbow"] { --ring-grad-a:#f43f5e; --ring-grad-b:#3b82f6; --ring-glow:rgba(139,92,246,0.5); }
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);

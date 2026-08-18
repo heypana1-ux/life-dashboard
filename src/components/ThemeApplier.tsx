@@ -9,11 +9,17 @@ export function ThemeApplier() {
   const theme = data.settings.theme;
   const accent = data.settings.accent ?? "calm";
   const density = data.settings.density ?? "cozy";
+  const ringSkin = data.settings.ringSkin ?? "default";
 
   useEffect(() => {
     if (!ready) return;
     document.documentElement.setAttribute("data-accent", accent);
   }, [accent, ready]);
+
+  useEffect(() => {
+    if (!ready) return;
+    document.documentElement.setAttribute("data-ring", ringSkin);
+  }, [ringSkin, ready]);
 
   useEffect(() => {
     if (!ready) return;

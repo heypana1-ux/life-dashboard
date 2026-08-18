@@ -556,6 +556,10 @@ export interface Settings {
   coachBriefing?: { date: string; text: string };
   /** Cosmetic character/avatar the user builds and unlocks items for. */
   avatar?: AvatarConfig;
+  /** Selected Score-ring skin id (see cosmetics.ts). Undefined = the default accent ring. */
+  ringSkin?: string;
+  /** Selected profile title id shown next to the level (see cosmetics.ts). */
+  title?: string;
   /** Self-reported "about you" answers (question id -> answer) the coach can draw on. */
   about?: Record<string, string>;
   /** Dashboard personalization: hidden card ids and a custom card order. */

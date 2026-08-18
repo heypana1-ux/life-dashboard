@@ -1,13 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Check, Coins, Gift, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
+import { Check, Coins, CircleDot, Gift, Palette, Plus, RotateCcw, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { fmtShort } from "@/lib/date";
 import { computeLevel } from "@/lib/level";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
+import { RING_SKINS, ringOwned } from "@/lib/cosmetics";
 import {
   REWARD_TEMPLATES,
   pointsBalance,
@@ -20,7 +21,7 @@ import { HintCard } from "@/components/HintCard";
 import clsx from "clsx";
 
 export default function RewardsPage() {
-  const { data, saveReward, removeReward, redeemReward, undoRedemption, buyCosmetic, updateSettings } = useStore();
+  const { data, saveReward, removeReward, redeemReward, undoRedemption, buyCosmetic, purchaseCosmetic, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -187,6 +188,62 @@ export default function RewardsPage() {
                   </Button>
                 ) : (
                   <Button size="sm" disabled={!affordable} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
+                    {affordable ? t("Buy") : t("Locked")}
+                  </Button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </Card>
+
+      {/* Score-ring skins */}
+      <Card>
+        <SectionTitle right={<CircleDot size={16} className="text-[var(--text-faint)]" />}>{t("Score-ring skins")}</SectionTitle>
+        <p className="mb-3 text-xs text-[var(--text-muted)]">
+          {t("Restyle the big Life Score ring on your dashboard. Purely cosmetic.")}
+        </p>
+        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+          {RING_SKINS.map((s) => {
+            const isOwned = ringOwned(s.id, owned);
+            const active = (data.settings.ringSkin ?? "default") === s.id;
+            const affordable = balance >= s.cost;
+            const days = daysToAfford(s.cost, balance, rate);
+            const grad = s.id === "default" ? "var(--grad)" : `linear-gradient(135deg, ${s.gradA}, ${s.gradB})`;
+            return (
+              <div
+                key={s.id}
+                className={clsx(
+                  "flex items-center gap-3 rounded-xl border p-3",
+                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
+                )}
+              >
+                <span
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                  style={{ background: grad, boxShadow: s.glow ? `0 0 8px ${s.glow}` : undefined }}
+                >
+                  <span className="h-4 w-4 rounded-full bg-[var(--surface)]" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-medium">{t(s.name)}</div>
+                  <div className="text-xs text-[var(--text-faint)]">
+                    {isOwned
+                      ? t("Owned")
+                      : `${s.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
+                  </div>
+                </div>
+                {isOwned ? (
+                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ ringSkin: s.id })}>
+                    {active ? (
+                      <>
+                        <Check size={14} /> {t("Active")}
+                      </>
+                    ) : (
+                      t("Apply")
+                    )}
+                  </Button>
+                ) : (
+                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`ring:${s.id}`, s.cost, `Ring: ${s.name}`); updateSettings({ ringSkin: s.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
                   </Button>
                 )}
