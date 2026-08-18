@@ -1683,8 +1683,8 @@ const DE: Record<string, string> = {
   "Earn points by living well, then cash them in for rewards you set yourself.":
     "Sammle Punkte durch gutes Leben und löse sie gegen selbst gewählte Belohnungen ein.",
   "How points work": "So funktionieren Punkte",
-  "Each logged day earns points equal to your Life Score ÷ 10 (score 70 → 7 points). Define your own rewards, then redeem them when you've saved enough.":
-    "Jeder erfasste Tag bringt Punkte in Höhe deines Life Score ÷ 10 (Score 70 → 7 Punkte). Lege eigene Belohnungen fest und löse sie ein, wenn du genug gesammelt hast.",
+  "You earn points for being active: every habit you complete, workout, check-in, sleep log and journal entry adds points, plus a small bonus for a good day. The more you do, the faster they add up. Spend them on your own rewards or on cosmetics.":
+    "Du bekommst Punkte fürs Aktivsein: jede erledigte Gewohnheit, jedes Training, jeder Check-in, Schlaf-Eintrag und Tagebuch-Eintrag bringt Punkte, plus ein kleiner Bonus für einen guten Tag. Je mehr du machst, desto schneller sammeln sie sich. Gib sie für eigene Belohnungen oder Kosmetik aus.",
   "points to spend": "Punkte zum Ausgeben",
   Earned: "Gesammelt",
   "~{n} pts / day": "~{n} Pkt / Tag",

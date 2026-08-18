@@ -24,9 +24,9 @@ export default function RewardsPage() {
   const d = useDerived();
   const t = useT();
 
-  const earned = useMemo(() => pointsEarned(d.history), [d.history]);
-  const balance = useMemo(() => pointsBalance(d.history, data.rewards.redemptions), [d.history, data.rewards.redemptions]);
-  const rate = useMemo(() => dailyRate(d.history), [d.history]);
+  const earned = useMemo(() => pointsEarned(d.history, data), [d.history, data]);
+  const balance = useMemo(() => pointsBalance(d.history, data.rewards.redemptions, data), [d.history, data]);
+  const rate = useMemo(() => dailyRate(d.history, data), [d.history, data]);
   const level = useMemo(() => computeLevel(data, d.history), [data, d.history]);
   const owned = data.rewards.owned ?? [];
   const cosmetics = ACCENT_REWARDS.filter((r) => r.cost > 0);
@@ -56,7 +56,7 @@ export default function RewardsPage() {
       />
 
       <HintCard id="rewards" title={t("How points work")}>
-        {t("Each logged day earns points equal to your Life Score ÷ 10 (score 70 → 7 points). Define your own rewards, then redeem them when you've saved enough.")}
+        {t("You earn points for being active: every habit you complete, workout, check-in, sleep log and journal entry adds points, plus a small bonus for a good day. The more you do, the faster they add up. Spend them on your own rewards or on cosmetics.")}
       </HintCard>
 
       {/* Balance */}
