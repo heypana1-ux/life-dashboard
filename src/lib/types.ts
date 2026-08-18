@@ -104,6 +104,13 @@ export interface DailyReview {
   improveTomorrow?: string;
 }
 
+/** A forward-looking weekly plan: an intention + a few focus habits for the coming week. */
+export interface WeeklyPlan {
+  weekOf: string; // the Sunday that anchors the week (YYYY-MM-DD)
+  intention?: string;
+  focusHabitIds?: string[];
+}
+
 /** A guided weekly reflection (the Sunday ritual). One per week, keyed by its Sunday anchor. */
 export interface WeeklyReview {
   weekOf: string; // the Sunday that anchors the week (YYYY-MM-DD)
@@ -597,6 +604,7 @@ export interface AppData {
   habitLogs: HabitLog[];
   reviews: DailyReview[];
   weeklyReviews: WeeklyReview[];
+  weeklyPlans: WeeklyPlan[];
   sleep: SleepLog[];
   journal: JournalEntry[];
   goals: Goal[];

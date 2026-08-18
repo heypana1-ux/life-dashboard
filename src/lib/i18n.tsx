@@ -1265,6 +1265,19 @@ const DE: Record<string, string> = {
   "On days you feel well (7+/10), your Life Score is about {diff} points higher.":
     "An Tagen mit gutem Wohlbefinden (7+/10) ist dein Life Score rund {diff} Punkte höher.",
   // --- Weather & spending insights ---
+  // --- Weekly planner ---
+  "This week's plan": "Plan für diese Woche",
+  Plan: "Planen",
+  "Set an intention and pick up to 3 focus habits for the week ahead.":
+    "Setz dir eine Absicht und wähle bis zu 3 Fokus-Gewohnheiten für die kommende Woche.",
+  "{n}× this week": "{n}× diese Woche",
+  "Week of {date}": "Woche vom {date}",
+  "Plan your week": "Plane deine Woche",
+  "Your intention for the week": "Deine Absicht für die Woche",
+  "e.g. Protect my mornings and train 3×": "z. B. Meine Morgen schützen und 3× trainieren",
+  "Focus habits": "Fokus-Gewohnheiten",
+  "Add some habits first to pick focus ones.": "Füge erst Gewohnheiten hinzu, um Fokus-Gewohnheiten zu wählen.",
+  "Save plan": "Plan speichern",
   // --- Body-metric targets ---
   "to go": "übrig",
   by: "bis",

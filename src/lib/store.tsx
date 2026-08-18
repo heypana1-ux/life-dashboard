@@ -36,6 +36,7 @@ import {
   Transaction,
   WeightLog,
   WeeklyReview,
+  WeeklyPlan,
   Workout,
   WorkoutPlan,
   SCHEMA_VERSION,
@@ -103,6 +104,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     habitLogs: parsed.habitLogs ?? [],
     reviews: parsed.reviews ?? [],
     weeklyReviews: parsed.weeklyReviews ?? [],
+    weeklyPlans: parsed.weeklyPlans ?? [],
     sleep: parsed.sleep ?? [],
     journal: parsed.journal ?? [],
     goals: parsed.goals ?? [],
@@ -159,6 +161,7 @@ interface StoreCtx {
   /* reviews / sleep */
   saveReview: (r: DailyReview) => void;
   saveWeeklyReview: (r: WeeklyReview) => void;
+  saveWeeklyPlan: (p: WeeklyPlan) => void;
   saveSleep: (s: SleepLog) => void;
   /* journal */
   saveJournal: (e: JournalEntry) => JournalEntry;
@@ -484,6 +487,11 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         mutate((d) => {
           const others = d.weeklyReviews.filter((x) => x.weekOf !== r.weekOf);
           return { ...d, weeklyReviews: [...others, r].sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1)) };
+        }),
+      saveWeeklyPlan: (p) =>
+        mutate((d) => {
+          const others = d.weeklyPlans.filter((x) => x.weekOf !== p.weekOf);
+          return { ...d, weeklyPlans: [...others, p] };
         }),
       saveSleep: (s) =>
         mutate((d) => {

@@ -108,6 +108,7 @@ export function emptyData(): AppData {
     habitLogs: [],
     reviews: [],
     weeklyReviews: [],
+    weeklyPlans: [],
     sleep: [],
     journal: [],
     goals: [],

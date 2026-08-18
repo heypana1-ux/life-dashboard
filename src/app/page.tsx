@@ -35,11 +35,12 @@ import { ScoreRing, Meter } from "@/components/ScoreRing";
 import { MiniSpark } from "@/components/charts";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing, CoachWeeklyCheckin } from "@/components/Coach";
+import { WeeklyPlanner } from "@/components/WeeklyPlanner";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
 import { HintCard } from "@/components/HintCard";
 
 /** Dashboard blocks the user can reorder / hide. Hero, coach briefing and the streak nudge stay pinned. */
-const MOVABLE = ["coachBriefing", "coachCheckin", "anomalies", "weeklyFocus", "level", "catInsights", "activity", "goals"] as const;
+const MOVABLE = ["coachBriefing", "coachCheckin", "weekPlan", "anomalies", "weeklyFocus", "level", "catInsights", "activity", "goals"] as const;
 type CardId = (typeof MOVABLE)[number];
 
 /** Where each anomaly links to when tapped. */
@@ -138,6 +139,7 @@ export default function DashboardPage() {
   const blocks: Record<CardId, React.ReactNode> = {
     coachBriefing: coachOn ? <CoachBriefing /> : null,
     coachCheckin: coachOn ? <CoachWeeklyCheckin /> : null,
+    weekPlan: <WeeklyPlanner />,
     anomalies: (anomalies.length > 0 || editMode) && (
       <Card>
         <SectionTitle right={<AlertTriangle size={16} className="text-[var(--warn)]" />}>{t("Heads up")}</SectionTitle>
@@ -427,6 +429,7 @@ export default function DashboardPage() {
 const CARD_LABELS: Record<CardId, string> = {
   coachBriefing: "Coach briefing",
   coachCheckin: "Weekly check-in",
+  weekPlan: "This week's plan",
   anomalies: "Heads up",
   weeklyFocus: "This week's focus",
   level: "Level",
