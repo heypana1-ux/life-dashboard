@@ -9,13 +9,14 @@ import {
   Repeat,
   Trash2,
 } from "lucide-react";
-import { CheckCircle2, Circle, Layers, TrendingUp, TrendingDown } from "lucide-react";
+import { CheckCircle2, Circle, Clock, Layers, TrendingUp, TrendingDown } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { Habit } from "@/lib/types";
 import { fmtDuration, todayISO } from "@/lib/date";
 import { habitsForToday } from "@/lib/habitView";
 import { useDerived } from "@/lib/useDerived";
 import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact, habitMomentum } from "@/lib/habitStats";
+import { bestHabitHour } from "@/lib/habitTimes";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
@@ -353,6 +354,7 @@ function HabitCard({
   const impact = habitLifeScoreImpact(data, d.history, h);
   const Icon = AREA_ICONS[h.area] ?? Repeat;
   const dots = habitHeatmap(data, h).slice(-30);
+  const smartTime = isReduce ? null : bestHabitHour(data.habitLogs, h.id);
   const heatColor = (lvl: string) =>
     lvl === "done" ? "var(--good)" : lvl === "missed" ? "var(--bad-soft)" : "var(--surface-3)";
 
@@ -384,6 +386,12 @@ function HabitCard({
               {impact.pct >= 0 ? "+" : ""}{impact.pct}%
             </span>
             <span className="text-[var(--text-faint)]">{t("Life Score on days you do this")}</span>
+          </div>
+        )}
+        {smartTime && smartTime.spread >= 0.4 && (
+          <div className="mt-1 flex items-center gap-1.5 text-[12px] text-[var(--text-muted)]">
+            <Clock size={12} className="text-[var(--accent)]" />
+            <span>{t("You usually do this around {time}", { time: `${String(smartTime.hour).padStart(2, "0")}:00` })}</span>
           </div>
         )}
       </div>

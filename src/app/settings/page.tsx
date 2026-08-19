@@ -26,6 +26,7 @@ import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls 
 import { InstallAppCard } from "@/components/PWA";
 import { pushConfigured, enablePush, disablePush, syncPush, PushError } from "@/lib/push";
 import { weeklyRecapText } from "@/lib/weeklyRecap";
+import { typicalLogHour } from "@/lib/habitTimes";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
 
@@ -920,6 +921,19 @@ function RemindersCard() {
                   value={checkinTime}
                   onChange={(e) => updateTime(e.target.value)}
                 />
+                {(() => {
+                  const hour = typicalLogHour(data.habitLogs);
+                  const suggested = hour == null ? null : `${String(hour).padStart(2, "0")}:00`;
+                  if (!suggested || suggested === checkinTime) return null;
+                  return (
+                    <button
+                      onClick={() => updateTime(suggested)}
+                      className="mt-1.5 text-xs text-[var(--accent)] hover:underline"
+                    >
+                      {t("You usually log around {time} — use that?", { time: suggested })}
+                    </button>
+                  );
+                })()}
               </Field>
               <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
                 <span className="text-sm font-medium">{t("Include still-open habits")}</span>

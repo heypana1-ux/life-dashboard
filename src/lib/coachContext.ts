@@ -128,12 +128,18 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
   const wk = new Set(Array.from({ length: 7 }, (_, i) => addDays(today, -i)));
   const workouts7 = data.workouts.filter((w) => wk.has(w.date)).length;
   if (data.workouts.length) L.push(`Workouts in the last 7 days: ${workouts7}.`);
+  const focus7 = (data.focusSessions ?? []).filter((f) => wk.has(f.date)).reduce((s, f) => s + f.minutes, 0);
+  if ((data.focusSessions ?? []).length) L.push(`Deep-work / focus minutes in the last 7 days: ${focus7}.`);
 
-  // Weekly review focus
+  // Weekly review focus — a stated intention the coach should follow up on.
   const lastReview = [...data.weeklyReviews]
     .filter((r) => r.weekOf <= weekAnchor(today))
     .sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0];
-  if (lastReview?.focus) L.push(`The user's focus from their last weekly review: "${lastReview.focus}".`);
+  if (lastReview?.focus)
+    L.push(`The user's stated focus/intention from their last weekly review (${lastReview.weekOf}): "${lastReview.focus}". If relevant, ask how it's going.`);
+  // Current weekly plan intention, if the user set one.
+  const curPlan = [...data.weeklyPlans].sort((a, b) => (a.weekOf < b.weekOf ? 1 : -1))[0];
+  if (curPlan?.intention) L.push(`The user's intention for this week's plan: "${curPlan.intention}".`);
 
   // Goals
   const goals = data.goals.filter((g) => !g.archived);
@@ -305,10 +311,15 @@ export function buildCoachContext(data: AppData, history: DayScore[]): CoachCont
     L.push("Average check-in feelings by weekday (1-10):\n" + rows.map((r) => `- ${r}`).join("\n"));
   }
 
-  // Coach memory: the most recent previous briefing, so advice can build on itself.
-  const prevNote = (data.settings.coachHistory ?? []).filter((h) => h.date < today).slice(-1)[0];
-  if (prevNote) {
-    L.push(`Your previous coaching note to the user (${prevNote.date}): "${prevNote.text}" — if it's still relevant, briefly follow up on whether it helped.`);
+  // Coach memory: your recent notes to this user, so advice builds on itself instead of
+  // resetting each time. The coach should reference these and follow up on past suggestions
+  // ("last week you wanted to get to bed earlier — did it help?").
+  const priorNotes = (data.settings.coachHistory ?? []).filter((h) => h.date < today).slice(-3);
+  if (priorNotes.length) {
+    L.push(
+      "Your recent coaching notes to this user (oldest first) — build on them and follow up on whether past advice worked:\n" +
+        priorNotes.map((h) => `- (${h.date}) "${h.text}"`).join("\n"),
+    );
   }
 
   // Analysis engine conclusions — the important part.
