@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   BarChart3,
   BookOpen,
   Brain,
@@ -50,6 +51,7 @@ export const NAV: NavItem[] = [
   { href: "/experiments", label: "Experiments", icon: FlaskConical },
   { href: "/finances", label: "Finances", icon: Wallet },
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
+  { href: "/correlations", label: "Correlations", icon: ArrowLeftRight },
   { href: "/analysis", label: "Analysis", icon: Brain },
   { href: "/wheel", label: "Wheel of Life", icon: Compass },
   { href: "/coach", label: "Coach", icon: Sparkles },
@@ -76,7 +78,7 @@ export function pinnedNav(pinned?: string[]): NavItem[] {
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/focus", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
+  { label: "Insights", hrefs: ["/statistics", "/correlations", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/vision", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/about", "/settings"] },
 ];

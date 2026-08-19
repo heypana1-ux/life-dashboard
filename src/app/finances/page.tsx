@@ -33,7 +33,7 @@ import {
   shiftMonth,
   subscriptionAudit,
 } from "@/lib/finance";
-import { todayISO } from "@/lib/date";
+import { todayISO, addDays } from "@/lib/date";
 import {
   Card,
   PageHeader,
@@ -46,6 +46,7 @@ import {
   NumberInput,
   EmptyState,
   Badge,
+  Delta,
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
@@ -103,8 +104,6 @@ function Overview({ cur }: { cur: string }) {
   const [editAcc, setEditAcc] = useState<FinanceAccount | undefined>();
   const [editLia, setEditLia] = useState<Liability | undefined>();
 
-  const history = data.finances.history.map((p) => ({ date: p.date, value: p.value }));
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -114,16 +113,7 @@ function Overview({ cur }: { cur: string }) {
         <Stat label={t("Liabilities")} value={fmtMoney(totals.debt, cur)} tone="bad" />
       </div>
 
-      <Card>
-        <SectionTitle>{t("Net worth over time")}</SectionTitle>
-        {history.length >= 2 ? (
-          <TrendLine data={history} color="var(--good)" name={t("Net worth")} height={220} />
-        ) : (
-          <p className="py-10 text-center text-sm text-[var(--text-muted)]">
-            {t("Not enough data in this range yet.")}
-          </p>
-        )}
-      </Card>
+      <NetWorthCard cur={cur} />
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -199,6 +189,58 @@ function Overview({ cur }: { cur: string }) {
         onSave={(l) => { saveLiability(l); setLiaModal(false); }}
       />
     </div>
+  );
+}
+
+/** Net-worth-over-time chart with a range selector and change-over-range delta. */
+function NetWorthCard({ cur }: { cur: string }) {
+  const { data } = useStore();
+  const t = useT();
+  const [range, setRange] = useState<"3m" | "1y" | "all">("all");
+
+  const full = data.finances.history;
+  const filtered = useMemo(() => {
+    if (range === "all") return full;
+    const days = range === "3m" ? 90 : 365;
+    const cutoff = addDays(todayISO(), -days);
+    return full.filter((p) => p.date >= cutoff);
+  }, [full, range]);
+  const history = filtered.map((p) => ({ date: p.date, value: p.value }));
+  const change = filtered.length >= 2 ? filtered[filtered.length - 1].value - filtered[0].value : 0;
+
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          <div className="flex gap-1.5">
+            <Chip active={range === "3m"} onClick={() => setRange("3m")}>{t("3M")}</Chip>
+            <Chip active={range === "1y"} onClick={() => setRange("1y")}>{t("1Y")}</Chip>
+            <Chip active={range === "all"} onClick={() => setRange("all")}>{t("All")}</Chip>
+          </div>
+        }
+      >
+        {t("Net worth over time")}
+      </SectionTitle>
+      {history.length >= 2 ? (
+        <>
+          <div className="mb-2 flex items-center gap-2 text-sm text-[var(--text-muted)]">
+            <span>
+              {range === "all" ? t("Since the start") : range === "1y" ? t("Past year") : t("Past 3 months")}:
+            </span>
+            <span className="font-semibold text-[var(--text)]">
+              {change >= 0 ? "+" : "−"}
+              {fmtMoney(Math.abs(change), cur)}
+            </span>
+            <Delta value={change} />
+          </div>
+          <TrendLine data={history} color="var(--good)" name={t("Net worth")} height={220} />
+        </>
+      ) : (
+        <p className="py-10 text-center text-sm text-[var(--text-muted)]">
+          {t("Not enough data in this range yet.")}
+        </p>
+      )}
+    </Card>
   );
 }
 

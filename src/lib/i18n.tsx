@@ -1287,6 +1287,36 @@ const DE: Record<string, string> = {
   "Life Dashboard is now an app": "Life Dashboard gibt's jetzt als App",
   "Install it and get reminders as push notifications. Tap to set it up.":
     "Installiere sie und erhalte Erinnerungen als Push-Benachrichtigung. Zum Einrichten tippen.",
+  // --- Correlations explorer ---
+  "Explore how any two things you track move together": "Erkunde, wie sich zwei beliebige Dinge, die du trackst, zusammen bewegen",
+  "Sleep hours": "Schlafstunden",
+  "Focus minutes": "Fokus-Minuten",
+  "Daily spending": "Tagesausgaben",
+  "Workout minutes": "Trainingsminuten",
+  "Body weight": "Körpergewicht",
+  "Not enough data yet": "Noch nicht genug Daten",
+  "Log a couple of weeks across a few areas, then come back to explore the links.":
+    "Trag ein paar Wochen in mehreren Bereichen ein, dann kannst du die Zusammenhänge erkunden.",
+  "Horizontal (X)": "Horizontal (X)",
+  "Vertical (Y)": "Vertikal (Y)",
+  Swap: "Tauschen",
+  negligible: "vernachlässigbar",
+  positive: "positiv",
+  negative: "negativ",
+  "Only {n} overlapping days so far — log more to see a pattern.":
+    "Bisher nur {n} überlappende Tage — trag mehr ein, um ein Muster zu sehen.",
+  "No clear relationship in this pair.": "Kein klarer Zusammenhang in diesem Paar.",
+  "{n} days": "{n} Tage",
+  "These two barely move together in your data.": "Diese beiden bewegen sich in deinen Daten kaum gemeinsam.",
+  "When {x} is higher, {y} tends to be higher too.": "Wenn {x} höher ist, ist {y} tendenziell auch höher.",
+  "When {x} is higher, {y} tends to be lower.": "Wenn {x} höher ist, ist {y} tendenziell niedriger.",
+  "Correlation, not causation.": "Korrelation, keine Kausalität.",
+  // --- Net worth range ---
+  "3M": "3M",
+  "1Y": "1J",
+  "Since the start": "Seit Beginn",
+  "Past year": "Letztes Jahr",
+  "Past 3 months": "Letzte 3 Monate",
   // --- Weekly recap push ---
   "Weekly recap (Sun evening)": "Wochenrückblick (So. Abend)",
   "Your Life-Score trend + the week's key insight.":
