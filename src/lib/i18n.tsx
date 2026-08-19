@@ -1284,6 +1284,9 @@ const DE: Record<string, string> = {
     "Tippe in Safari auf „Teilen“ und dann auf „Zum Home-Bildschirm“.",
   "Open your browser menu and choose “Install app” or “Add to Home screen”.":
     "Öffne das Browser-Menü und wähle „App installieren“ bzw. „Zum Startbildschirm hinzufügen“.",
+  "Life Dashboard is now an app": "Life Dashboard gibt's jetzt als App",
+  "Install it and get reminders as push notifications. Tap to set it up.":
+    "Installiere sie und erhalte Erinnerungen als Push-Benachrichtigung. Zum Einrichten tippen.",
   // --- Weekly planner ---
   "This week's plan": "Plan für diese Woche",
   Plan: "Planen",

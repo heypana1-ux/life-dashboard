@@ -1,9 +1,49 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Download, Share, SquarePlus } from "lucide-react";
+import Link from "next/link";
+import { BellRing, Check, Download, Share, SquarePlus, X } from "lucide-react";
+import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { pushConfigured } from "@/lib/push";
 import { Card, SectionTitle, Button } from "@/components/ui";
+
+const PROMO_ID = "app-push-promo";
+
+/** One-time, dismissible banner announcing the installable app + push. Tap → Settings. */
+export function AppPromoBanner() {
+  const { data, updateSettings, ready } = useStore();
+  const t = useT();
+  if (!ready) return null;
+  const seen = data.settings.hintsSeen?.includes(PROMO_ID);
+  const pushOn = !!data.settings.reminders?.push;
+  // Only when push is actually available on this deployment, not yet enabled, and not dismissed.
+  if (!pushConfigured || seen || pushOn) return null;
+
+  function dismiss(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    updateSettings({ hintsSeen: [...(data.settings.hintsSeen ?? []), PROMO_ID] });
+  }
+
+  return (
+    <Link
+      href="/settings#reminders"
+      className="grad mb-[18px] flex items-center gap-3 rounded-2xl p-3.5 text-white shadow-[var(--shadow)]"
+    >
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/20">
+        <BellRing size={18} />
+      </span>
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-semibold">{t("Life Dashboard is now an app")}</div>
+        <div className="text-xs text-white/85">{t("Install it and get reminders as push notifications. Tap to set it up.")}</div>
+      </div>
+      <button onClick={dismiss} aria-label={t("Dismiss")} className="shrink-0 rounded-lg p-1 text-white/80 hover:bg-white/15 hover:text-white">
+        <X size={18} />
+      </button>
+    </Link>
+  );
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // The browser's install prompt event, stashed until the user taps Install.

@@ -17,7 +17,7 @@ import { WeeklyReviewGate } from "@/components/WeeklyReview";
 import { CoachLauncher } from "@/components/Coach";
 import { CommandPalette, CommandPaletteButton, openCommandPalette } from "@/components/CommandPalette";
 import { Tour } from "@/components/Tour";
-import { PWARegister } from "@/components/PWA";
+import { PWARegister, AppPromoBanner } from "@/components/PWA";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
@@ -175,6 +175,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CommandPalette />
           {!isActive(pathname, "/coach") && <CoachLauncher />}
           <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
+            <AppPromoBanner />
             <BackupReminder />
             {children}
           </div>

@@ -227,7 +227,9 @@ export default function SettingsPage() {
       </Card>
 
       {/* Reminders */}
-      <RemindersCard />
+      <div id="reminders" className="scroll-mt-20">
+        <RemindersCard />
+      </div>
 
       {/* AI coach */}
       <CoachCard />
