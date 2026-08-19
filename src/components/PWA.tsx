@@ -9,11 +9,29 @@ import { Card, SectionTitle, Button } from "@/components/ui";
 // The browser's install prompt event, stashed until the user taps Install.
 let deferredPrompt: any = null;
 
-/** Registers the service worker and captures the install prompt. Mount once. */
+/** Registers the service worker, auto-refreshes on update, and captures the install prompt. */
 export function PWARegister() {
   useEffect(() => {
+    let refreshing = false;
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => {});
+      // If a page was controlled by an old worker and a new one takes over, reload once so the
+      // user always sees the latest version instead of a stale cached shell.
+      const hadController = !!navigator.serviceWorker.controller;
+      const onControllerChange = () => {
+        if (refreshing || !hadController) return;
+        refreshing = true;
+        window.location.reload();
+      };
+      navigator.serviceWorker.addEventListener("controllerchange", onControllerChange);
+      navigator.serviceWorker
+        .register("/sw.js")
+        .then((reg) => {
+          reg.update().catch(() => {});
+          // Check for a fresh service worker whenever the app regains focus.
+          const onVis = () => document.visibilityState === "visible" && reg.update().catch(() => {});
+          document.addEventListener("visibilitychange", onVis);
+        })
+        .catch(() => {});
     }
     const onPrompt = (e: any) => {
       e.preventDefault();
