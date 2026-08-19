@@ -360,6 +360,15 @@ const DE: Record<string, string> = {
   "Notifications aren't supported here.": "Benachrichtigungen werden hier nicht unterstützt.",
   "Enable notifications": "Benachrichtigungen aktivieren",
   "Daily check-in reminder": "Tägliche Check-in-Erinnerung",
+  "A daily nudge to log your day.": "Ein täglicher Anstupser, deinen Tag einzutragen.",
+  "Also when the app is closed (push)": "Auch wenn die App geschlossen ist (Push)",
+  "Get the reminder as a real notification even when the app isn't open.":
+    "Erhalte die Erinnerung als echte Benachrichtigung, auch wenn die App nicht offen ist.",
+  "Push isn't supported on this device/browser.": "Push wird auf diesem Gerät/Browser nicht unterstützt.",
+  "Push isn't set up on the server yet.": "Push ist auf dem Server noch nicht eingerichtet.",
+  "Notifications are blocked — allow them in your browser settings.":
+    "Benachrichtigungen sind blockiert – erlaube sie in den Browser-Einstellungen.",
+  "Couldn't reach the server. Try again.": "Server nicht erreichbar. Versuch es nochmal.",
   "Reminder time": "Erinnerungszeit",
   "Include still-open habits": "Offene Gewohnheiten einbeziehen",
   "Life Dashboard — daily check-in": "Life Dashboard — täglicher Check-in",

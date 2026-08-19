@@ -24,6 +24,7 @@ import { useT } from "@/lib/i18n";
 import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
 import { InstallAppCard } from "@/components/PWA";
+import { pushConfigured, enablePush, disablePush, syncPush, PushError } from "@/lib/push";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
 
@@ -830,11 +831,14 @@ function RemindersCard() {
   const { data, updateSettings } = useStore();
   const t = useT();
   const r = data.settings.reminders;
+  const lang = data.settings.language;
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
     typeof window !== "undefined" && "Notification" in window
       ? Notification.permission
       : "unsupported",
   );
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushErr, setPushErr] = useState<PushError | null>(null);
 
   async function enable() {
     if (perm === "unsupported") return;
@@ -845,11 +849,40 @@ function RemindersCard() {
     }
   }
 
+  const checkinTime = r.checkinTime ?? "21:00";
+
+  async function togglePush(on: boolean) {
+    setPushErr(null);
+    if (!on) {
+      updateSettings({ reminders: { ...r, push: false } });
+      await disablePush();
+      return;
+    }
+    setPushBusy(true);
+    const res = await enablePush(checkinTime, r.habitReminders, lang);
+    setPushBusy(false);
+    if (res.ok) updateSettings({ reminders: { ...r, enabled: true, push: true } });
+    else setPushErr(res.error ?? "server");
+  }
+
+  // Keep the server's copy of the reminder time in sync while push is on.
+  function updateTime(time: string) {
+    updateSettings({ reminders: { ...r, checkinTime: time } });
+    if (r.push) void syncPush(time, r.habitReminders, lang);
+  }
+
+  const PUSH_ERR: Record<PushError, string> = {
+    unsupported: t("Push isn't supported on this device/browser."),
+    not_configured: t("Push isn't set up on the server yet."),
+    denied: t("Notifications are blocked — allow them in your browser settings."),
+    server: t("Couldn't reach the server. Try again."),
+  };
+
   return (
     <Card>
       <SectionTitle>{t("Reminders")}</SectionTitle>
       <p className="mb-3 text-sm text-[var(--text-muted)]">
-        {t("A daily nudge to log your day. Works only while the app is open (no background push).")}
+        {t("A daily nudge to log your day.")}
       </p>
 
       {perm === "unsupported" ? (
@@ -873,19 +906,33 @@ function RemindersCard() {
                 <input
                   type="time"
                   className={inputCls}
-                  value={r.checkinTime ?? "21:00"}
-                  onChange={(e) =>
-                    updateSettings({ reminders: { ...r, checkinTime: e.target.value } })
-                  }
+                  value={checkinTime}
+                  onChange={(e) => updateTime(e.target.value)}
                 />
               </Field>
               <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
                 <span className="text-sm font-medium">{t("Include still-open habits")}</span>
                 <Toggle
                   checked={r.habitReminders}
-                  onChange={(v) => updateSettings({ reminders: { ...r, habitReminders: v } })}
+                  onChange={(v) => {
+                    updateSettings({ reminders: { ...r, habitReminders: v } });
+                    if (r.push) void syncPush(checkinTime, v, lang);
+                  }}
                 />
               </div>
+
+              {pushConfigured && (
+                <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium">{t("Also when the app is closed (push)")}</div>
+                      <div className="text-xs text-[var(--text-muted)]">{t("Get the reminder as a real notification even when the app isn't open.")}</div>
+                    </div>
+                    <Toggle checked={!!r.push && !pushBusy} onChange={togglePush} />
+                  </div>
+                  {pushErr && <p className="mt-2 text-xs text-[var(--bad)]">{PUSH_ERR[pushErr]}</p>}
+                </div>
+              )}
             </>
           )}
         </div>

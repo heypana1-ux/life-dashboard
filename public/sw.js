@@ -1,5 +1,41 @@
-/* Life Dashboard service worker — offline app shell + asset caching. */
+/* Life Dashboard service worker — offline app shell + asset caching + web push. */
 const CACHE = "ld-cache-v1";
+
+// ---- Web push ----
+self.addEventListener("push", (e) => {
+  let data = {};
+  try {
+    data = e.data ? e.data.json() : {};
+  } catch {
+    data = { body: e.data ? e.data.text() : "" };
+  }
+  const title = data.title || "Life Dashboard";
+  const options = {
+    body: data.body || "",
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png",
+    tag: data.tag || "life-dashboard",
+    data: { url: data.url || "/today" },
+  };
+  e.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (e) => {
+  e.notification.close();
+  const target = (e.notification.data && e.notification.data.url) || "/";
+  e.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const c of all) {
+        if ("focus" in c) {
+          c.navigate(target).catch(() => {});
+          return c.focus();
+        }
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+    })(),
+  );
+});
 
 self.addEventListener("install", (e) => {
   self.skipWaiting();

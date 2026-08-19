@@ -474,6 +474,8 @@ export interface ReminderSettings {
   habitReminders: boolean;
   /** ISO dates on which reminders already fired (debounce). */
   firedToday: string[];
+  /** Opt-in: real push notifications (delivered even when the app is closed). */
+  push?: boolean;
 }
 
 export type Accent =
