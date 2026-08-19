@@ -122,6 +122,11 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
   for (const l of data.habitLogs) if (l.done) doneByHabit.get(l.habitId)?.add(l.date);
   const healthOf = new Map(data.health.map((h) => [h.date, h] as const));
   const wellDates = data.health.filter((h) => h.wellbeing != null).map((h) => h.date);
+  // Deep-work / focus minutes per day (from the Focus timer).
+  const focusMinOf = new Map<string, number>();
+  for (const f of data.focusSessions ?? []) focusMinOf.set(f.date, (focusMinOf.get(f.date) ?? 0) + f.minutes);
+  const focusTarget = data.settings.focusTargetMinutes || 120;
+  const bigFocus = (d: string) => (focusMinOf.get(d) ?? 0) >= focusTarget;
 
   function assoc(pred: (d: string) => boolean, metric: (d: string) => number | null, dates: string[]) {
     const A: number[] = [];
@@ -192,6 +197,20 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
       const teNext = assoc((d) => trained.has(d), (d) => energy(addDays(d, 1)), [...trained]);
       if (teNext && teNext.diff >= 0.5) {
         F.push({ id: "train-energy-next", kind: "insight", title: t("Training → next-day energy"), detail: t("The day after you train, your energy is {diff}/10 higher.", { diff: teNext.diff.toFixed(1) }), weight: 50 + teNext.diff * 5 });
+      }
+    }
+  }
+
+  // ---------- Deep-work / focus ----------
+  if (focusMinOf.size >= 2 * MIN) {
+    const fl = assoc(bigFocus, life, scoreDates);
+    if (fl && fl.diff >= 3) {
+      F.push({ id: "focus-life", kind: "insight", title: t("Focus ↔ Life Score"), detail: t("On days you hit your focus target, your Life Score is about {diff} points higher.", { diff: Math.round(fl.diff) }), weight: 68 + fl.diff });
+    }
+    if (refl) {
+      const fm = assoc(bigFocus, mood, reviewDates);
+      if (fm && fm.diff >= 0.5) {
+        F.push({ id: "focus-mood", kind: "insight", title: t("Focus ↔ mood"), detail: t("On days with {h}+ of focus your mood runs about {diff}/10 higher.", { h: fmtH(focusTarget), diff: fm.diff.toFixed(1) }), weight: 56 + fm.diff * 5 });
       }
     }
   }
@@ -669,6 +688,7 @@ export function analyze(data: AppData, history: DayScore[], lang: Language = "en
     driverFactors.push({ label: t("Good sleep quality"), pred: (d) => (sleepOf.get(d)?.quality ?? 0) >= 7 });
   }
   if (refl) driverFactors.push({ label: t("Journaling"), pred: (d) => journaled.has(d) });
+  if (focusMinOf.size >= 2 * MIN) driverFactors.push({ label: t("Deep work"), pred: bigFocus });
   if (has("health")) driverFactors.push({ label: t("Feeling well"), pred: (d) => (healthOf.get(d)?.wellbeing ?? 0) >= 7 });
   for (const h of data.habits.filter((x) => !x.archived && has(x.area))) {
     const done = doneByHabit.get(h.id) ?? new Set<string>();

@@ -68,6 +68,11 @@ const OVERFILL_CAP = 0.15;
 /** Max Life-Score bonus for completing the optional morning "top 3" focus. */
 const FOCUS_BONUS = 2;
 
+/** Max Life-Score bonus for hitting your daily deep-work / focus target. */
+const DEEPWORK_BONUS = 3;
+/** Fallback daily focus target (minutes) when the user hasn't set one. */
+const DEFAULT_FOCUS_TARGET = 120;
+
 /** Lowest fraction of the raw score a full lack of coverage can leave (1.0 = full coverage,
  *  no penalty). At 0.65 a day where you engaged none of what was in play keeps 65% of its
  *  adherence score; a fully-covered day keeps 100%. */
@@ -259,6 +264,15 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
     if (focus && focus.items.length > 0) {
       const doneFrac = focus.items.filter((i) => i.done).length / focus.items.length;
       lifeScore = Math.round(clamp(lifeScore + doneFrac * FOCUS_BONUS));
+    }
+    // Deep-work / focus sessions: a small, capped nudge for hitting your daily focus target.
+    const focusMin = (data.focusSessions ?? [])
+      .filter((f) => f.date === dateISO)
+      .reduce((s, f) => s + f.minutes, 0);
+    if (focusMin > 0) {
+      const target = data.settings.focusTargetMinutes || DEFAULT_FOCUS_TARGET;
+      const frac = Math.min(1, focusMin / target);
+      lifeScore = Math.round(clamp(lifeScore + frac * DEEPWORK_BONUS));
     }
   }
 

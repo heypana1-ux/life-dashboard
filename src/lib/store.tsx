@@ -18,6 +18,7 @@ import {
   DailyReview,
   Experiment,
   FinanceAccount,
+  FocusSession,
   Goal,
   Habit,
   HabitLog,
@@ -26,6 +27,7 @@ import {
   Liability,
   Profile,
   Project,
+  VisionItem,
   RewardItem,
   Redemption,
   HealthLog,
@@ -113,6 +115,8 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     wheelChecks: parsed.wheelChecks ?? [],
     health: parsed.health ?? [],
     focus: parsed.focus ?? [],
+    focusSessions: parsed.focusSessions ?? [],
+    visionItems: parsed.visionItems ?? [],
     finances: {
       ...base.finances,
       ...parsed.finances,
@@ -185,6 +189,12 @@ interface StoreCtx {
   saveHealth: (h: HealthLog) => void;
   /* focus (morning top 3) */
   setFocus: (date: string, items: FocusDay["items"]) => void;
+  /* focus sessions (deep work timer) */
+  addFocusSession: (minutes: number, label?: string) => void;
+  removeFocusSession: (id: string) => void;
+  /* vision board */
+  saveVisionItem: (v: VisionItem) => VisionItem;
+  removeVisionItem: (id: string) => void;
   /* finances */
   setCurrency: (c: string) => void;
   saveAccount: (a: FinanceAccount) => void;
@@ -460,11 +470,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
             (l) => l.habitId === habitId && l.date === date,
           );
           const logs = [...d.habitLogs];
+          const stamp = new Date().toISOString();
           if (idx >= 0) {
             const cur = logs[idx];
-            logs[idx] = { ...cur, done: !cur.done, ...extra };
+            const nowDone = !cur.done;
+            // Record the clock time the habit was completed, so "smart" reminder times can be
+            // learned from when you actually do things (only stamped when it becomes done).
+            logs[idx] = { ...cur, done: nowDone, ...(nowDone ? { doneAt: stamp } : {}), ...extra };
           } else {
-            logs.push({ habitId, date, done: true, ...extra });
+            logs.push({ habitId, date, done: true, doneAt: stamp, ...extra });
           }
           return { ...d, habitLogs: logs };
         }),
@@ -574,6 +588,33 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
           const clean = items.filter((i) => i.text.trim());
           return { ...d, focus: clean.length ? [...others, { date, items: clean }] : others };
         }),
+
+      /* focus sessions (deep work timer) */
+      addFocusSession: (minutes, label) =>
+        mutate((d) => {
+          const session: FocusSession = {
+            id: uid("focus"),
+            date: todayISO(),
+            minutes: Math.max(1, Math.round(minutes)),
+            label: label?.trim() || undefined,
+            startedAt: new Date().toISOString(),
+          };
+          return { ...d, focusSessions: [...d.focusSessions, session] };
+        }),
+      removeFocusSession: (id) =>
+        mutate((d) => ({ ...d, focusSessions: d.focusSessions.filter((x) => x.id !== id) })),
+
+      /* vision board */
+      saveVisionItem: (v) => {
+        const item: VisionItem = v.id ? v : { ...v, id: uid("vision") };
+        mutate((d) => {
+          const others = d.visionItems.filter((x) => x.id !== item.id);
+          return { ...d, visionItems: [...others, item] };
+        });
+        return item;
+      },
+      removeVisionItem: (id) =>
+        mutate((d) => ({ ...d, visionItems: d.visionItems.filter((x) => x.id !== id) })),
 
       /* finances */
       setCurrency: (c) =>

@@ -25,6 +25,7 @@ import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
 import { InstallAppCard } from "@/components/PWA";
 import { pushConfigured, enablePush, disablePush, syncPush, PushError } from "@/lib/push";
+import { weeklyRecapText } from "@/lib/weeklyRecap";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
 
@@ -852,6 +853,8 @@ function RemindersCard() {
   }
 
   const checkinTime = r.checkinTime ?? "21:00";
+  // Freshly computed weekly-recap text stored server-side for the Sunday-evening push.
+  const recap = () => weeklyRecapText(data, lang);
 
   async function togglePush(on: boolean) {
     setPushErr(null);
@@ -861,16 +864,22 @@ function RemindersCard() {
       return;
     }
     setPushBusy(true);
-    const res = await enablePush(checkinTime, r.habitReminders, lang);
+    const weekly = r.weeklyRecap ?? true;
+    const res = await enablePush(checkinTime, r.habitReminders, lang, weekly, recap());
     setPushBusy(false);
-    if (res.ok) updateSettings({ reminders: { ...r, enabled: true, push: true } });
+    if (res.ok) updateSettings({ reminders: { ...r, enabled: true, push: true, weeklyRecap: weekly } });
     else setPushErr(res.error ?? "server");
   }
 
   // Keep the server's copy of the reminder time in sync while push is on.
   function updateTime(time: string) {
     updateSettings({ reminders: { ...r, checkinTime: time } });
-    if (r.push) void syncPush(time, r.habitReminders, lang);
+    if (r.push) void syncPush(time, r.habitReminders, lang, !!r.weeklyRecap, recap());
+  }
+
+  function toggleWeekly(v: boolean) {
+    updateSettings({ reminders: { ...r, weeklyRecap: v } });
+    if (r.push) void syncPush(checkinTime, r.habitReminders, lang, v, recap());
   }
 
   const PUSH_ERR: Record<PushError, string> = {
@@ -918,7 +927,7 @@ function RemindersCard() {
                   checked={r.habitReminders}
                   onChange={(v) => {
                     updateSettings({ reminders: { ...r, habitReminders: v } });
-                    if (r.push) void syncPush(checkinTime, v, lang);
+                    if (r.push) void syncPush(checkinTime, v, lang, !!r.weeklyRecap, recap());
                   }}
                 />
               </div>
@@ -933,6 +942,15 @@ function RemindersCard() {
                     <Toggle checked={!!r.push && !pushBusy} onChange={togglePush} />
                   </div>
                   {pushErr && <p className="mt-2 text-xs text-[var(--bad)]">{PUSH_ERR[pushErr]}</p>}
+                  {r.push && (
+                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium">{t("Weekly recap (Sun evening)")}</div>
+                        <div className="text-xs text-[var(--text-muted)]">{t("Your Life-Score trend + the week's key insight.")}</div>
+                      </div>
+                      <Toggle checked={!!r.weeklyRecap} onChange={toggleWeekly} />
+                    </div>
+                  )}
                 </div>
               )}
             </>

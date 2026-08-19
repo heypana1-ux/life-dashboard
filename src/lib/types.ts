@@ -89,6 +89,33 @@ export interface HabitLog {
   /** For "reduce" slips: an optional trigger/situation, to surface patterns over time. */
   trigger?: string;
   notes?: string;
+  /** Local ISO timestamp the habit was last marked done — powers "smart" reminder times. */
+  doneAt?: string;
+}
+
+/** A single Deep-Work / Pomodoro focus session (logged by the in-app timer or by hand). */
+export interface FocusSession {
+  id: string;
+  date: string; // YYYY-MM-DD (the local day it was completed)
+  minutes: number;
+  /** What you worked on (free text). */
+  label?: string;
+  startedAt: string; // ISO timestamp
+}
+
+/** A visual goal / "where I want to go" card on the Vision Board. */
+export interface VisionItem {
+  id: string;
+  title: string;
+  note?: string;
+  /** Small, client-resized image stored as a data: URL. */
+  image?: string;
+  /** Free-text category / life area, shown as a chip. */
+  category?: string;
+  /** Optional target year the user is aiming for. */
+  targetYear?: number;
+  done?: boolean;
+  createdAt: string;
 }
 
 /** End-of-day self check-in. */
@@ -476,6 +503,8 @@ export interface ReminderSettings {
   firedToday: string[];
   /** Opt-in: real push notifications (delivered even when the app is closed). */
   push?: boolean;
+  /** Opt-in weekly recap push, sent Sunday evening (needs push enabled). */
+  weeklyRecap?: boolean;
 }
 
 export type Accent =
@@ -534,6 +563,8 @@ export interface Settings {
   areas: AreaConfig[];
   /** Personal sleep target in minutes (the user's chosen goal). */
   sleepTargetMinutes: number;
+  /** Daily deep-work / focus target in minutes (drives the focus score bonus + stats). */
+  focusTargetMinutes?: number;
   /** ELO starting/current tracking is derived, but we persist the seed. */
   eloStart: number;
   demoDataLoaded: boolean;
@@ -615,6 +646,10 @@ export interface AppData {
   wheelChecks: WheelCheck[];
   health: HealthLog[];
   focus: FocusDay[];
+  /** Logged Deep-Work / Pomodoro sessions (see Focus timer). */
+  focusSessions: FocusSession[];
+  /** Vision-board cards (visual yearly goals). */
+  visionItems: VisionItem[];
   finances: Finances;
   workouts: Workout[];
   workoutPlans: WorkoutPlan[];

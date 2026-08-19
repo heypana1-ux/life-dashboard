@@ -11,6 +11,8 @@ import {
   Gauge,
   Gift,
   HeartPulse,
+  Image as ImageIcon,
+  Timer,
   KanbanSquare,
   ListChecks,
   type LucideIcon,
@@ -36,12 +38,14 @@ export const NAV: NavItem[] = [
   { href: "/today", label: "Today", icon: CalendarCheck },
   { href: "/morning", label: "Morning", icon: Sunrise },
   { href: "/habits", label: "Habits", icon: ListChecks },
+  { href: "/focus", label: "Focus", icon: Timer },
   { href: "/training", label: "Training", icon: Dumbbell },
   { href: "/sleep", label: "Sleep", icon: Moon },
   { href: "/health", label: "Health", icon: HeartPulse },
   { href: "/calendar", label: "Calendar", icon: CalendarDays },
   { href: "/journal", label: "Journal", icon: BookOpen },
   { href: "/goals", label: "Goals", icon: Target },
+  { href: "/vision", label: "Vision Board", icon: ImageIcon },
   { href: "/projects", label: "Projects", icon: KanbanSquare },
   { href: "/experiments", label: "Experiments", icon: FlaskConical },
   { href: "/finances", label: "Finances", icon: Wallet },
@@ -71,9 +75,9 @@ export function pinnedNav(pinned?: string[]): NavItem[] {
 
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [
-  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/training", "/sleep", "/health", "/journal", "/calendar"] },
+  { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/focus", "/training", "/sleep", "/health", "/journal", "/calendar"] },
   { label: "Insights", hrefs: ["/statistics", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
-  { label: "Areas", hrefs: ["/goals", "/projects", "/experiments", "/finances"] },
+  { label: "Areas", hrefs: ["/goals", "/vision", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/about", "/settings"] },
 ];
 

@@ -117,6 +117,8 @@ export function emptyData(): AppData {
     wheelChecks: [],
     health: [],
     focus: [],
+    focusSessions: [],
+    visionItems: [],
     finances: emptyFinances(),
     workouts: [],
     workoutPlans: [],

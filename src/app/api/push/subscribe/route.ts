@@ -15,6 +15,8 @@ export async function POST(req: NextRequest) {
     habitReminders?: boolean;
     language?: string;
     timezone?: string;
+    weeklyRecap?: boolean;
+    weeklySummary?: string | null;
   };
   try {
     body = await req.json();
@@ -35,6 +37,18 @@ export async function POST(req: NextRequest) {
   };
   const { error } = await db.from(PUSH_TABLE).upsert(row, { onConflict: "endpoint" });
   if (error) return NextResponse.json({ error: "db", detail: error.message.slice(0, 200) }, { status: 500 });
+
+  // Best-effort weekly-recap fields. If the table doesn't have these columns yet the update
+  // errors and is ignored — the daily reminder above keeps working without them. To enable the
+  // weekly recap, add: weekly_recap boolean, weekly_summary text, last_weekly text.
+  await db
+    .from(PUSH_TABLE)
+    .update({
+      weekly_recap: !!body.weeklyRecap,
+      weekly_summary: typeof body.weeklySummary === "string" ? body.weeklySummary : null,
+    })
+    .eq("endpoint", sub.endpoint);
+
   return NextResponse.json({ ok: true });
 }
 

@@ -1287,6 +1287,63 @@ const DE: Record<string, string> = {
   "Life Dashboard is now an app": "Life Dashboard gibt's jetzt als App",
   "Install it and get reminders as push notifications. Tap to set it up.":
     "Installiere sie und erhalte Erinnerungen als Push-Benachrichtigung. Zum Einrichten tippen.",
+  // --- Weekly recap push ---
+  "Weekly recap (Sun evening)": "Wochenrückblick (So. Abend)",
+  "Your Life-Score trend + the week's key insight.":
+    "Dein Life-Score-Trend + die wichtigste Erkenntnis der Woche.",
+  "Your weekly recap": "Dein Wochenrückblick",
+  // --- Focus timer ---
+  "Deep-work sessions that fuel your score": "Deep-Work-Sessions, die deinen Score antreiben",
+  Timer: "Timer",
+  min: "Min",
+  Custom: "Eigene",
+  "What are you working on?": "Woran arbeitest du?",
+  Resume: "Fortsetzen",
+  Pause: "Pause",
+  "Stop & log": "Stopp & speichern",
+  Reset: "Zurücksetzen",
+  "Finishing the timer logs the full session; “Stop & log” saves the time you did.":
+    "Läuft der Timer ab, wird die ganze Session gespeichert; „Stopp & speichern“ sichert die Zeit, die du geschafft hast.",
+  "This week": "Diese Woche",
+  "of target": "vom Ziel",
+  "Focus streak": "Fokus-Serie",
+  "Daily target": "Tagesziel",
+  "Focus this week": "Fokus diese Woche",
+  "Recent sessions": "Letzte Sessions",
+  "No focus sessions yet": "Noch keine Fokus-Sessions",
+  "Run the timer above to log your first Deep-Work block.":
+    "Starte oben den Timer, um deinen ersten Deep-Work-Block zu speichern.",
+  "Deep work": "Deep Work",
+  "Focus session done": "Fokus-Session fertig",
+  "Logged {min} min of focus. Nice work.": "{min} Min Fokus gespeichert. Stark.",
+  "Focus ↔ Life Score": "Fokus ↔ Life-Score",
+  "On days you hit your focus target, your Life Score is about {diff} points higher.":
+    "An Tagen, an denen du dein Fokus-Ziel erreichst, liegt dein Life-Score etwa {diff} Punkte höher.",
+  "Focus ↔ mood": "Fokus ↔ Stimmung",
+  "On days with {h}+ of focus your mood runs about {diff}/10 higher.":
+    "An Tagen mit {h}+ Fokus liegt deine Stimmung etwa {diff}/10 höher.",
+  // --- Vision board ---
+  "Vision Board": "Vision Board",
+  "Where you're headed — the picture worth working toward":
+    "Wohin du willst — das Bild, für das sich die Arbeit lohnt",
+  "Add vision": "Vision hinzufügen",
+  "Your vision board is empty": "Dein Vision Board ist leer",
+  "Add the goals, places and feelings you're aiming for — with a picture to make them real.":
+    "Füge die Ziele, Orte und Gefühle hinzu, die du anstrebst — mit einem Bild, das sie greifbar macht.",
+  "Add your first vision": "Erste Vision hinzufügen",
+  Achieved: "Erreicht",
+  "Mark as not yet": "Als noch offen markieren",
+  "Mark as achieved": "Als erreicht markieren",
+  "Edit vision": "Vision bearbeiten",
+  "New vision": "Neue Vision",
+  "Add a picture": "Bild hinzufügen",
+  "Remove image": "Bild entfernen",
+  "e.g. Run a marathon": "z. B. Marathon laufen",
+  "e.g. Health": "z. B. Gesundheit",
+  "Target year": "Zieljahr",
+  "Why it matters": "Warum es zählt",
+  "What this looks and feels like when you get there.":
+    "Wie es aussieht und sich anfühlt, wenn du dort ankommst.",
   // --- Weekly planner ---
   "This week's plan": "Plan für diese Woche",
   Plan: "Planen",

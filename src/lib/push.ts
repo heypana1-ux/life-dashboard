@@ -25,7 +25,14 @@ function supported(): boolean {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
 
-async function postSubscription(sub: PushSubscription, checkinTime: string, habitReminders: boolean, language: string): Promise<boolean> {
+async function postSubscription(
+  sub: PushSubscription,
+  checkinTime: string,
+  habitReminders: boolean,
+  language: string,
+  weeklyRecap = false,
+  weeklySummary: string | null = null,
+): Promise<boolean> {
   const res = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -34,6 +41,8 @@ async function postSubscription(sub: PushSubscription, checkinTime: string, habi
       checkinTime,
       habitReminders,
       language,
+      weeklyRecap,
+      weeklySummary,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }),
   });
@@ -41,7 +50,13 @@ async function postSubscription(sub: PushSubscription, checkinTime: string, habi
 }
 
 /** Ask permission, subscribe, and register the subscription + reminder time on the server. */
-export async function enablePush(checkinTime: string, habitReminders: boolean, language: string): Promise<{ ok: boolean; error?: PushError }> {
+export async function enablePush(
+  checkinTime: string,
+  habitReminders: boolean,
+  language: string,
+  weeklyRecap = false,
+  weeklySummary: string | null = null,
+): Promise<{ ok: boolean; error?: PushError }> {
   if (!supported()) return { ok: false, error: "unsupported" };
   if (!VAPID_PUBLIC) return { ok: false, error: "not_configured" };
   const perm = await Notification.requestPermission();
@@ -54,16 +69,22 @@ export async function enablePush(checkinTime: string, habitReminders: boolean, l
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC) as BufferSource,
     });
   }
-  const ok = await postSubscription(sub, checkinTime, habitReminders, language);
+  const ok = await postSubscription(sub, checkinTime, habitReminders, language, weeklyRecap, weeklySummary);
   return ok ? { ok: true } : { ok: false, error: "server" };
 }
 
 /** Push the latest reminder time/settings to the server for the existing subscription. */
-export async function syncPush(checkinTime: string, habitReminders: boolean, language: string): Promise<void> {
+export async function syncPush(
+  checkinTime: string,
+  habitReminders: boolean,
+  language: string,
+  weeklyRecap = false,
+  weeklySummary: string | null = null,
+): Promise<void> {
   if (!supported() || !VAPID_PUBLIC) return;
   const reg = await navigator.serviceWorker.ready;
   const sub = await reg.pushManager.getSubscription();
-  if (sub) await postSubscription(sub, checkinTime, habitReminders, language);
+  if (sub) await postSubscription(sub, checkinTime, habitReminders, language, weeklyRecap, weeklySummary);
 }
 
 /** Unsubscribe locally and remove the subscription from the server. */
