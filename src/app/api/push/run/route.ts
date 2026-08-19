@@ -53,11 +53,28 @@ async function handle(req: NextRequest) {
   const { data: rows, error } = await db.from(PUSH_TABLE).select("*");
   if (error) return NextResponse.json({ error: "db" }, { status: 500 });
 
+  // Test mode: ?test=1 sends a notification to every subscription now, ignoring the schedule.
+  const test = new URL(req.url).searchParams.get("test") === "1";
+
   let sent = 0;
   let removed = 0;
   let skipped = 0;
 
   for (const row of rows ?? []) {
+    if (test) {
+      const text = TEXT[row.language === "de" ? "de" : "en"];
+      try {
+        await webpush.sendNotification(row.subscription, JSON.stringify({ title: text.title, body: text.body, url: "/today", tag: "test" }));
+        sent++;
+      } catch (e: unknown) {
+        const status = (e as { statusCode?: number })?.statusCode;
+        if (status === 404 || status === 410) {
+          await db.from(PUSH_TABLE).delete().eq("endpoint", row.endpoint);
+          removed++;
+        }
+      }
+      continue;
+    }
     if (!row.checkin_time) {
       skipped++;
       continue;
