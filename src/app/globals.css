@@ -358,3 +358,9 @@ body {
 .num {
   font-variant-numeric: tabular-nums;
 }
+
+/* Let a vertical scroll pass through range sliders instead of dragging them by accident.
+   Horizontal drags still adjust the value; vertical swipes scroll the page. */
+input[type="range"] {
+  touch-action: pan-y;
+}

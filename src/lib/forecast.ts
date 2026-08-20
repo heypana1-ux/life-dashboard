@@ -77,8 +77,12 @@ export function predictTomorrow(history: DayScore[]): Prediction | null {
   }
   const slope = den ? num / den : 0;
   const avg = my;
-  // Predict from the last point + slope, blended toward the average for stability.
+  // Day-to-day Life Score is noisy and mean-reverting, so lean mostly on the recent average
+  // and only nudge by the trend — extrapolating the last point + full slope overshot reality.
   const fromTrend = s[n - 1] + slope;
-  const value = Math.round(Math.max(0, Math.min(100, 0.6 * fromTrend + 0.4 * avg)));
+  let value = 0.35 * fromTrend + 0.65 * avg;
+  // Keep the estimate within a sane band of the recent average so a spike can't run away.
+  value = Math.max(avg - 12, Math.min(avg + 12, value));
+  value = Math.round(Math.max(0, Math.min(100, value)));
   return { value, trend: Math.round(slope) };
 }

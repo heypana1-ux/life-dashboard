@@ -1,10 +1,29 @@
 /** Date helpers working purely on local calendar dates (YYYY-MM-DD). */
 
-export function todayISO(d: Date = new Date()): string {
+/** Hour before which the "current day" still counts as the previous calendar day.
+ *  So logging at 00:30 (or checking your streak at 00:47) goes to the day you're
+ *  still living, not to the one that just started at midnight. */
+export const DAY_CUTOFF_HOUR = 4;
+
+function fmtDate(d: Date): string {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+/** Local calendar date (YYYY-MM-DD). With NO argument, returns the *logical* current day:
+ *  before DAY_CUTOFF_HOUR it is still yesterday. An explicit date is formatted as-is
+ *  (so addDays/isoRange math is never shifted). */
+export function todayISO(d?: Date): string {
+  if (d) return fmtDate(d);
+  const now = new Date();
+  if (now.getHours() < DAY_CUTOFF_HOUR) {
+    const shifted = new Date(now);
+    shifted.setDate(shifted.getDate() - 1);
+    return fmtDate(shifted);
+  }
+  return fmtDate(now);
 }
 
 export function parseISO(iso: string): Date {
