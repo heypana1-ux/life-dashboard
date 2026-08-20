@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Activity, CalendarHeart, Droplet, HeartPulse, Minus, Pill, Plus, Save, Scale, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { HealthLog } from "@/lib/types";
-import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom } from "@/lib/health";
+import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom, WELLBEING_DIMS, computeWellbeing } from "@/lib/health";
 import { analyzeCycle, FLOW_LABEL } from "@/lib/cycle";
 import { addDays, fmtLong, fmtShort, todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
@@ -18,7 +18,21 @@ import { Ruler, Dumbbell } from "lucide-react";
 import { HintCard } from "@/components/HintCard";
 import clsx from "clsx";
 
-const blank = (date: string): HealthLog => ({ date, wellbeing: 7, symptoms: {}, sick: false });
+const blank = (date: string): HealthLog => ({
+  date,
+  wellbeing: 7,
+  physical: 7,
+  mental: 7,
+  energy: 7,
+  stress: 3,
+  symptoms: {},
+  sick: false,
+});
+
+/** Fill in any missing wellbeing sub-dimensions (for legacy logs) so the sliders have a value. */
+function withWellbeingDefaults(log: HealthLog): HealthLog {
+  return { physical: 7, mental: 7, energy: 7, stress: 3, ...log };
+}
 
 export default function HealthPage() {
   const { data, saveHealth, updateSettings } = useStore();
@@ -26,12 +40,13 @@ export default function HealthPage() {
   const today = todayISO();
   const [date, setDate] = useState(today);
   const existing = data.health.find((h) => h.date === date);
-  const [log, setLog] = useState<HealthLog>(existing ?? blank(date));
+  const [log, setLog] = useState<HealthLog>(existing ? withWellbeingDefaults(existing) : blank(date));
   const [flash, setFlash] = useState(false);
 
   useEffect(() => {
+    const found = data.health.find((h) => h.date === date);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLog(data.health.find((h) => h.date === date) ?? blank(date));
+    setLog(found ? withWellbeingDefaults(found) : blank(date));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
 
@@ -425,13 +440,33 @@ function MeasurementsCard() {
 }
 
 function WellbeingField({ log, setLog, t }: { log: HealthLog; setLog: React.Dispatch<React.SetStateAction<HealthLog>>; t: (k: string) => string }) {
+  const overall = computeWellbeing(log) ?? log.wellbeing ?? 7;
+  const dimValue = (key: string) => (log[key as keyof HealthLog] as number | undefined) ?? (key === "stress" ? 3 : 7);
+  function setDim(key: string, v: number) {
+    setLog((l) => {
+      const next = { ...l, [key]: v };
+      next.wellbeing = computeWellbeing(next) ?? next.wellbeing ?? 7;
+      return next;
+    });
+  }
   return (
-    <div>
-      <div className="mb-1.5 flex items-center justify-between">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-xl bg-[var(--accent-soft)] px-3 py-2">
         <span className="text-sm font-medium">{t("Overall wellbeing")}</span>
-        <span className="text-sm font-semibold text-[var(--accent)]">{log.wellbeing ?? 7}/10</span>
+        <span className="text-base font-bold text-[var(--accent)]">{overall}/10</span>
       </div>
-      <ScaleInput value={log.wellbeing ?? 7} onChange={(v) => setLog((l) => ({ ...l, wellbeing: v }))} />
+      {WELLBEING_DIMS.map((d) => (
+        <div key={d.key}>
+          <div className="mb-1 flex items-center justify-between text-sm">
+            <span className="font-medium">
+              {t(d.label)}
+              {d.invert && <span className="ml-1 text-xs font-normal text-[var(--text-faint)]">({t("lower is better")})</span>}
+            </span>
+            <span className="text-[var(--text-muted)]">{dimValue(d.key)}/10</span>
+          </div>
+          <ScaleInput value={dimValue(d.key)} onChange={(v) => setDim(d.key, v)} />
+        </div>
+      ))}
     </div>
   );
 }

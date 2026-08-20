@@ -45,3 +45,25 @@ export function symptomCount(symptoms?: Record<string, number>): number {
   if (!symptoms) return 0;
   return Object.values(symptoms).filter((v) => v > 0).length;
 }
+
+/** The wellbeing sub-dimensions the user rates (1..10). Stress is inverted when averaged. */
+export const WELLBEING_DIMS = [
+  { key: "physical", label: "Physical", invert: false },
+  { key: "mental", label: "Mental", invert: false },
+  { key: "energy", label: "Energy", invert: false },
+  { key: "stress", label: "Stress", invert: true },
+] as const;
+
+export type WellbeingDim = (typeof WELLBEING_DIMS)[number]["key"];
+
+/** Average the rated sub-dimensions (stress inverted) into an overall wellbeing 1..10.
+ *  Returns null if none are set, so a legacy log's own `wellbeing` can be kept. */
+export function computeWellbeing(log: { physical?: number; mental?: number; energy?: number; stress?: number }): number | null {
+  const vals: number[] = [];
+  for (const d of WELLBEING_DIMS) {
+    const v = log[d.key];
+    if (v != null) vals.push(d.invert ? 11 - v : v);
+  }
+  if (vals.length === 0) return null;
+  return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
+}

@@ -233,8 +233,14 @@ export interface WheelCheck {
 /** Daily health check — tracked and correlated, but never part of the Life Score. */
 export interface HealthLog {
   date: string; // YYYY-MM-DD
-  /** Overall wellbeing 1..10. */
+  /** Overall wellbeing 1..10 — derived from the sub-dimensions below when they're set. */
   wellbeing?: number;
+  /** Wellbeing sub-dimensions (1..10). Their average (stress inverted) forms `wellbeing`. */
+  physical?: number;
+  mental?: number;
+  energy?: number;
+  /** Stress 1..10 (higher = worse; inverted when averaged into wellbeing). */
+  stress?: number;
   /** Symptom key -> severity 1..3 (mild/moderate/strong); absent = not present. */
   symptoms?: Record<string, number>;
   sick?: boolean;
