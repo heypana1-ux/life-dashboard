@@ -461,7 +461,7 @@ function AccountStep({
     const res = mode === "in" ? await sync.signIn(email, password) : await sync.signUp(email, password);
     setBusy(false);
     if (res.error) {
-      setErr(res.error);
+      setErr(res.error === "already_registered" ? t("This email is already registered — sign in instead.") : res.error);
       return;
     }
     // Signing in pulls existing cloud data; creating pushes this device's data up.

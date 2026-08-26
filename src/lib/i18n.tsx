@@ -299,6 +299,7 @@ const DE: Record<string, string> = {
   "Create account": "Konto erstellen",
   "Have an account? Sign in": "Schon ein Konto? Anmelden",
   "Account created — you can sign in now.": "Konto erstellt — du kannst dich jetzt anmelden.",
+  "This email is already registered — sign in instead.": "Diese E-Mail ist bereits registriert — melde dich stattdessen an.",
   Email: "E-Mail",
   Password: "Passwort",
   "Sync now": "Jetzt synchronisieren",

@@ -759,7 +759,7 @@ function AccountCard() {
     setErr(null);
     const res = mode === "in" ? await sync.signIn(email, password) : await sync.signUp(email, password);
     setBusy(false);
-    if (res.error) setErr(res.error);
+    if (res.error) setErr(res.error === "already_registered" ? t("This email is already registered — sign in instead.") : res.error);
     else if (mode === "up") setErr(t("Account created — you can sign in now."));
   }
 

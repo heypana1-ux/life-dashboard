@@ -301,12 +301,20 @@ export function Modal({
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+  // Only close when the press STARTED on the backdrop. Otherwise selecting text inside an
+  // input and releasing the mouse over the backdrop would close the dialog mid-edit.
+  const downOnBackdrop = useRef(false);
   if (!open || !mounted) return null;
 
   return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        downOnBackdrop.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && downOnBackdrop.current) onClose();
+      }}
     >
       <div
         className={clsx(

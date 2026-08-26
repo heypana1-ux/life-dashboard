@@ -418,8 +418,14 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   }, []);
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) return { error: "not configured" };
-    const { error } = await supabase.auth.signUp({ email, password });
-    return error ? { error: error.message } : {};
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) return { error: error.message };
+    // When the email already exists, Supabase (to avoid leaking that) returns a user with an
+    // empty `identities` array and no error instead of failing — treat that as "already taken".
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      return { error: "already_registered" };
+    }
+    return {};
   }, []);
   const signOut = useCallback(async () => {
     if (!supabase) return;
