@@ -16,6 +16,7 @@ import {
   Budget,
   SavingsGoal,
   DailyReview,
+  CoachChatThread,
   Experiment,
   FinanceAccount,
   FocusSession,
@@ -117,6 +118,7 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
     focus: parsed.focus ?? [],
     focusSessions: parsed.focusSessions ?? [],
     visionItems: parsed.visionItems ?? [],
+    coachChats: parsed.coachChats ?? [],
     finances: {
       ...base.finances,
       ...parsed.finances,
@@ -195,6 +197,9 @@ interface StoreCtx {
   /* vision board */
   saveVisionItem: (v: VisionItem) => VisionItem;
   removeVisionItem: (id: string) => void;
+  /* coach chats */
+  saveCoachChat: (chat: CoachChatThread) => void;
+  removeCoachChat: (id: string) => void;
   /* finances */
   setCurrency: (c: string) => void;
   saveAccount: (a: FinanceAccount) => void;
@@ -621,6 +626,15 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       },
       removeVisionItem: (id) =>
         mutate((d) => ({ ...d, visionItems: d.visionItems.filter((x) => x.id !== id) })),
+
+      /* coach chats */
+      saveCoachChat: (chat) =>
+        mutate((d) => {
+          const others = d.coachChats.filter((c) => c.id !== chat.id);
+          return { ...d, coachChats: [...others, chat].sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)) };
+        }),
+      removeCoachChat: (id) =>
+        mutate((d) => ({ ...d, coachChats: d.coachChats.filter((c) => c.id !== id) })),
 
       /* finances */
       setCurrency: (c) =>

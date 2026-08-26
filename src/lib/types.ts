@@ -103,6 +103,19 @@ export interface FocusSession {
   startedAt: string; // ISO timestamp
 }
 
+/** One saved AI-coach conversation thread. */
+export interface CoachChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+export interface CoachChatThread {
+  id: string;
+  title: string;
+  messages: CoachChatMessage[];
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
+}
+
 /** A visual goal / "where I want to go" card on the Vision Board. */
 export interface VisionItem {
   id: string;
@@ -659,6 +672,8 @@ export interface AppData {
   focusSessions: FocusSession[];
   /** Vision-board cards (visual yearly goals). */
   visionItems: VisionItem[];
+  /** Saved AI-coach conversation threads. */
+  coachChats: CoachChatThread[];
   finances: Finances;
   workouts: Workout[];
   workoutPlans: WorkoutPlan[];

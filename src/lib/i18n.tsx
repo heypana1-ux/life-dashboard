@@ -860,6 +860,11 @@ const DE: Record<string, string> = {
   "Open coach": "Coach öffnen",
   "Enable AI coach": "KI-Coach aktivieren",
   "Your data, interpreted. Ask anything.": "Deine Daten, interpretiert. Frag alles.",
+  "New chat": "Neuer Chat",
+  "Your chats will appear here.": "Deine Chats erscheinen hier.",
+  Chats: "Chats",
+  Chat: "Chat",
+  "Done.": "Erledigt.",
   "Ask about your week, your patterns and what to focus on. Your app analyses the numbers first — the coach only interprets the results.":
     "Frag nach deiner Woche, deinen Mustern und worauf du dich konzentrieren solltest. Deine App wertet die Zahlen zuerst aus — der Coach interpretiert nur die Ergebnisse.",
   "Only derived summaries are sent (scores, trends, habit names, the engine's findings) — never your journal text, health notes or finance amounts. You can turn this off any time in Settings.":

@@ -8,7 +8,9 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { buildCoachContext } from "@/lib/coachContext";
-import { askCoach, coachAsk, checkCoachConfigured, CoachTurn } from "@/lib/ai";
+import { coachAsk, checkCoachConfigured, CoachTurn, askCoachAgent, AgentMsg } from "@/lib/ai";
+import { runCoachTool } from "@/lib/coachTools";
+import { uid } from "@/lib/defaults";
 import { todayISO } from "@/lib/date";
 import { weekAnchor } from "@/lib/recap";
 import { Button } from "@/components/ui";
@@ -36,8 +38,19 @@ const ERROR_MSG: Record<string, string> = {
   bad_request: "Something went wrong with that request.",
 };
 
-export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideHeader?: boolean }) {
-  const { data, updateSettings } = useStore();
+export function CoachChat({
+  onClose,
+  hideHeader,
+  chatId,
+  onThreadCreated,
+}: {
+  onClose?: () => void;
+  hideHeader?: boolean;
+  chatId?: string | null;
+  onThreadCreated?: (id: string) => void;
+}) {
+  const store = useStore();
+  const { data, updateSettings, saveCoachChat } = store;
   const d = useDerived();
   const t = useT();
   const enabled = !!data.settings.aiCoachEnabled;
@@ -48,6 +61,19 @@ export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideH
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const threadRef = useRef<string | null>(chatId ?? null);
+
+  // Load the selected thread's messages whenever the chosen thread changes. Skip when the id
+  // matches the thread we're already showing (e.g. the one we just created mid-send), so an
+  // in-progress conversation isn't wiped before the store has caught up.
+  useEffect(() => {
+    if (chatId && chatId === threadRef.current) return;
+    threadRef.current = chatId ?? null;
+    const thread = chatId ? data.coachChats.find((c) => c.id === chatId) : null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMessages(thread ? thread.messages.map((m) => ({ role: m.role, content: m.content })) : []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatId]);
 
   useEffect(() => {
     if (!enabled) return;
@@ -62,23 +88,84 @@ export function CoachChat({ onClose, hideHeader }: { onClose?: () => void; hideH
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, loading]);
 
+  /** Persist the current messages to a saved thread (creating one lazily). */
+  function persist(msgs: CoachTurn[]) {
+    if (msgs.length === 0) return;
+    let id = threadRef.current;
+    const now = new Date().toISOString();
+    if (!id) {
+      id = uid("chat");
+      threadRef.current = id;
+      onThreadCreated?.(id);
+    }
+    const existing = data.coachChats.find((c) => c.id === id);
+    const firstUser = msgs.find((m) => m.role === "user")?.content ?? "Chat";
+    saveCoachChat({
+      id,
+      title: existing?.title ?? firstUser.slice(0, 40),
+      messages: msgs.map((m) => ({ role: m.role, content: m.content })),
+      createdAt: existing?.createdAt ?? now,
+      updatedAt: now,
+    });
+  }
+
   async function send(text: string) {
     const content = text.trim();
     if (!content || loading) return;
     setErr(null);
-    const next: CoachTurn[] = [...messages, { role: "user", content }];
-    setMessages(next);
+    const display: CoachTurn[] = [...messages, { role: "user", content }];
+    setMessages(display);
     setInput("");
     setLoading(true);
+    persist(display);
+
     const ctx = buildCoachContext(data, d.history).text;
-    const res = await askCoach(next, ctx, data.settings.language);
-    setLoading(false);
-    if (res.reply) {
-      setMessages((m) => [...m, { role: "assistant", content: res.reply as string }]);
-    } else {
-      setErr(res.error ?? "network");
-      if (res.error === "not_configured") setConfigured(false);
+    const lang = data.settings.language;
+    // Agent loop: the coach may call tools to record/create things; we run them and feed results back.
+    const convo: AgentMsg[] = display.map((m) => ({ role: m.role, content: m.content }));
+    const actions: string[] = [];
+    let finalText = "";
+    let hadError: string | null = null;
+
+    for (let step = 0; step < 5; step++) {
+      const res = await askCoachAgent(convo, ctx, lang);
+      if (res.error) {
+        hadError = res.error;
+        break;
+      }
+      if (res.toolCalls && res.toolCalls.length) {
+        convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
+        for (const call of res.toolCalls) {
+          let args: Record<string, unknown> = {};
+          try {
+            args = JSON.parse(call.function.arguments || "{}");
+          } catch {
+            args = {};
+          }
+          const result = runCoachTool(store, call.function.name, args);
+          actions.push(result);
+          convo.push({ role: "tool", tool_call_id: call.id, content: result });
+        }
+        continue;
+      }
+      finalText = res.reply ?? "";
+      break;
     }
+    setLoading(false);
+
+    if (hadError) {
+      setErr(hadError);
+      if (hadError === "not_configured") setConfigured(false);
+      return;
+    }
+    let body = finalText;
+    const ok = actions.filter((a) => !/^(Error|No habit|Unknown)/.test(a));
+    if (!body && ok.length) body = t("Done.");
+    if (ok.length) body += "\n\n" + ok.map((a) => "✓ " + a).join("\n");
+    if (!body) body = t("The AI didn't return an answer — try rephrasing.");
+    const finalMsgs: CoachTurn[] = [...display, { role: "assistant", content: body }];
+    setMessages(finalMsgs);
+    persist(finalMsgs);
   }
 
   /* ---- Opt-in gate ---- */

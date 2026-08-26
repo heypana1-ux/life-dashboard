@@ -58,6 +58,41 @@ export async function askCoach(
   }
 }
 
+/* ---------------- Agent (tool-calling) coach ---------------- */
+
+export interface ToolCall {
+  id: string;
+  type: "function";
+  function: { name: string; arguments: string };
+}
+export interface AgentMsg {
+  role: "user" | "assistant" | "tool";
+  content: string;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
+}
+export interface AgentResult {
+  reply?: string;
+  toolCalls?: ToolCall[] | null;
+  error?: CoachErrorCode;
+}
+
+/** One round of the agent loop: may return a final reply and/or tool calls to execute. */
+export async function askCoachAgent(messages: AgentMsg[], context: string, language: string): Promise<AgentResult> {
+  try {
+    const res = await fetch("/api/coach", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages, context, language, mode: "agent" }),
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) return { error: (json.error as CoachErrorCode) || "network" };
+    return { reply: (json.reply as string) ?? "", toolCalls: (json.toolCalls as ToolCall[]) ?? null };
+  } catch {
+    return { error: "network" };
+  }
+}
+
 /* ---------------- AI goal breakdown ---------------- */
 
 export interface GoalPlanHabit {
