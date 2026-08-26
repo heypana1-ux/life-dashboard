@@ -1433,6 +1433,12 @@ const DE: Record<string, string> = {
   "Grace days": "Kulanztage",
   "Missed days a streak tolerates before it breaks.": "Verpasste Tage, die eine Serie verkraftet, bevor sie reißt.",
   "Rest days (e.g. vacation)": "Ruhetage (z. B. Urlaub)",
+  Vacation: "Urlaub",
+  "You have days to catch up on": "Du hast Tage zum Nachtragen",
+  "Fill them in to keep your history complete — it also restores your streak.":
+    "Trag sie nach, damit dein Verlauf vollständig bleibt — das stellt auch deine Serie wieder her.",
+  "On vacation days scoring is lenient — missed habits don't count, there's no coverage penalty, and your Life Rating can't drop. Streaks stay safe too.":
+    "An Urlaubstagen ist die Bewertung nachsichtig — verpasste Gewohnheiten zählen nicht, es gibt keinen Abzug für geringe Abdeckung, und dein Life-Rating kann nicht fallen. Serien bleiben ebenfalls geschützt.",
   "Until (optional)": "Bis (optional)",
 
   // --- Morning focus ---

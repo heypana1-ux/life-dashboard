@@ -444,6 +444,20 @@ function StreakCard() {
     updateSettings({ restDays: rest.filter((x) => x !== d) });
   }
 
+  const vacations = [...(data.settings.vacations ?? [])].sort((a, b) => (a.from < b.from ? -1 : 1));
+  const [vfrom, setVfrom] = useState("");
+  const [vto, setVto] = useState("");
+  function addVacation() {
+    if (!vfrom) return;
+    const end = vto && vto >= vfrom ? vto : vfrom;
+    updateSettings({ vacations: [...vacations, { from: vfrom, to: end }] });
+    setVfrom("");
+    setVto("");
+  }
+  function removeVacation(idx: number) {
+    updateSettings({ vacations: vacations.filter((_, i) => i !== idx) });
+  }
+
   return (
     <Card>
       <SectionTitle>{t("Streak protection")}</SectionTitle>
@@ -484,6 +498,37 @@ function StreakCard() {
                 className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
               >
                 {fmtShort(d)} <span className="text-[var(--text-faint)]">✕</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 border-t border-[var(--border)] pt-4">
+        <div className="mb-1 text-sm font-medium">{t("Vacation")}</div>
+        <p className="mb-2 text-xs text-[var(--text-muted)]">
+          {t("On vacation days scoring is lenient — missed habits don't count, there's no coverage penalty, and your Life Rating can't drop. Streaks stay safe too.")}
+        </p>
+        <div className="flex flex-wrap items-end gap-2">
+          <Field label={t("From")}>
+            <input type="date" className={inputCls} value={vfrom} onChange={(e) => setVfrom(e.target.value)} />
+          </Field>
+          <Field label={t("Until (optional)")}>
+            <input type="date" className={inputCls} value={vto} onChange={(e) => setVto(e.target.value)} />
+          </Field>
+          <Button variant="soft" size="sm" onClick={addVacation} disabled={!vfrom}>
+            {t("Add")}
+          </Button>
+        </div>
+        {vacations.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {vacations.map((v, i) => (
+              <button
+                key={`${v.from}-${v.to}-${i}`}
+                onClick={() => removeVacation(i)}
+                className="flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs text-[var(--accent)] hover:brightness-105"
+              >
+                {fmtShort(v.from)}{v.to !== v.from ? ` – ${fmtShort(v.to)}` : ""} <span className="opacity-70">✕</span>
               </button>
             ))}
           </div>

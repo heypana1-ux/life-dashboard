@@ -21,6 +21,7 @@ import {
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { QuickLogButton } from "@/components/QuickLog";
+import { BackfillNudge } from "@/components/BackfillNudge";
 
 const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
   { key: "productivity", label: "Productivity" },
@@ -134,6 +135,8 @@ export default function TodayPage() {
           </div>
         }
       />
+
+      <BackfillNudge />
 
       <div className="grid items-start gap-[18px] lg:grid-cols-[1.3fr_1fr]">
         <div className="flex min-w-0 flex-col gap-[18px]">

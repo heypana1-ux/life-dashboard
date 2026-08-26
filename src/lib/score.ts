@@ -9,6 +9,7 @@ import {
   SleepLog,
 } from "./types";
 import { addDays, isoRange, parseISO, sleepDurationMinutes, weekdayOf } from "./date";
+import { inVacation } from "./streak";
 
 /*
   Scoring model (transparent by design):
@@ -134,6 +135,7 @@ function habitAreaScore(
   dateISO: string,
   habits: Habit[],
   logs: HabitLog[],
+  lenient = false,
 ): number | null {
   const active = habits.filter(
     (h) => h.area === area && !h.archived && parseISO(h.createdAt) <= parseISO(dateISO),
@@ -149,13 +151,20 @@ function habitAreaScore(
       // habit's priority for records created before explicit weighting existed.
       const w = h.weight ?? PRIORITY_WEIGHT[h.priority];
       if (h.schedule.type === "weekly") {
-        fSum += w * weeklyFraction(h, dateISO, logs);
-        wSum += w;
-        counted++;
+        const f = weeklyFraction(h, dateISO, logs);
+        // On lenient (vacation) days a missed habit simply doesn't count against you.
+        if (!lenient || f > 0) {
+          fSum += w * f;
+          wSum += w;
+          counted++;
+        }
       } else if (isDueOn(h, dateISO)) {
-        fSum += w * fulfillment(h, logFor(logs, h.id, dateISO));
-        wSum += w;
-        counted++;
+        const f = fulfillment(h, logFor(logs, h.id, dateISO));
+        if (!lenient || f > 0) {
+          fSum += w * f;
+          wSum += w;
+          counted++;
+        }
       }
     } else if (isDueOn(h, dateISO)) {
       // reduce habit: avoided (no occurrence) is full credit; weighted by severity
@@ -206,6 +215,8 @@ export interface DayComputation {
 export function computeDay(data: AppData, dateISO: string): DayComputation {
   const { habits, habitLogs, reviews, sleep, settings } = data;
   const enabled = settings.areas.filter((a) => a.enabled);
+  // On vacation days scoring is lenient: missed habits don't count and there's no coverage penalty.
+  const lenient = inVacation(settings, dateISO);
   const categories: Partial<Record<AreaKey, number>> = {};
 
   let weightSum = 0;
@@ -225,7 +236,7 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
     } else if (area.key === "health") {
       score = null; // tracked & correlated, but deliberately never part of the Life Score
     } else {
-      score = habitAreaScore(area.key, dateISO, habits, habitLogs);
+      score = habitAreaScore(area.key, dateISO, habits, habitLogs, lenient);
     }
 
     if (score !== null) {
@@ -254,7 +265,7 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
     if (categories[area.key] != null) engaged++;
   }
   const coverage = expected > 0 ? engaged / expected : 1;
-  const coverageFactor = COVERAGE_FLOOR + (1 - COVERAGE_FLOOR) * coverage;
+  const coverageFactor = lenient ? 1 : COVERAGE_FLOOR + (1 - COVERAGE_FLOOR) * coverage;
 
   let lifeScore: number | null = null;
   if (weightSum > 0) {
@@ -308,6 +319,8 @@ export function computeHistory(data: AppData, fromISO: string, toISO: string): D
       let delta = ELO_K * (day.lifeScore - avg);
       delta = Math.max(-ELO_CLAMP, Math.min(ELO_CLAMP, delta));
       delta = Math.round(delta);
+      // On vacation your Life Rating can rise but never fall — relaxing shouldn't cost you rank.
+      if (inVacation(data.settings, cur) && delta < 0) delta = 0;
       elo += delta;
       recent.push(day.lifeScore);
       if (recent.length > ELO_TRAILING) recent.shift();

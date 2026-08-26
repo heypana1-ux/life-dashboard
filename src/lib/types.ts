@@ -600,6 +600,9 @@ export interface Settings {
   measurementGoals?: { key: string; target: number }[];
   /** Dates that shouldn't break streaks (vacation / planned rest). */
   restDays?: string[];
+  /** Vacation ranges: streaks are protected and scoring is lenient (missed habits don't count,
+   *  no coverage penalty, and your Life Rating can't drop) across these days. */
+  vacations?: { from: string; to: string }[];
   /** How many missed days a streak tolerates before breaking (streak protection). */
   streakGrace?: number;
   /** Whether the first-run mini tour has been completed/dismissed. */

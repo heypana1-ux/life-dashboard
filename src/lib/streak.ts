@@ -8,14 +8,18 @@ import { addDays, todayISO } from "./date";
      so forgetting to log for a day or two doesn't wipe a long run.
 */
 
+/** Whether a date falls inside any vacation range. */
+export function inVacation(settings: Settings, date: string): boolean {
+  return (settings.vacations ?? []).some((v) => date >= v.from && date <= v.to);
+}
+
 export function isRestDay(settings: Settings, date: string): boolean {
-  return settings.restDays?.includes(date) ?? false;
+  return (settings.restDays?.includes(date) ?? false) || inVacation(settings, date);
 }
 
 /** Consecutive logged days ending today, honoring rest days and grace. */
 export function activityStreak(history: DayScore[], settings: Settings): number {
   if (history.length === 0) return 0;
-  const rest = new Set(settings.restDays ?? []);
   const grace = settings.streakGrace ?? 0;
   const byDate = new Map(history.map((h) => [h.date, h]));
   const earliest = history[0].date;
@@ -25,7 +29,7 @@ export function activityStreak(history: DayScore[], settings: Settings): number 
   let cur = todayISO();
   for (let i = 0; i < 4000; i++) {
     if (cur < earliest) break;
-    if (rest.has(cur)) {
+    if (isRestDay(settings, cur)) {
       cur = addDays(cur, -1);
       continue; // neutral
     }
