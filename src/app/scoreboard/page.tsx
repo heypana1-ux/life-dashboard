@@ -9,7 +9,13 @@ import { useT } from "@/lib/i18n";
 import { AreaKey } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
 import { scoreColor } from "@/lib/score";
-import { Card, PageHeader, SectionTitle, Button, Field, inputCls, Toggle, Badge, EmptyState } from "@/components/ui";
+import { computeLevel } from "@/lib/level";
+import { activityStreak } from "@/lib/streak";
+import { computeAchievements } from "@/lib/achievements";
+import { titleName, badgeEmoji } from "@/lib/cosmetics";
+import { Card, PageHeader, SectionTitle, Button, Field, inputCls, Toggle, Badge, EmptyState, Modal } from "@/components/ui";
+import { ProfileView, ProfileCardData } from "@/components/ProfileView";
+import { Lock } from "lucide-react";
 import {
   isLeaderboardConfigured,
   averageScores,
@@ -40,7 +46,7 @@ const METRICS: ("overall" | AreaKey)[] = [
 type View = { type: "global" } | { type: "league"; id: string; name: string };
 
 export default function ScoreboardPage() {
-  const { sync } = useStore();
+  const { data, sync } = useStore();
   const d = useDerived();
   const t = useT();
 
@@ -48,7 +54,8 @@ export default function ScoreboardPage() {
   const signedIn = isLeaderboardConfigured && !!sync.email;
 
   const [myRow, setMyRow] = useState<LeaderRow | null>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(data.settings.profile.displayName ?? "");
+  const [viewProfile, setViewProfile] = useState<LeaderRow | null>(null);
   const [global, setGlobal] = useState(false);
   const [leagues, setLeagues] = useState<League[]>([]);
   const [view, setView] = useState<View>({ type: "global" });
@@ -119,7 +126,21 @@ export default function ScoreboardPage() {
     setErr(null);
     setMsg(null);
     try {
-      await publishScores(name, mine.overall, mine.categories, global);
+      const prof = data.settings.profile;
+      const level = computeLevel(data, d.history).level;
+      const elo = d.history.length ? d.history[d.history.length - 1].elo : undefined;
+      const streak = activityStreak(d.history, data.settings);
+      const achievements = computeAchievements(data, d.history).filter((a) => a.unlocked).length;
+      await publishScores(name, mine.overall, mine.categories, global, {
+        avatar: prof.avatar,
+        title: titleName(data.settings.title),
+        badge: badgeEmoji(data.settings.badge),
+        level,
+        elo,
+        streak,
+        achievements,
+        isPublic: !!prof.isPublic,
+      });
       setMsg(t("Your scores are live."));
       setRefresh((n) => n + 1);
     } catch (e) {
@@ -318,22 +339,35 @@ export default function ScoreboardPage() {
             {ranked.map((r, i) => {
               const value = metric === "overall" ? r.overall : r.categories[metric] ?? 0;
               const isMe = r.user_id === myId;
+              const openable = isMe || r.is_public === true;
               return (
-                <div
+                <button
                   key={r.user_id}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 ${isMe ? "bg-[var(--accent-soft)]" : "hover:bg-[var(--surface-2)]"}`}
+                  onClick={() => openable && setViewProfile(r)}
+                  disabled={!openable}
+                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ${isMe ? "bg-[var(--accent-soft)]" : "enabled:hover:bg-[var(--surface-2)]"} ${openable ? "cursor-pointer" : "cursor-default"}`}
                 >
                   <span className="num w-7 text-center text-sm font-bold text-[var(--text-faint)]">
                     {i === 0 ? <Medal size={16} className="mx-auto text-[#eab308]" /> : i + 1}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">
+                  {r.avatar ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={r.avatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <span className="grad flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white">
+                      {(r.display_name || "?").trim().charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm font-medium">
                     {r.display_name}
+                    {r.badge && <span>{r.badge}</span>}
                     {isMe && <Badge tone="accent">{t("You")}</Badge>}
+                    {!openable && !isMe && <Lock size={11} className="text-[var(--text-faint)]" />}
                   </span>
                   <span className="num text-lg font-bold" style={{ color: scoreColor(value) }}>
                     {value}
                   </span>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -344,6 +378,26 @@ export default function ScoreboardPage() {
           </p>
         )}
       </Card>
+
+      <Modal open={!!viewProfile} onClose={() => setViewProfile(null)} title={t("Profile")}>
+        {viewProfile && (
+          <ProfileView
+            p={
+              {
+                displayName: viewProfile.display_name,
+                avatar: viewProfile.avatar ?? undefined,
+                level: viewProfile.level ?? 1,
+                title: viewProfile.title ?? null,
+                badge: viewProfile.badge ?? null,
+                overall: viewProfile.overall,
+                elo: viewProfile.elo ?? undefined,
+                streak: viewProfile.streak ?? undefined,
+                achievementCount: viewProfile.achievements ?? undefined,
+              } as ProfileCardData
+            }
+          />
+        )}
+      </Modal>
     </div>
   );
 }

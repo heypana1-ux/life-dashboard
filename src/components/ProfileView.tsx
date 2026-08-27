@@ -15,6 +15,8 @@ export interface ProfileCardData {
   /** Owned accent gradient CSS strings, for the little swatch row. */
   accents?: string[];
   achievements?: { icon: string; title: string }[];
+  /** Number of achievements when the individual icons aren't available (other people's cards). */
+  achievementCount?: number;
 }
 
 /** Presentational public-profile card — used for your own preview and (later) other people's. */
@@ -63,7 +65,7 @@ export function ProfileView({ p }: { p: ProfileCardData }) {
           </div>
         )}
 
-        {p.achievements && p.achievements.length > 0 && (
+        {p.achievements && p.achievements.length > 0 ? (
           <div className="mt-4">
             <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
               {t("Achievements")} · {p.achievements.length}
@@ -76,7 +78,11 @@ export function ProfileView({ p }: { p: ProfileCardData }) {
               ))}
             </div>
           </div>
-        )}
+        ) : p.achievementCount ? (
+          <div className="mt-4 flex items-center gap-1.5 text-sm text-[var(--text-muted)]">
+            <Trophy size={14} className="text-[var(--warn)]" /> {t("Achievements")} · <b>{p.achievementCount}</b>
+          </div>
+        ) : null}
       </div>
     </div>
   );

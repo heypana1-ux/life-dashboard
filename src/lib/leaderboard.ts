@@ -17,6 +17,27 @@ export interface LeaderRow {
   categories: Partial<Record<AreaKey, number>>;
   global: boolean;
   updated_at: string;
+  // Optional public-profile fields (present only if the extra columns exist and were published).
+  avatar?: string | null;
+  title?: string | null;
+  badge?: string | null;
+  level?: number | null;
+  elo?: number | null;
+  streak?: number | null;
+  achievements?: number | null;
+  is_public?: boolean | null;
+}
+
+/** The public-profile bits published alongside your scores (all optional / best-effort). */
+export interface PublicProfile {
+  avatar?: string;
+  title?: string | null;
+  badge?: string | null;
+  level?: number;
+  elo?: number;
+  streak?: number;
+  achievements?: number;
+  isPublic?: boolean;
 }
 
 export interface League {
@@ -68,6 +89,7 @@ export async function publishScores(
   overall: number,
   categories: Partial<Record<AreaKey, number>>,
   global: boolean,
+  profile?: PublicProfile,
 ): Promise<void> {
   if (!supabase) throw new Error("not configured");
   const uid = await userId();
@@ -81,6 +103,24 @@ export async function publishScores(
     updated_at: new Date().toISOString(),
   });
   if (error) throw new Error(error.message);
+
+  // Best-effort public-profile fields. If the extra columns don't exist yet the update simply
+  // errors and is ignored — the score publish above still succeeds. See supabase/profile.sql.
+  if (profile) {
+    await supabase
+      .from("leaderboard")
+      .update({
+        avatar: profile.avatar ?? null,
+        title: profile.title ?? null,
+        badge: profile.badge ?? null,
+        level: profile.level ?? null,
+        elo: profile.elo ?? null,
+        streak: profile.streak ?? null,
+        achievements: profile.achievements ?? null,
+        is_public: !!profile.isPublic,
+      })
+      .eq("user_id", uid);
+  }
 }
 
 export async function getGlobalBoard(limit = 100): Promise<LeaderRow[]> {
