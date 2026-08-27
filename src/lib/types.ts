@@ -219,6 +219,12 @@ export interface Profile {
   sex?: "male" | "female" | "other" | "prefer_not";
   heightCm?: number;
   activityLevel?: "sedentary" | "light" | "moderate" | "active" | "athlete";
+  /** Public display name / nickname others see on the scoreboard and your profile card. */
+  displayName?: string;
+  /** Small, client-resized avatar image as a data: URL. */
+  avatar?: string;
+  /** Whether other people can open your full profile card from the scoreboard. */
+  isPublic?: boolean;
 }
 
 /** A single body-weight measurement (kept as a time series). */

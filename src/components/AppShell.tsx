@@ -163,6 +163,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
+      {/* Profile avatar — top-right corner (desktop; the centered content leaves the corner free). */}
+      <Link
+        href="/profile"
+        aria-label={t("Profile")}
+        className="fixed right-4 top-3 z-30 hidden h-9 w-9 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:ring-2 hover:ring-[var(--accent)] md:block"
+      >
+        {data.settings.profile.avatar ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={data.settings.profile.avatar} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <span className="grad flex h-full w-full items-center justify-center text-sm font-bold text-white">
+            {(data.settings.profile.displayName || data.settings.profile.name || "?").trim().charAt(0).toUpperCase()}
+          </span>
+        )}
+      </Link>
+
       {/* Main */}
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">

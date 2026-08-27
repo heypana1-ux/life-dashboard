@@ -14,13 +14,12 @@ import {
   type StravaState,
 } from "@/lib/strava";
 
-const ACCENTS: { key: Accent; label: string; a: string; b: string }[] = [
-  { key: "calm", label: "Calm", a: "#4f46e5", b: "#6366f1" },
-  { key: "aurora", label: "Aurora", a: "#06b6d4", b: "#4f46e5" },
-  { key: "mono", label: "Mono", a: "#52525b", b: "#27272a" },
-];
+import Link from "next/link";
 import { generateDemo, clearDemo } from "@/lib/demo";
 import { useT } from "@/lib/i18n";
+import { useDerived } from "@/lib/useDerived";
+import { computeLevel } from "@/lib/level";
+import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
 import { InstallAppCard } from "@/components/PWA";
@@ -133,29 +132,7 @@ export default function SettingsPage() {
       </Card>
 
       {/* Accent */}
-      <Card>
-        <SectionTitle>{t("Accent")}</SectionTitle>
-        <div className="flex gap-2">
-          {ACCENTS.map((a) => (
-            <button
-              key={a.key}
-              onClick={() => updateSettings({ accent: a.key })}
-              className={clsx(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition",
-                s.accent === a.key
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface-2)]",
-              )}
-            >
-              <span
-                className="h-4 w-4 rounded-full"
-                style={{ background: `linear-gradient(135deg, ${a.a}, ${a.b})` }}
-              />
-              {t(a.label)}
-            </button>
-          ))}
-        </div>
-      </Card>
+      <AccentCard />
 
       {/* Language */}
       <Card>
@@ -1022,6 +999,49 @@ function RemindersCard() {
 
 const SEXES: NonNullable<Profile["sex"]>[] = ["male", "female", "other", "prefer_not"];
 const ACTIVITY: NonNullable<Profile["activityLevel"]>[] = ["sedentary", "light", "moderate", "active", "athlete"];
+
+function AccentCard() {
+  const { data, updateSettings } = useStore();
+  const d = useDerived();
+  const t = useT();
+  const level = computeLevel(data, d.history).level;
+  const owned = data.rewards.owned ?? [];
+  const current = data.settings.accent ?? "calm";
+  const available = ACCENT_REWARDS.filter((r) => accentOwned(r.accent, level, owned));
+  const lockedCount = ACCENT_REWARDS.length - available.length;
+  return (
+    <Card>
+      <SectionTitle
+        right={
+          lockedCount > 0 ? (
+            <Link href="/rewards" className="text-xs font-medium text-[var(--accent)] hover:underline">
+              +{lockedCount} {t("in the shop")}
+            </Link>
+          ) : undefined
+        }
+      >
+        {t("Accent")}
+      </SectionTitle>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        {available.map((r) => (
+          <button
+            key={r.accent}
+            onClick={() => updateSettings({ accent: r.accent })}
+            className={clsx(
+              "flex items-center gap-2 rounded-xl border px-2.5 py-2.5 text-sm font-medium transition",
+              current === r.accent
+                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                : "border-[var(--border)] bg-[var(--surface-2)]",
+            )}
+          >
+            <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: ACCENT_SWATCH[r.accent] }} />
+            <span className="truncate">{t(r.name)}</span>
+          </button>
+        ))}
+      </div>
+    </Card>
+  );
+}
 
 function ProfileCard() {
   const { data, updateProfile, saveWeight } = useStore();

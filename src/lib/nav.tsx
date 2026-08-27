@@ -55,6 +55,7 @@ export const NAV: NavItem[] = [
   { href: "/analysis", label: "Analysis", icon: Brain },
   { href: "/wheel", label: "Wheel of Life", icon: Compass },
   { href: "/coach", label: "Coach", icon: Sparkles },
+  { href: "/profile", label: "Profile", icon: UserCircle },
   { href: "/about", label: "About you", icon: UserCircle },
   { href: "/reports", label: "Reports", icon: FileText },
   { href: "/achievements", label: "Achievements", icon: Trophy },
@@ -80,7 +81,7 @@ export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/focus", "/training", "/sleep", "/health", "/journal", "/calendar"] },
   { label: "Insights", hrefs: ["/statistics", "/correlations", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/vision", "/projects", "/experiments", "/finances"] },
-  { label: "System", hrefs: ["/about", "/settings"] },
+  { label: "System", hrefs: ["/profile", "/about", "/settings"] },
 ];
 
 /** Apply the user's saved sidebar order, keeping any new items at the end. */
