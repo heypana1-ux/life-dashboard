@@ -653,6 +653,9 @@ export interface Settings {
   /** Opt-in: let the daily check-in ratings (productivity/mood/energy/…) count lightly toward
    *  the Life Score. Off by default — the check-in is otherwise informational only. */
   checkinCounts?: boolean;
+  /** Quick-capture window: which section panels are enabled, and whether the first-run picker
+   *  has been completed. */
+  quickCapture?: { sections: string[]; configured: boolean };
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

@@ -286,12 +286,14 @@ export function Modal({
   title,
   children,
   wide,
+  headerRight,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: React.ReactNode;
   wide?: boolean;
+  headerRight?: React.ReactNode;
 }) {
   // Portal to <body>: modals must escape ancestors with a `transform` (e.g. the page's
   // fade-in animation), which would otherwise make `position: fixed` anchor to that box
@@ -324,11 +326,14 @@ export function Modal({
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">{title}</h3>
-          <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
-            <X size={18} />
-          </Button>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <h3 className="min-w-0 truncate text-lg font-semibold">{title}</h3>
+          <div className="flex shrink-0 items-center gap-1">
+            {headerRight}
+            <Button variant="ghost" size="sm" onClick={onClose} aria-label="Close">
+              <X size={18} />
+            </Button>
+          </div>
         </div>
         {children}
       </div>
