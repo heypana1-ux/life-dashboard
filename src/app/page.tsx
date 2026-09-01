@@ -39,9 +39,19 @@ import { WeeklyPlanner } from "@/components/WeeklyPlanner";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
 import { HintCard } from "@/components/HintCard";
 
-/** Dashboard blocks the user can reorder / hide. Hero, coach briefing and the streak nudge stay pinned. */
-const MOVABLE = ["coachBriefing", "coachCheckin", "weekPlan", "anomalies", "weeklyFocus", "level", "catInsights", "activity", "goals"] as const;
+/** Dashboard blocks the user can reorder / hide. The score hero and the streak nudge stay pinned. */
+const MOVABLE = ["categories", "activity", "anomalies", "insights", "weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin"] as const;
 type CardId = (typeof MOVABLE)[number];
+
+/** Default order: the essentials first, everything else after. */
+const DEFAULT_ORDER: CardId[] = [
+  "categories", "activity", "anomalies", "insights",
+  "weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin",
+];
+
+/** Hidden by default — the dashboard starts focused; these are opt-in extras the user can
+ *  re-enable from the "Hidden cards" tray under Customize. */
+const DEFAULT_HIDDEN: CardId[] = ["weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin"];
 
 /** Where each anomaly links to when tapped. */
 const ANOMALY_HREF: Record<string, string> = {
@@ -53,8 +63,18 @@ const ANOMALY_HREF: Record<string, string> = {
   Training: "/training",
 };
 
+/** A layout saved before the categories/insights split (or never customized) counts as "legacy":
+ *  we re-seed the fresh, decluttered defaults for it. Once the user customizes again, their saved
+ *  order contains "categories" and their own preferences take over. */
+function isLegacyLayout(settings: Settings): boolean {
+  const order = settings.dashboard?.order;
+  return !order || !order.includes("categories");
+}
+
 function orderedCards(settings: Settings): CardId[] {
+  if (isLegacyLayout(settings)) return [...DEFAULT_ORDER];
   const saved = (settings.dashboard?.order ?? []).filter((id): id is CardId => (MOVABLE as readonly string[]).includes(id));
+  if (saved.length === 0) return [...DEFAULT_ORDER];
   const rest = MOVABLE.filter((id) => !saved.includes(id));
   return [...saved, ...rest];
 }
@@ -115,7 +135,9 @@ export default function DashboardPage() {
   );
 
   const order = orderedCards(data.settings);
-  const hidden = new Set(data.settings.dashboard?.hidden ?? []);
+  const hidden = new Set(
+    isLegacyLayout(data.settings) ? DEFAULT_HIDDEN : (data.settings.dashboard?.hidden ?? []),
+  );
 
   function persist(nextOrder: CardId[], nextHidden: Set<string>) {
     updateSettings({ dashboard: { order: nextOrder, hidden: [...nextHidden] } });
@@ -227,21 +249,28 @@ export default function DashboardPage() {
         </Card>
       </Link>
     ),
-    catInsights: (
-      <div className="grid gap-[18px] lg:grid-cols-[1.4fr_1fr]">
-        <Card>
-          <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
-            {t("Categories")}
-          </SectionTitle>
+    categories: (enabledAreas.length > 0 || editMode) && (
+      <Card>
+        <SectionTitle right={<Link href="/statistics" className="text-xs text-[var(--accent)]">{t("All stats →")}</Link>}>
+          {t("Categories")}
+        </SectionTitle>
+        {enabledAreas.length === 0 ? (
+          <p className="py-2 text-sm text-[var(--text-muted)]">{t("Log a few days to see your category scores here.")}</p>
+        ) : (
           <div className="flex flex-col">
             {enabledAreas.map((a) => (
               <CategoryRow key={a.key} area={a.key} derived={d} live={todayComp.categories[a.key]} />
             ))}
           </div>
-        </Card>
-
-        <Card>
-          <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
+        )}
+      </Card>
+    ),
+    insights: (d.insights.length > 0 || editMode) && (
+      <Card>
+        <SectionTitle right={<Badge tone="accent">{t("Data-driven")}</Badge>}>{t("Insights")}</SectionTitle>
+        {d.insights.length === 0 ? (
+          <p className="py-2 text-sm text-[var(--text-muted)]">{t("Insights appear once there's enough data to spot patterns.")}</p>
+        ) : (
           <div className="flex flex-col gap-2.5">
             {d.insights.slice(0, 4).map((ins) => (
               <div key={ins.id} className="flex gap-[11px] rounded-[13px] bg-[var(--surface-2)] p-[13px]">
@@ -250,11 +279,11 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <p className="mt-[14px] text-[11px] leading-[1.5] text-[var(--text-faint)]">
-            {t("Observations from your own logs. These are associations, not medical or causal claims.")}
-          </p>
-        </Card>
-      </div>
+        )}
+        <p className="mt-[14px] text-[11px] leading-[1.5] text-[var(--text-faint)]">
+          {t("Observations from your own logs. These are associations, not medical or causal claims.")}
+        </p>
+      </Card>
     ),
     activity: (
       <Card>
@@ -427,15 +456,16 @@ export default function DashboardPage() {
 }
 
 const CARD_LABELS: Record<CardId, string> = {
-  coachBriefing: "Coach briefing",
-  coachCheckin: "Weekly check-in",
-  weekPlan: "This week's plan",
+  categories: "Categories",
+  activity: "Activity",
   anomalies: "Heads up",
+  insights: "Insights",
+  weekPlan: "This week's plan",
   weeklyFocus: "This week's focus",
   level: "Level",
-  catInsights: "Categories",
-  activity: "Activity",
   goals: "Today's goals",
+  coachBriefing: "Coach briefing",
+  coachCheckin: "Weekly check-in",
 };
 
 function MovableBlock({

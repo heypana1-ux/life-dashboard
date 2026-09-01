@@ -137,6 +137,10 @@ const DE: Record<string, string> = {
   "Add habits": "Gewohnheiten hinzufügen",
   Insights: "Insights",
   "Data-driven": "Datenbasiert",
+  "Log a few days to see your category scores here.":
+    "Trage ein paar Tage ein, um hier deine Kategorie-Scores zu sehen.",
+  "Insights appear once there's enough data to spot patterns.":
+    "Insights erscheinen, sobald genug Daten für Muster vorhanden sind.",
   "Observations from your own logs. These are associations, not medical or causal claims.":
     "Beobachtungen aus deinen eigenen Daten. Das sind Zusammenhänge, keine medizinischen oder kausalen Aussagen.",
   "Log today": "Heute eintragen",
