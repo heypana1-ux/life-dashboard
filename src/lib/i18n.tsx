@@ -176,6 +176,10 @@ const DE: Record<string, string> = {
     "Spracheingabe braucht Chrome (oder einen anderen Chromium-Browser). Tippen geht trotzdem.",
   "Working…": "Arbeite…",
   "Nothing was recorded — try rephrasing.": "Es wurde nichts eingetragen — formuliere es anders.",
+  "Open now": "Jetzt öffnen",
+  "Anything else? Log more, open a page, or change a setting.":
+    "Noch etwas? Mehr eintragen, eine Seite öffnen oder eine Einstellung ändern.",
+  "Say or type another command": "Sprich oder tippe einen weiteren Befehl",
   "Anything else": "Sonstiges",
   Clear: "Löschen",
   "e.g. meditated, read 20 min": "z. B. meditiert, 20 Min gelesen",

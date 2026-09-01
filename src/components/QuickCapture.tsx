@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, Sparkles, Check, ListChecks, X, Square } from "lucide-react";
+import { Mic, Sparkles, Check, ListChecks, X, Square, ArrowUpRight, Send } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { todayISO } from "@/lib/date";
@@ -67,8 +67,11 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [actions, setActions] = useState<string[]>([]);
   const [reply, setReply] = useState("");
+  const [navTarget, setNavTarget] = useState<string | null>(null);
+  const [followText, setFollowText] = useState("");
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);
+  const engagedRef = useRef(false);
 
   const recRef = useRef<Rec>(null);
   const silenceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -190,12 +193,15 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   // Clean up on unmount.
   useEffect(() => () => stopListening(), []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Auto-close after the summary has been visible for a few seconds.
+  // Auto-close the summary after a few seconds — but only when there's nothing left to act on
+  // (no navigation offered) and the user hasn't started a follow-up.
   useEffect(() => {
-    if (stage !== "done") return;
-    const id = setTimeout(onClose, 4200);
+    if (stage !== "done" || navTarget) return;
+    const id = setTimeout(() => {
+      if (!engagedRef.current) onClose();
+    }, 5000);
     return () => clearTimeout(id);
-  }, [stage, onClose]);
+  }, [stage, navTarget, onClose]);
 
   function composedGuided(): string {
     return GUIDED.filter((g) => fields[g.key]?.trim())
@@ -210,6 +216,8 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
     if (!content || stageRef.current === "loading") return;
     stopListening();
     setErr(null);
+    setFollowText("");
+    engagedRef.current = false;
     setStage("loading");
 
     const habitNames = data.habits.filter((h) => !h.archived).map((h) => h.name).join(", ") || "none";
@@ -219,44 +227,63 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
       `Dashboard card ids that can be shown/hidden: ${DASHBOARD_CARDS.join(", ")}`,
     ].join("\n");
 
-    // A SINGLE agent request keeps token use low (Groq's free tier is rate-limited per minute).
-    // We execute any tool calls locally and build the summary ourselves — no extra confirm round.
+    // A short agent loop so the model can log SEVERAL things (e.g. one entry for yesterday and
+    // another for today) — it may split them across turns — and then confirm. Context is tiny
+    // here, so a few rounds stay well within the provider's per-minute budget.
     const convo: AgentMsg[] = [{ role: "user", content }];
-    const res = await askCoachAgent(convo, ctx, lang);
+    const done: string[] = [];
+    let navigated: string | null = null;
+    let finalText = "";
+    let hadError: string | null = null;
 
-    if (res.error) {
-      setErr(res.error);
+    for (let step = 0; step < 4; step++) {
+      const res = await askCoachAgent(convo, ctx, lang);
+      if (res.error) {
+        hadError = res.error;
+        break;
+      }
+      if (res.toolCalls && res.toolCalls.length) {
+        convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
+        for (const call of res.toolCalls) {
+          let args: Record<string, unknown> = {};
+          try {
+            args = JSON.parse(call.function.arguments || "{}");
+          } catch {
+            args = {};
+          }
+          const result = runCoachTool(store, call.function.name, args, {
+            navigate: (href) => {
+              navigated = href;
+            },
+          });
+          // Navigation is offered as a button on the summary, not counted as a logged action.
+          if (call.function.name !== "navigate" && !/^(Error|No habit|No page|Unknown)/.test(result)) {
+            done.push(result);
+          }
+          convo.push({ role: "tool", tool_call_id: call.id, content: result });
+        }
+        continue;
+      }
+      finalText = res.reply ?? "";
+      break;
+    }
+
+    if (hadError) {
+      setErr(hadError);
       setStage("input");
       return;
     }
 
-    const done: string[] = [];
-    let navigated: string | null = null;
-    if (res.toolCalls && res.toolCalls.length) {
-      for (const call of res.toolCalls) {
-        let args: Record<string, unknown> = {};
-        try {
-          args = JSON.parse(call.function.arguments || "{}");
-        } catch {
-          args = {};
-        }
-        const result = runCoachTool(store, call.function.name, args, {
-          navigate: (href) => {
-            navigated = href;
-          },
-        });
-        done.push(result);
-      }
-    }
-
-    if (navigated) {
+    // Pure navigation (nothing was logged) → go straight there.
+    if (navigated && done.length === 0) {
       onClose();
       router.push(navigated);
       return;
     }
 
-    setActions(done.filter((a) => !/^(Error|No habit|No page|Unknown)/.test(a)));
-    setReply(res.reply ?? "");
+    setActions(done);
+    setReply(finalText);
+    setNavTarget(navigated);
     setStage("done");
   }
 
@@ -267,11 +294,11 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   return (
     <Modal open onClose={onClose} title={t("Quick capture")}>
       {stage === "done" ? (
-        <div className="py-2 text-center">
+        <div className="py-1">
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--good)]/15 text-[var(--good)]">
             <Check size={26} />
           </div>
-          {reply && <p className="mb-3 text-sm text-[var(--text-muted)]">{reply}</p>}
+          {reply && <p className="mb-3 text-center text-sm text-[var(--text-muted)]">{reply}</p>}
           {actions.length > 0 ? (
             <div className="flex flex-col gap-1.5 text-left">
               {actions.map((a, i) => (
@@ -282,9 +309,41 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           ) : (
-            !reply && <p className="text-sm text-[var(--text-muted)]">{t("Nothing was recorded — try rephrasing.")}</p>
+            !reply && <p className="text-center text-sm text-[var(--text-muted)]">{t("Nothing was recorded — try rephrasing.")}</p>
           )}
-          <Button className="mt-5 w-full" onClick={onClose}>{t("Done")}</Button>
+
+          {navTarget && (
+            <Button
+              className="mt-3 w-full"
+              onClick={() => { const to = navTarget; onClose(); router.push(to); }}
+            >
+              <ArrowUpRight size={16} /> {t("Open now")}
+            </Button>
+          )}
+
+          {/* Follow-up: keep going without reopening — log more, navigate, or change a setting. */}
+          <div className="mt-4 border-t border-[var(--border)] pt-3">
+            <p className="mb-1.5 text-[12px] text-[var(--text-muted)]">
+              {t("Anything else? Log more, open a page, or change a setting.")}
+            </p>
+            <div className="flex items-center gap-2">
+              <input
+                value={followText}
+                onChange={(e) => { setFollowText(e.target.value); engagedRef.current = true; }}
+                onFocus={() => { engagedRef.current = true; }}
+                placeholder={t("Say or type another command")}
+                className="min-w-0 flex-1 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+                onKeyDown={(e) => { if (e.key === "Enter" && followText.trim()) runWith(followText.trim()); }}
+              />
+              <Dictate onText={(tx) => { engagedRef.current = true; setFollowText((s) => (s ? s + " " : "") + tx); }} />
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button variant="soft" className="flex-1" onClick={onClose}>{t("Done")}</Button>
+              <Button className="flex-1" disabled={!followText.trim()} onClick={() => runWith(followText.trim())}>
+                <Send size={15} /> {t("Send to AI")}
+              </Button>
+            </div>
+          </div>
         </div>
       ) : (
         <div>
