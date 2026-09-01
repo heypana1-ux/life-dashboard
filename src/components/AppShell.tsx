@@ -39,6 +39,20 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [overHref, setOverHref] = useState<string | null>(null);
   const [navQuery, setNavQuery] = useState("");
   const [moreQuery, setMoreQuery] = useState("");
+  // Remember the "More" sheet scroll position for a short while, so reopening it right after
+  // visiting a page doesn't force you to scroll back down again.
+  const moreScrollRef = useRef<HTMLDivElement>(null);
+  const moreScrollPos = useRef(0);
+  const moreScrollAt = useRef(0);
+
+  // Restore the remembered scroll position when the sheet reopens within 10s; otherwise start at top.
+  useEffect(() => {
+    if (!moreOpen) return;
+    const el = moreScrollRef.current;
+    if (!el) return;
+    if (Date.now() - moreScrollAt.current < 10000) el.scrollTop = moreScrollPos.current;
+    else moreScrollPos.current = 0;
+  }, [moreOpen]);
 
   const orderedNav = useMemo(() => orderNav(data.settings.navOrder), [data.settings.navOrder]);
   const matches = (item: NavItem, q: string) => t(item.label).toLowerCase().includes(q.trim().toLowerCase());
@@ -253,7 +267,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <div className="flex items-center gap-1.5 px-1 text-[11px] text-[var(--text-faint)]">
               <Star size={11} /> {t("Tap the star to pin a page to the bottom bar.")}
             </div>
-            <div className="space-y-3 overflow-y-auto">
+            <div
+              ref={moreScrollRef}
+              onScroll={(e) => { moreScrollPos.current = e.currentTarget.scrollTop; moreScrollAt.current = Date.now(); }}
+              className="space-y-3 overflow-y-auto"
+            >
               {SECTIONS.map((sec) => {
                 const items = sec.hrefs
                   .map((h) => NAV.find((n) => n.href === h))

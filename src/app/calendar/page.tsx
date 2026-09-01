@@ -224,7 +224,7 @@ function WeekdayFeelingsCard() {
           })}
         </p>
       )}
-      <div className="overflow-x-auto">
+      <div className="no-swipe overflow-x-auto">
         <div className="min-w-[440px]">
           <div className="grid gap-1 pb-1" style={{ gridTemplateColumns: cols }}>
             <div />
