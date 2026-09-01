@@ -53,9 +53,10 @@ export function HabitRow({
 
   const metaParts = [t(areaLabel(habit.area))];
   if (isCount) metaParts.push(`${countTarget}× ${t("per day")}`);
-  if (habit.targetMinutes) metaParts.push(fmtDuration(habit.targetMinutes));
-  if (habit.targetValue) metaParts.push(`${habit.targetValue.toLocaleString()} ${habit.unit ?? ""}`.trim());
-  if (item.weekTarget !== undefined) metaParts.push(`${item.weekDone}/${item.weekTarget} ${t("this week")}`);
+  // Skip the target in the meta line when the amount box already shows it (avoids "1h" + "60 min").
+  if (habit.targetMinutes && !canEnterAmount) metaParts.push(fmtDuration(habit.targetMinutes));
+  if (habit.targetValue && !canEnterAmount) metaParts.push(`${habit.targetValue.toLocaleString()} ${habit.unit ?? ""}`.trim());
+  if (item.weekTarget !== undefined) metaParts.push(`${item.weekDone}/${item.weekTarget}× ${t("wk")}`);
 
   return (
     <div className="flex items-center gap-3 overflow-hidden rounded-xl px-1 py-2">
@@ -81,14 +82,14 @@ export function HabitRow({
         <div className="flex min-w-0 items-center gap-2">
           <span
             className={clsx(
-              "truncate text-sm font-medium",
+              "line-clamp-2 text-sm font-medium leading-snug break-words",
               isReduce && marked ? "text-[var(--text-muted)]" : "",
             )}
           >
             {habit.name}
           </span>
-          {habit.priority === "high" && <Badge tone="accent">{t("High")}</Badge>}
-          {isReduce && <Badge tone="bad">{t("Reduce")}</Badge>}
+          {habit.priority === "high" && <span className="shrink-0"><Badge tone="accent">{t("High")}</Badge></span>}
+          {isReduce && <span className="shrink-0"><Badge tone="bad">{t("Reduce")}</Badge></span>}
         </div>
         <div className="mt-0.5 truncate text-xs text-[var(--text-faint)]">{metaParts.join(" · ")}</div>
       </div>
@@ -137,10 +138,10 @@ export function HabitRow({
               else next.value = n;
               setHabitLog(next);
             }}
-            className="w-14 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-right text-xs outline-none focus:border-[var(--accent)]"
+            className="w-12 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-right text-xs outline-none focus:border-[var(--accent)]"
             aria-label={t("Amount")}
           />
-          <span className="w-8 text-xs text-[var(--text-faint)]">{amountUnit}</span>
+          <span className="text-xs text-[var(--text-faint)]">{amountUnit}</span>
         </div>
       )}
 
