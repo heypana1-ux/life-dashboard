@@ -191,7 +191,17 @@ function sleepDurationScore(minutes: number, targetMinutes: number): number {
 export function sleepScore(log: SleepLog, targetMinutes: number): number {
   const dur = sleepDurationMinutes(log.bedTime, log.wakeTime, log.fallAsleepMinutes ?? 0);
   const durScore = sleepDurationScore(dur, targetMinutes);
-  return clamp(0.6 * durScore + 0.4 * log.quality * 10);
+  const qualityScore = clamp(log.quality * 10);
+  const energyScore = clamp((log.morningEnergy ?? log.quality) * 10);
+  // Blend duration, self-rated quality, and how you woke up.
+  let s = 0.45 * durScore + 0.3 * qualityScore + 0.25 * energyScore;
+  // Falling asleep slowly costs a little (nothing under 20 min); capped.
+  const latency = log.fallAsleepMinutes ?? 0;
+  if (latency > 20) s -= Math.min(12, ((latency - 20) / 10) * 3);
+  // Each night-waking costs a little; capped.
+  const wakes = log.awakenings ?? 0;
+  if (wakes > 0) s -= Math.min(12, wakes * 3);
+  return Math.round(clamp(s));
 }
 
 export function reviewScore(r: DailyReview): number {

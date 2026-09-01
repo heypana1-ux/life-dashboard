@@ -29,7 +29,7 @@ export function PageHeader({
 }) {
   return (
     <div className="sticky top-0 z-20 -mx-5 mb-[18px] flex flex-col gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-[18px] sm:-mx-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
-      <div className="min-w-0">
+      <div className="min-w-0 pr-11 sm:pr-0">
         <h1 className="truncate text-[21px] font-semibold tracking-[-0.025em]">{title}</h1>
         {subtitle && (
           <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>

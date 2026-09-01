@@ -163,11 +163,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      {/* Profile avatar — top-right corner (desktop; the centered content leaves the corner free). */}
+      {/* Profile avatar — fixed top-right corner on every screen (the page header keeps its
+          title on the left and its actions below on mobile, so this corner stays free). */}
       <Link
         href="/profile"
         aria-label={t("Profile")}
-        className="fixed right-4 top-3 z-30 hidden h-9 w-9 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:ring-2 hover:ring-[var(--accent)] md:block"
+        className="fixed right-3 top-2.5 z-50 block h-9 w-9 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:ring-2 hover:ring-[var(--accent)]"
       >
         {data.settings.profile.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
