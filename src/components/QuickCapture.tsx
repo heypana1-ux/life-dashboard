@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, Sparkles, Check, ListChecks, X } from "lucide-react";
+import { Mic, Sparkles, Check, ListChecks, X, Square } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { todayISO } from "@/lib/date";
@@ -14,7 +14,7 @@ import { Dictate } from "@/components/QuickLog";
 
 const ERROR_MSG: Record<string, string> = {
   not_configured: "The AI isn't set up yet. Add your Groq API key in the coach setup.",
-  rate_limited: "The free AI limit was hit for now — try again in a minute.",
+  rate_limited: "You've made several AI requests in a short time. The free AI has a per-minute limit — wait about a minute and try again.",
   provider_error: "The AI provider returned an error. Try again shortly.",
   network: "Couldn't reach the AI service. Check your connection and try again.",
   empty: "The AI didn't return anything — try rephrasing.",
@@ -52,6 +52,9 @@ const GUIDED: { key: string; label: string; placeholder: string }[] = [
 
 type Stage = "input" | "loading" | "done";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Rec = any;
+
 function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   const store = useStore();
   const { data } = store;
@@ -64,17 +67,113 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   const [err, setErr] = useState<string | null>(null);
   const [actions, setActions] = useState<string[]>([]);
   const [reply, setReply] = useState("");
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(false);
 
-  function composed(): string {
-    if (!guided) return text.trim();
+  const recRef = useRef<Rec>(null);
+  const silenceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const finalRef = useRef("");
+  const stageRef = useRef<Stage>("input");
+  stageRef.current = stage;
+
+  const lang = data.settings.language;
+
+  function clearSilence() {
+    if (silenceRef.current) {
+      clearTimeout(silenceRef.current);
+      silenceRef.current = null;
+    }
+  }
+
+  function stopListening() {
+    clearSilence();
+    try {
+      recRef.current?.stop();
+    } catch {
+      /* ignore */
+    }
+    setListening(false);
+  }
+
+  // Auto-stop after a few seconds of silence, then auto-submit what was heard.
+  function armSilence() {
+    clearSilence();
+    silenceRef.current = setTimeout(() => {
+      stopListening();
+      const said = finalRef.current.trim();
+      if (said && stageRef.current === "input") runWith(said);
+    }, 3500);
+  }
+
+  function startListening() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) return;
+    const rec: Rec = new SR();
+    rec.lang = navigator.language || (lang === "de" ? "de-DE" : "en-US");
+    rec.interimResults = true;
+    rec.continuous = true;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    rec.onresult = (e: any) => {
+      let finalTx = "";
+      let interim = "";
+      for (let i = 0; i < e.results.length; i++) {
+        const r = e.results[i];
+        if (r.isFinal) finalTx += r[0].transcript;
+        else interim += r[0].transcript;
+      }
+      finalRef.current = finalTx;
+      setText((finalTx + " " + interim).trim());
+      armSilence();
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+    try {
+      rec.start();
+      setListening(true);
+      armSilence();
+    } catch {
+      setListening(false);
+    }
+  }
+
+  // Detect speech support and auto-start the mic on open (free mode only).
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSupported(!!SR);
+    if (SR && !guided) {
+      // slight delay so it starts within the click gesture that opened the modal
+      const id = setTimeout(startListening, 150);
+      return () => clearTimeout(id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Clean up on unmount.
+  useEffect(() => () => stopListening(), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-close after the summary has been visible for a few seconds.
+  useEffect(() => {
+    if (stage !== "done") return;
+    const id = setTimeout(onClose, 4200);
+    return () => clearTimeout(id);
+  }, [stage, onClose]);
+
+  function composedGuided(): string {
     return GUIDED.filter((g) => fields[g.key]?.trim())
       .map((g) => `${t(g.label)}: ${fields[g.key].trim()}`)
       .join("\n");
   }
+  function composed(): string {
+    return (guided ? composedGuided() : text).trim();
+  }
 
-  async function run() {
-    const content = composed();
-    if (!content) return;
+  async function runWith(content: string) {
+    if (!content || stageRef.current === "loading") return;
+    stopListening();
     setErr(null);
     setStage("loading");
 
@@ -84,50 +183,37 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
       `The user's habit names: ${habitNames}`,
       `Dashboard card ids that can be shown/hidden: ${DASHBOARD_CARDS.join(", ")}`,
     ].join("\n");
-    const lang = data.settings.language;
 
+    // A SINGLE agent request keeps token use low (Groq's free tier is rate-limited per minute).
+    // We execute any tool calls locally and build the summary ourselves — no extra confirm round.
     const convo: AgentMsg[] = [{ role: "user", content }];
-    const done: string[] = [];
-    let navigated: string | null = null;
-    let finalText = "";
-    let hadError: string | null = null;
+    const res = await askCoachAgent(convo, ctx, lang);
 
-    for (let step = 0; step < 6; step++) {
-      const res = await askCoachAgent(convo, ctx, lang);
-      if (res.error) {
-        hadError = res.error;
-        break;
-      }
-      if (res.toolCalls && res.toolCalls.length) {
-        convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
-        for (const call of res.toolCalls) {
-          let args: Record<string, unknown> = {};
-          try {
-            args = JSON.parse(call.function.arguments || "{}");
-          } catch {
-            args = {};
-          }
-          const result = runCoachTool(store, call.function.name, args, {
-            navigate: (href) => {
-              navigated = href;
-            },
-          });
-          done.push(result);
-          convo.push({ role: "tool", tool_call_id: call.id, content: result });
-        }
-        continue;
-      }
-      finalText = res.reply ?? "";
-      break;
-    }
-
-    if (hadError) {
-      setErr(hadError);
+    if (res.error) {
+      setErr(res.error);
       setStage("input");
       return;
     }
 
-    // If the AI navigated somewhere, close and go there.
+    const done: string[] = [];
+    let navigated: string | null = null;
+    if (res.toolCalls && res.toolCalls.length) {
+      for (const call of res.toolCalls) {
+        let args: Record<string, unknown> = {};
+        try {
+          args = JSON.parse(call.function.arguments || "{}");
+        } catch {
+          args = {};
+        }
+        const result = runCoachTool(store, call.function.name, args, {
+          navigate: (href) => {
+            navigated = href;
+          },
+        });
+        done.push(result);
+      }
+    }
+
     if (navigated) {
       onClose();
       router.push(navigated);
@@ -135,8 +221,12 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
     }
 
     setActions(done.filter((a) => !/^(Error|No habit|No page|Unknown)/.test(a)));
-    setReply(finalText);
+    setReply(res.reply ?? "");
     setStage("done");
+  }
+
+  function run() {
+    runWith(composed());
   }
 
   return (
@@ -171,7 +261,7 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
             <span className="flex items-center gap-2 text-sm font-medium">
               <ListChecks size={16} className="text-[var(--accent)]" /> {t("Ask by category")}
             </span>
-            <Toggle checked={guided} onChange={setGuided} />
+            <Toggle checked={guided} onChange={(v) => { setGuided(v); if (v) stopListening(); }} />
           </label>
 
           {guided ? (
@@ -203,20 +293,39 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
               ))}
             </div>
           ) : (
-            <textarea
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              rows={4}
-              autoFocus
-              placeholder={t("What happened today?")}
-              className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-sm outline-none focus:border-[var(--accent)]"
-              onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(); }}
-            />
+            <>
+              {listening && (
+                <div className="mb-2 flex items-center gap-2 text-[13px] font-medium text-[var(--accent)]">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent)] opacity-75" />
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[var(--accent)]" />
+                  </span>
+                  {t("Listening… pause when you're done")}
+                </div>
+              )}
+              <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                rows={4}
+                autoFocus
+                placeholder={t("What happened today?")}
+                className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-sm outline-none focus:border-[var(--accent)]"
+                onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(); }}
+              />
+            </>
           )}
 
           <div className="mt-3 flex items-center justify-between gap-2">
-            {!guided ? (
-              <Dictate onText={(tx) => setText((s) => (s ? s + " " : "") + tx)} />
+            {!guided && supported ? (
+              listening ? (
+                <Button variant="soft" onClick={stopListening}>
+                  <Square size={14} /> {t("Stop")}
+                </Button>
+              ) : (
+                <Button variant="soft" onClick={startListening}>
+                  <Mic size={16} /> {t("Speak")}
+                </Button>
+              )
             ) : (
               <span />
             )}
@@ -224,7 +333,7 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
               {stage === "loading" ? (
                 <><Sparkles size={16} className="animate-pulse" /> {t("Working…")}</>
               ) : (
-                <><Mic size={16} /> {t("Send to AI")}</>
+                <><Check size={16} /> {t("Send to AI")}</>
               )}
             </Button>
           </div>

@@ -8,7 +8,7 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { buildCoachContext } from "@/lib/coachContext";
-import { coachAsk, checkCoachConfigured, CoachTurn, askCoachAgent, AgentMsg } from "@/lib/ai";
+import { askCoach, coachAsk, checkCoachConfigured, CoachTurn, askCoachAgent, AgentMsg } from "@/lib/ai";
 import { runCoachTool } from "@/lib/coachTools";
 import { uid } from "@/lib/defaults";
 import { todayISO } from "@/lib/date";
@@ -31,12 +31,19 @@ const QUICK_PROMPTS = [
 
 const ERROR_MSG: Record<string, string> = {
   not_configured: "The AI coach isn't set up yet. Add your Groq API key (see setup below).",
-  rate_limited: "The free AI limit was hit for now — try again in a minute.",
+  rate_limited: "You've sent several AI requests in a short time. The free AI has a per-minute limit — wait about a minute and try again.",
   provider_error: "The AI provider returned an error. Try again shortly.",
   network: "Couldn't reach the AI service. Check your connection and try again.",
   empty: "The AI didn't return an answer — try rephrasing.",
   bad_request: "Something went wrong with that request.",
 };
+
+/* Only send the (token-heavy) tool schemas when the message actually asks the coach to DO
+   something — logging, creating, navigating, changing a setting. Pure questions use the cheaper
+   tool-free chat path, which roughly halves the tokens per request and keeps you under the free
+   provider's per-minute limit. */
+const ACTION_RE =
+  /\b(log|logg|track|record|add|create|set|change|adjust|open|navigat|go to|show me|mark|done|hide|show|reset|vacation|trag|eintrag|einträgt|eintragen|notier|erstell|hinzuf|markier|navigier|öffne|geh zu|zeig|ausblend|einblend|urlaub|einstellung|ändere|setz|dashboard)/i;
 
 export function CoachChat({
   onClose,
@@ -121,35 +128,43 @@ export function CoachChat({
 
     const ctx = buildCoachContext(data, d.history).text;
     const lang = data.settings.language;
-    // Agent loop: the coach may call tools to record/create things; we run them and feed results back.
-    const convo: AgentMsg[] = display.map((m) => ({ role: m.role, content: m.content }));
     const actions: string[] = [];
     let finalText = "";
     let hadError: string | null = null;
 
-    for (let step = 0; step < 5; step++) {
-      const res = await askCoachAgent(convo, ctx, lang);
-      if (res.error) {
-        hadError = res.error;
+    if (!ACTION_RE.test(content)) {
+      // Pure question → cheaper, tool-free chat path (no tool schemas sent). Recent turns are
+      // trimmed server-side, so history stays cheap while keeping follow-ups coherent.
+      const res = await askCoach(display, ctx, lang);
+      if (res.error) hadError = res.error;
+      else finalText = res.reply ?? "";
+    } else {
+      // Action → agent loop: the coach may call tools; we run them and feed results back.
+      const convo: AgentMsg[] = display.map((m) => ({ role: m.role, content: m.content }));
+      for (let step = 0; step < 5; step++) {
+        const res = await askCoachAgent(convo, ctx, lang);
+        if (res.error) {
+          hadError = res.error;
+          break;
+        }
+        if (res.toolCalls && res.toolCalls.length) {
+          convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
+          for (const call of res.toolCalls) {
+            let args: Record<string, unknown> = {};
+            try {
+              args = JSON.parse(call.function.arguments || "{}");
+            } catch {
+              args = {};
+            }
+            const result = runCoachTool(store, call.function.name, args);
+            actions.push(result);
+            convo.push({ role: "tool", tool_call_id: call.id, content: result });
+          }
+          continue;
+        }
+        finalText = res.reply ?? "";
         break;
       }
-      if (res.toolCalls && res.toolCalls.length) {
-        convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
-        for (const call of res.toolCalls) {
-          let args: Record<string, unknown> = {};
-          try {
-            args = JSON.parse(call.function.arguments || "{}");
-          } catch {
-            args = {};
-          }
-          const result = runCoachTool(store, call.function.name, args);
-          actions.push(result);
-          convo.push({ role: "tool", tool_call_id: call.id, content: result });
-        }
-        continue;
-      }
-      finalText = res.reply ?? "";
-      break;
     }
     setLoading(false);
 

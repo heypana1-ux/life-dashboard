@@ -45,7 +45,10 @@ export async function POST(req: NextRequest) {
   }
 
   const messages = Array.isArray(body.messages) ? body.messages : [];
-  const context = typeof body.context === "string" ? body.context.slice(0, 8000) : "";
+  // Cap the snapshot so a single request stays well under the free provider's per-minute token
+  // budget (agent mode also carries the tool schemas, so it gets a tighter cap).
+  const rawContext = typeof body.context === "string" ? body.context : "";
+  const context = rawContext.slice(0, body.mode === "agent" ? 4500 : 6500);
   const language = body.language === "de" ? "German" : "English";
   const mode = typeof body.mode === "string" ? body.mode : "chat";
 
