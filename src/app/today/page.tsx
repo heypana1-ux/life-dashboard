@@ -21,7 +21,6 @@ import {
   Toggle,
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
-import { QuickLogButton } from "@/components/QuickLog";
 import { BackfillNudge } from "@/components/BackfillNudge";
 
 const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
@@ -136,7 +135,6 @@ export default function TodayPage() {
                 {t("Today")}
               </Button>
             )}
-            <QuickLogButton className="!py-2" />
           </div>
         }
       />
