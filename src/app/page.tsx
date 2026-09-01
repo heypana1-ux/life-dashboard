@@ -28,7 +28,8 @@ import { detectAnomalies } from "@/lib/anomalies";
 import { earlyWarning, predictTomorrow } from "@/lib/forecast";
 import { fmtLong } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
-import { AreaKey, Settings } from "@/lib/types";
+import { AreaKey } from "@/lib/types";
+import { effectiveLayout, CARD_LABELS as SHARED_CARD_LABELS, type DashboardCardId } from "@/lib/dashboardCards";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile, AnimatedNumber } from "@/components/ui";
 import { ScoreRing, Meter } from "@/components/ScoreRing";
@@ -39,19 +40,10 @@ import { WeeklyPlanner } from "@/components/WeeklyPlanner";
 import { MiniHeatmap } from "@/components/MiniHeatmap";
 import { HintCard } from "@/components/HintCard";
 
-/** Dashboard blocks the user can reorder / hide. The score hero and the streak nudge stay pinned. */
-const MOVABLE = ["categories", "activity", "anomalies", "insights", "weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin"] as const;
-type CardId = (typeof MOVABLE)[number];
-
-/** Default order: the essentials first, everything else after. */
-const DEFAULT_ORDER: CardId[] = [
-  "categories", "activity", "anomalies", "insights",
-  "weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin",
-];
-
-/** Hidden by default — the dashboard starts focused; these are opt-in extras the user can
- *  re-enable from the "Hidden cards" tray under Customize. */
-const DEFAULT_HIDDEN: CardId[] = ["weekPlan", "weeklyFocus", "level", "goals", "coachBriefing", "coachCheckin"];
+/** Dashboard blocks the user can reorder / hide. The score hero and the streak nudge stay pinned.
+ *  Card ids, default layout and the legacy migration live in dashboardCards.ts (shared with the
+ *  AI quick-capture tool). */
+type CardId = DashboardCardId;
 
 /** Where each anomaly links to when tapped. */
 const ANOMALY_HREF: Record<string, string> = {
@@ -63,21 +55,6 @@ const ANOMALY_HREF: Record<string, string> = {
   Training: "/training",
 };
 
-/** A layout saved before the categories/insights split (or never customized) counts as "legacy":
- *  we re-seed the fresh, decluttered defaults for it. Once the user customizes again, their saved
- *  order contains "categories" and their own preferences take over. */
-function isLegacyLayout(settings: Settings): boolean {
-  const order = settings.dashboard?.order;
-  return !order || !order.includes("categories");
-}
-
-function orderedCards(settings: Settings): CardId[] {
-  if (isLegacyLayout(settings)) return [...DEFAULT_ORDER];
-  const saved = (settings.dashboard?.order ?? []).filter((id): id is CardId => (MOVABLE as readonly string[]).includes(id));
-  if (saved.length === 0) return [...DEFAULT_ORDER];
-  const rest = MOVABLE.filter((id) => !saved.includes(id));
-  return [...saved, ...rest];
-}
 
 export default function DashboardPage() {
   const { data, updateSettings } = useStore();
@@ -134,10 +111,9 @@ export default function DashboardPage() {
     [data.weeklyReviews],
   );
 
-  const order = orderedCards(data.settings);
-  const hidden = new Set(
-    isLegacyLayout(data.settings) ? DEFAULT_HIDDEN : (data.settings.dashboard?.hidden ?? []),
-  );
+  const layout = effectiveLayout(data.settings.dashboard);
+  const order = layout.order;
+  const hidden = new Set<string>(layout.hidden);
 
   function persist(nextOrder: CardId[], nextHidden: Set<string>) {
     updateSettings({ dashboard: { order: nextOrder, hidden: [...nextHidden] } });
@@ -444,7 +420,7 @@ export default function DashboardPage() {
                   onClick={() => toggleHide(id)}
                   className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)]"
                 >
-                  <Eye size={14} /> {t(CARD_LABELS[id])}
+                  <Eye size={14} /> {t(SHARED_CARD_LABELS[id])}
                 </button>
               ))}
             </div>
@@ -454,19 +430,6 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-const CARD_LABELS: Record<CardId, string> = {
-  categories: "Categories",
-  activity: "Activity",
-  anomalies: "Heads up",
-  insights: "Insights",
-  weekPlan: "This week's plan",
-  weeklyFocus: "This week's focus",
-  level: "Level",
-  goals: "Today's goals",
-  coachBriefing: "Coach briefing",
-  coachCheckin: "Weekly check-in",
-};
 
 function MovableBlock({
   id,

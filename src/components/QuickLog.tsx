@@ -234,7 +234,7 @@ function summaryLines(p: ParsedLog, t: (k: string, v?: Record<string, string | n
 
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-function Dictate({ onText }: { onText: (t: string) => void }) {
+export function Dictate({ onText }: { onText: (t: string) => void }) {
   const t = useT();
   const [listening, setListening] = useState(false);
   const [supported, setSupported] = useState(false);

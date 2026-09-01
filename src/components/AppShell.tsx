@@ -16,6 +16,7 @@ import { RecapGate } from "@/components/Recap";
 import { WeeklyReviewGate } from "@/components/WeeklyReview";
 import { CoachLauncher } from "@/components/Coach";
 import { CommandPalette, CommandPaletteButton, openCommandPalette } from "@/components/CommandPalette";
+import { QuickCaptureButton } from "@/components/QuickCapture";
 import { Tour } from "@/components/Tour";
 import { PWARegister, AppPromoBanner } from "@/components/PWA";
 
@@ -162,6 +163,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span>{t("Data stays on this device.")}</span>
         </div>
       </aside>
+
+      {/* Quick capture — voice/AI entry, fixed just left of the avatar on every screen. */}
+      <QuickCaptureButton />
 
       {/* Profile avatar — fixed top-right corner on every screen (the page header keeps its
           title on the left and its actions below on mobile, so this corner stays free). */}

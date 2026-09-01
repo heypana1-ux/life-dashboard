@@ -162,6 +162,24 @@ const DE: Record<string, string> = {
   "Count toward Life Score": "Zum Life Score zählen",
   "When on, your ratings gently influence the score. Off by default.":
     "Wenn aktiv, fließen deine Bewertungen leicht in den Score ein. Standardmäßig aus.",
+
+  // --- Quick capture (voice / AI) ---
+  "Quick capture": "Schnell eintragen",
+  "Speak or type what you did — the AI logs it for you. You can also ask it to open a page, change a setting, add vacation days or adjust your dashboard.":
+    "Sprich oder tippe, was du gemacht hast — die KI trägt es für dich ein. Du kannst sie auch bitten, eine Seite zu öffnen, eine Einstellung zu ändern, Urlaubstage einzutragen oder dein Dashboard anzupassen.",
+  "Ask by category": "Nach Kategorien fragen",
+  "Send to AI": "An die KI senden",
+  "Working…": "Arbeite…",
+  "Nothing was recorded — try rephrasing.": "Es wurde nichts eingetragen — formuliere es anders.",
+  "Anything else": "Sonstiges",
+  Clear: "Löschen",
+  "e.g. meditated, read 20 min": "z. B. meditiert, 20 Min gelesen",
+  "e.g. slept 7.5h, good quality": "z. B. 7,5 Std geschlafen, gute Qualität",
+  "e.g. ran 30 min": "z. B. 30 Min gelaufen",
+  "e.g. 6 glasses of water, 74 kg": "z. B. 6 Gläser Wasser, 74 kg",
+  "e.g. spent 40 on groceries": "z. B. 40 für Lebensmittel ausgegeben",
+  "e.g. mood 8, energy 7": "z. B. Stimmung 8, Energie 7",
+  "e.g. adjust my dashboard, add vacation…": "z. B. Dashboard anpassen, Urlaub eintragen…",
   "Edit day": "Tag bearbeiten",
   "Edit this day": "Diesen Tag bearbeiten",
   "Night of": "Nacht vom",

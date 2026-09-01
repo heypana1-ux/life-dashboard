@@ -1,6 +1,7 @@
 import type { useStore } from "./store";
 import { AreaKey, DailyReview, HealthLog } from "./types";
 import { todayISO } from "./date";
+import { DASHBOARD_CARDS, CARD_LABELS, effectiveLayout, isDashboardCard, type DashboardCardId } from "./dashboardCards";
 
 /*
   Tools the AI coach can call to actually WRITE data on the user's behalf (create habits, log a
@@ -11,6 +12,23 @@ import { todayISO } from "./date";
 
 type Store = ReturnType<typeof useStore>;
 type Args = Record<string, unknown>;
+
+/** Side effects a tool may need beyond the store (client-only), e.g. navigation. */
+export interface ToolEffects {
+  navigate?: (href: string) => void;
+}
+
+/** Pages the AI can take the user to. Keys are friendly aliases the model can use. */
+const ROUTES: Record<string, string> = {
+  dashboard: "/", home: "/", today: "/today", morning: "/morning",
+  habits: "/habits", focus: "/focus", training: "/training", sport: "/training",
+  sleep: "/sleep", health: "/health", calendar: "/calendar", journal: "/journal",
+  goals: "/goals", vision: "/vision", projects: "/projects", experiments: "/experiments",
+  finances: "/finances", statistics: "/statistics", correlations: "/correlations",
+  analysis: "/analysis", wheel: "/wheel", coach: "/coach", profile: "/profile",
+  about: "/about", reports: "/reports", achievements: "/achievements",
+  rewards: "/rewards", scoreboard: "/scoreboard", settings: "/settings",
+};
 
 const AREAS: AreaKey[] = ["productivity", "sport", "sleep", "habits", "learning", "creativity", "reflection", "finances", "health"];
 const toArea = (a: unknown): AreaKey => (typeof a === "string" && (AREAS as string[]).includes(a) ? (a as AreaKey) : "habits");
@@ -172,10 +190,103 @@ export const COACH_TOOLS = [
       },
     },
   },
+  {
+    type: "function",
+    function: {
+      name: "log_transaction",
+      description: "Record an income or expense in Finances.",
+      parameters: {
+        type: "object",
+        properties: {
+          type: { type: "string", enum: ["income", "expense"], description: "Default expense." },
+          amount: { type: "number", description: "A positive amount." },
+          category: { type: "string", description: "e.g. Groceries, Salary, Rent." },
+          note: { type: "string" },
+          date: { type: "string", description: "YYYY-MM-DD. Default today." },
+        },
+        required: ["amount"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "navigate",
+      description:
+        "Take the user to a page in the app. Use when they ask to open, go to, show, or navigate to a section or the settings.",
+      parameters: {
+        type: "object",
+        properties: {
+          to: {
+            type: "string",
+            description:
+              "Target page, e.g. today, habits, sleep, finances, statistics, settings, coach, goals, calendar, health, training, profile, rewards, achievements, scoreboard.",
+          },
+        },
+        required: ["to"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "adjust_dashboard",
+      description:
+        "Show, hide or reset dashboard cards. Use when the user asks to change what's on their dashboard.",
+      parameters: {
+        type: "object",
+        properties: {
+          action: { type: "string", enum: ["show", "hide", "reset"], description: "reset restores the default layout." },
+          card: {
+            type: "string",
+            enum: [...DASHBOARD_CARDS],
+            description: "Which card. Required for show/hide, ignored for reset.",
+          },
+        },
+        required: ["action"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "set_vacation",
+      description:
+        "Add a vacation range so streaks are protected and scoring is lenient across those days.",
+      parameters: {
+        type: "object",
+        properties: {
+          from: { type: "string", description: "Start date YYYY-MM-DD." },
+          to: { type: "string", description: "End date YYYY-MM-DD (inclusive). Defaults to 'from'." },
+        },
+        required: ["from"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_settings",
+      description:
+        "Change a personal setting. Only include the fields the user asked to change.",
+      parameters: {
+        type: "object",
+        properties: {
+          sleepTargetHours: { type: "number", description: "Nightly sleep goal in hours (e.g. 8)." },
+          focusTargetMinutes: { type: "integer", description: "Daily deep-work target in minutes." },
+          checkinCounts: { type: "boolean", description: "Whether the daily check-in counts toward the Life Score." },
+          waterGoalGlasses: { type: "integer", description: "Daily water goal in glasses." },
+          theme: { type: "string", enum: ["light", "dark", "system"] },
+          language: { type: "string", enum: ["en", "de"] },
+        },
+      },
+    },
+  },
 ] as const;
 
-/** Execute one tool call against the store; returns a short human-readable result. */
-export function runCoachTool(store: Store, name: string, args: Args): string {
+/** Execute one tool call against the store; returns a short human-readable result.
+ *  `effects` carries client-only capabilities (navigation) used by the header quick-capture. */
+export function runCoachTool(store: Store, name: string, args: Args, effects?: ToolEffects): string {
   const { data } = store;
   switch (name) {
     case "create_habit": {
@@ -281,6 +392,81 @@ export function runCoachTool(store: Store, name: string, args: Args): string {
       const date = toDate(args.date);
       store.saveWeight({ date, kg: Math.round(kg * 10) / 10 });
       return `Logged ${Math.round(kg * 10) / 10} kg for ${date}.`;
+    }
+    case "log_transaction": {
+      const amount = Math.abs(Number(args.amount));
+      if (!Number.isFinite(amount) || amount <= 0) return "Error: missing or invalid amount.";
+      const type = args.type === "income" ? "income" : "expense";
+      store.saveTransaction({
+        id: "",
+        date: toDate(args.date),
+        type,
+        category: str(args.category) || (type === "income" ? "Income" : "General"),
+        amount: Math.round(amount * 100) / 100,
+        note: str(args.note) || undefined,
+      });
+      return `Logged ${type} of ${Math.round(amount * 100) / 100}${str(args.category) ? ` (${str(args.category)})` : ""}.`;
+    }
+    case "navigate": {
+      const key = str(args.to).toLowerCase().replace(/^\/+/, "");
+      const href = ROUTES[key] ?? (Object.values(ROUTES).includes(`/${key}`) ? `/${key}` : undefined);
+      if (!href) return `No page matching "${str(args.to)}".`;
+      if (effects?.navigate) {
+        effects.navigate(href);
+        return `Opened ${key || "dashboard"}.`;
+      }
+      return `To open it, go to ${href}.`;
+    }
+    case "adjust_dashboard": {
+      const action = str(args.action).toLowerCase();
+      const layout = effectiveLayout(data.settings.dashboard);
+      if (action === "reset") {
+        store.updateSettings({ dashboard: undefined });
+        return "Reset the dashboard to its default layout.";
+      }
+      const card = str(args.card);
+      if (!isDashboardCard(card)) return `Unknown dashboard card "${card}".`;
+      const hidden = new Set<DashboardCardId>(layout.hidden);
+      if (action === "show") hidden.delete(card);
+      else if (action === "hide") hidden.add(card);
+      else return `Unknown action "${action}".`;
+      store.updateSettings({ dashboard: { order: layout.order, hidden: [...hidden] } });
+      return `${action === "show" ? "Showing" : "Hid"} the "${CARD_LABELS[card]}" card on your dashboard.`;
+    }
+    case "set_vacation": {
+      const from = toDate(args.from);
+      const to = /^\d{4}-\d{2}-\d{2}$/.test(str(args.to)) ? str(args.to) : from;
+      const lo = from <= to ? from : to;
+      const hi = from <= to ? to : from;
+      const vacations = [...(data.settings.vacations ?? []), { from: lo, to: hi }];
+      store.updateSettings({ vacations });
+      return lo === hi ? `Marked ${lo} as a vacation day.` : `Marked ${lo} to ${hi} as vacation.`;
+    }
+    case "update_settings": {
+      const patch: Record<string, unknown> = {};
+      const changed: string[] = [];
+      if (args.sleepTargetHours != null) {
+        const h = Math.max(3, Math.min(14, Number(args.sleepTargetHours)));
+        if (Number.isFinite(h)) { patch.sleepTargetMinutes = Math.round(h * 60); changed.push(`sleep target ${h}h`); }
+      }
+      if (args.focusTargetMinutes != null) {
+        patch.focusTargetMinutes = clampInt(args.focusTargetMinutes, 5, 720, 120); changed.push(`focus target ${patch.focusTargetMinutes}min`);
+      }
+      if (typeof args.checkinCounts === "boolean") {
+        patch.checkinCounts = args.checkinCounts; changed.push(`check-in scoring ${args.checkinCounts ? "on" : "off"}`);
+      }
+      if (args.waterGoalGlasses != null) {
+        patch.waterGoalGlasses = clampInt(args.waterGoalGlasses, 1, 40, 8); changed.push(`water goal ${patch.waterGoalGlasses}`);
+      }
+      if (args.theme === "light" || args.theme === "dark" || args.theme === "system") {
+        patch.theme = args.theme; changed.push(`theme ${args.theme}`);
+      }
+      if (args.language === "en" || args.language === "de") {
+        patch.language = args.language; changed.push(`language ${args.language}`);
+      }
+      if (changed.length === 0) return "Error: no supported setting to change.";
+      store.updateSettings(patch);
+      return `Updated ${changed.join(", ")}.`;
     }
     default:
       return `Unknown tool: ${name}.`;
