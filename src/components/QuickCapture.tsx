@@ -73,6 +73,7 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   const recRef = useRef<Rec>(null);
   const silenceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalRef = useRef("");
+  const lastFinalRef = useRef("");
   const displayRef = useRef("");
   const stageRef = useRef<Stage>("input");
   stageRef.current = stage;
@@ -108,34 +109,58 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
     }, 3500);
   }
 
-  function startListening() {
+  /** Prime the microphone permission so browsers (esp. desktop) actually show the prompt.
+   *  Harmless if already granted or unsupported. */
+  async function ensureMic(): Promise<void> {
+    try {
+      const md = navigator.mediaDevices;
+      if (md?.getUserMedia) {
+        const stream = await md.getUserMedia({ audio: true });
+        stream.getTracks().forEach((tr) => tr.stop());
+      }
+    } catch {
+      /* denied or unsupported — recognition may still prompt on its own */
+    }
+  }
+
+  async function startListening() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SR) return;
+    await ensureMic();
     const rec: Rec = new SR();
     rec.lang = navigator.language || (lang === "de" ? "de-DE" : "en-US");
-    rec.interimResults = true;
+    // interimResults=false is deliberate: some Android engines (e.g. Samsung) emit growing
+    // partials as separate results, which made the transcript repeat and pile up. Only
+    // finalized segments are delivered here, each appended exactly once.
+    rec.interimResults = false;
     rec.continuous = true;
-    // Keep already-committed text; dictation appends to it. Only NEW results (from resultIndex)
-    // are processed each event, so finalized phrases are never re-counted (that caused the
-    // "repeats and grows" bug on mobile).
+    // Dictation appends to whatever is already in the box.
     finalRef.current = text.trim();
+    lastFinalRef.current = "";
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (e: any) => {
-      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
+        if (!r.isFinal) continue;
         const chunk = (r[0]?.transcript ?? "").trim();
         if (!chunk) continue;
-        if (r.isFinal) {
-          finalRef.current = (finalRef.current ? finalRef.current + " " : "") + chunk;
-        } else {
-          interim += (interim ? " " : "") + chunk;
+        const last = lastFinalRef.current;
+        if (chunk === last) continue; // exact re-emit → ignore
+        if (last && chunk.startsWith(last) && finalRef.current.endsWith(last)) {
+          // Cumulative final (engine re-sends the whole utterance, longer each time) → replace,
+          // don't append. This is what made the transcript pile up on some Android engines.
+          finalRef.current = finalRef.current.slice(0, finalRef.current.length - last.length).trimEnd();
         }
+        finalRef.current = (finalRef.current ? finalRef.current + " " : "") + chunk;
+        lastFinalRef.current = chunk;
       }
-      setText((finalRef.current + (interim ? " " + interim : "")).trim());
+      setText(finalRef.current);
       armSilence();
     };
+    // While the user is actively speaking, don't let the silence timer fire; re-arm on pause.
+    rec.onspeechstart = () => clearSilence();
+    rec.onspeechend = () => armSilence();
     rec.onend = () => setListening(false);
     rec.onerror = () => setListening(false);
     recRef.current = rec;
@@ -322,6 +347,11 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
                 className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-3 text-sm outline-none focus:border-[var(--accent)]"
                 onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) run(); }}
               />
+              {!supported && (
+                <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+                  {t("Voice input needs Chrome (or another Chromium browser). You can still type here.")}
+                </p>
+              )}
             </>
           )}
 

@@ -169,6 +169,11 @@ const DE: Record<string, string> = {
     "Sprich oder tippe, was du gemacht hast — die KI trägt es für dich ein. Du kannst sie auch bitten, eine Seite zu öffnen, eine Einstellung zu ändern, Urlaubstage einzutragen oder dein Dashboard anzupassen.",
   "Ask by category": "Nach Kategorien fragen",
   "Send to AI": "An die KI senden",
+  Speak: "Sprechen",
+  Stop: "Stopp",
+  "Listening… pause when you're done": "Höre zu… mach eine Pause, wenn du fertig bist",
+  "Voice input needs Chrome (or another Chromium browser). You can still type here.":
+    "Spracheingabe braucht Chrome (oder einen anderen Chromium-Browser). Tippen geht trotzdem.",
   "Working…": "Arbeite…",
   "Nothing was recorded — try rephrasing.": "Es wurde nichts eingetragen — formuliere es anders.",
   "Anything else": "Sonstiges",
