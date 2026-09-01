@@ -150,6 +150,14 @@ const DE: Record<string, string> = {
 
   // --- Today ---
   "Daily check-in": "Täglicher Check-in",
+  Counts: "Zählt",
+  "Tap to review or edit today's ratings.":
+    "Tippen, um die heutigen Bewertungen anzusehen oder zu ändern.",
+  "Optional ratings for mood, energy and more. Tap to open.":
+    "Optionale Bewertungen für Stimmung, Energie und mehr. Zum Öffnen tippen.",
+  "Count toward Life Score": "Zum Life Score zählen",
+  "When on, your ratings gently influence the score. Off by default.":
+    "Wenn aktiv, fließen deine Bewertungen leicht in den Score ein. Standardmäßig aus.",
   "Edit day": "Tag bearbeiten",
   "Edit this day": "Diesen Tag bearbeiten",
   "Night of": "Nacht vom",
@@ -1442,8 +1450,8 @@ const DE: Record<string, string> = {
   "You have days to catch up on": "Du hast Tage zum Nachtragen",
   "Fill them in to keep your history complete — it also restores your streak.":
     "Trag sie nach, damit dein Verlauf vollständig bleibt — das stellt auch deine Serie wieder her.",
-  "On vacation days scoring is lenient — missed habits don't count, there's no coverage penalty, and your Life Rating can't drop. Streaks stay safe too.":
-    "An Urlaubstagen ist die Bewertung nachsichtig — verpasste Gewohnheiten zählen nicht, es gibt keinen Abzug für geringe Abdeckung, und dein Life-Rating kann nicht fallen. Serien bleiben ebenfalls geschützt.",
+  "On vacation days scoring is lenient — missed habits and slips don't count, and your Life Rating can't drop. Streaks stay safe too.":
+    "An Urlaubstagen ist die Bewertung nachsichtig — verpasste Gewohnheiten und Ausrutscher zählen nicht, und dein Life-Rating kann nicht fallen. Serien bleiben ebenfalls geschützt.",
   "Until (optional)": "Bis (optional)",
 
   // --- Morning focus ---

@@ -650,6 +650,9 @@ export interface Settings {
   dashboard?: { hidden?: string[]; order?: string[] };
   /** Ids of one-time feature spotlight hints the user has dismissed. */
   hintsSeen?: string[];
+  /** Opt-in: let the daily check-in ratings (productivity/mood/energy/…) count lightly toward
+   *  the Life Score. Off by default — the check-in is otherwise informational only. */
+  checkinCounts?: boolean;
 }
 
 /** Optional "top 3 for today" focus items shown on the morning screen. */

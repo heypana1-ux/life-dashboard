@@ -484,7 +484,7 @@ function StreakCard() {
       <div className="mt-5 border-t border-[var(--border)] pt-4">
         <div className="mb-1 text-sm font-medium">{t("Vacation")}</div>
         <p className="mb-2 text-xs text-[var(--text-muted)]">
-          {t("On vacation days scoring is lenient — missed habits don't count, there's no coverage penalty, and your Life Rating can't drop. Streaks stay safe too.")}
+          {t("On vacation days scoring is lenient — missed habits and slips don't count, and your Life Rating can't drop. Streaks stay safe too.")}
         </p>
         <div className="flex flex-wrap items-end gap-2">
           <Field label={t("From")}>

@@ -14,26 +14,44 @@ import { inVacation } from "./streak";
 /*
   Scoring model (transparent by design):
 
-  - Each enabled AREA gets a 0..100 score for a day, computed from that area's data.
-      * Habit-driven areas (productivity, sport, habits, learning, creativity):
-        weighted adherence to that area's habits due that day.
-          - "build" habits contribute done?1:0, weighted by priority.
-          - "reduce" habits contribute avoided?1:0, weighted by severity.
-        Weekly-target build habits are scored over a rolling 7-day window, so rest days
-        are never punished as "missed training".
-      * sleep: from the manual sleep log (duration vs. personal target + quality).
-      * reflection: from the daily check-in (average of the 1..10 metrics).
-  - The Life Score is the weight-normalized average of the areas that HAVE data that day,
-    then scaled by a COVERAGE factor: of the areas you were set up to act on today, how many
-    did you actually engage? Touching only a sliver of what's in play dampens the day, so a
-    barely-there day (e.g. one habit ticked, nothing else logged) can no longer post a high
-    score just because the little it measured went well.
-  - Because a reduce-habit slip only lowers its own area's average (bounded by that area's
-    weight), a single bad day dents the score without wrecking it; long-term movement is
-    captured by ELO, not by the daily number.
+  Life Score = a weighted blend of the parts that have data today, renormalized over whatever
+  is present, then nudged by optional focus bonuses:
+
+    * HABITS (weight 0.65) — ONE shared points pool across every in-scope habit, regardless of
+      area, so same-area habits never dilute each other and priority means the same everywhere.
+      Each habit contributes `possible` points and you keep `earned`:
+        - build habits: possible = priority points (low 1 / medium 3 / high 6),
+          earned = possible × completion (0..1). Weekly-target habits use a rolling 7-day window.
+        - reduce habits: possible = severity points, earned = possible if avoided, else 0.
+      The day's habit score is earned / possible × 100. A "high" habit moves the day the same
+      amount whether it's your only habit or one of ten.
+    * SLEEP (weight 0.25) — from the manual sleep log (duration + quality + morning energy).
+    * CHECK-IN (weight 0.10) — the daily 1..10 ratings, and ONLY if the user opts in
+      (settings.checkinCounts); otherwise the check-in stays informational and doesn't score.
+
+  Per-area category scores (0..100) are still computed for display, but the Life Score comes
+  from the pool + sleep + optional check-in, not from averaging the areas. On vacation days
+  scoring is lenient (missed habits and slips simply don't count). Long-term movement is
+  captured by ELO, not by the daily number.
 */
 
+/** Per-area display weighting (importance 1..5, falling back to priority). */
 const PRIORITY_WEIGHT: Record<Priority, number> = { low: 1, medium: 2, high: 3 };
+
+/** Points a habit is worth in the shared Life-Score pool, by priority. Deliberately spread
+ *  (1 / 3 / 6) so a "high" habit clearly outweighs a "low" one. */
+const PRIORITY_POINTS: Record<Priority, number> = { low: 1, medium: 3, high: 6 };
+
+/** Points at stake for a reduce habit, scaled by how bad a slip is (severity 1..5). */
+function reducePoints(severity?: number): number {
+  const s = severity ?? 2;
+  return s >= 4 ? 6 : s === 3 ? 3 : 1;
+}
+
+/** Blend weights for the Life Score parts (renormalized over whichever are present). */
+const HABIT_WEIGHT = 0.65;
+const SLEEP_WEIGHT = 0.25;
+const CHECKIN_WEIGHT = 0.1;
 
 export function clamp(n: number, lo = 0, hi = 100): number {
   return Math.max(lo, Math.min(hi, n));
@@ -74,11 +92,6 @@ const DEEPWORK_BONUS = 3;
 /** Fallback daily focus target (minutes) when the user hasn't set one. */
 const DEFAULT_FOCUS_TARGET = 120;
 
-/** Lowest fraction of the raw score a full lack of coverage can leave (1.0 = full coverage,
- *  no penalty). At 0.65 a day where you engaged none of what was in play keeps 65% of its
- *  adherence score; a fully-covered day keeps 100%. */
-const COVERAGE_FLOOR = 0.65;
-
 /**
  * Credit for a single completed occurrence: 1.0 normally, slightly more when the logged
  * amount (minutes or value) exceeds the habit's target. The bonus is small and capped, so
@@ -117,16 +130,45 @@ function weeklyFraction(habit: Habit, dateISO: string, logs: HabitLog[]): number
   return Math.min(1 + OVERFILL_CAP, sum / target);
 }
 
-/** Whether a habit-driven area had anything expected of the user on a given day
- *  (a habit due today, or any weekly-target habit). Used for the coverage factor. */
-function habitAreaExpected(area: AreaKey, dateISO: string, habits: Habit[]): boolean {
-  return habits.some(
-    (h) =>
-      h.area === area &&
-      !h.archived &&
-      parseISO(h.createdAt) <= parseISO(dateISO) &&
-      (h.schedule.type === "weekly" || isDueOn(h, dateISO)),
+/** One shared points pool across every in-scope habit for the day, regardless of area.
+ *  `possible` is the total points at stake (priority for build, severity for reduce) and
+ *  `earned` is what the user actually got. Dividing the two gives a habit adherence 0..1 that
+ *  weights each habit the same no matter how many others share its area. */
+function habitPool(
+  dateISO: string,
+  habits: Habit[],
+  logs: HabitLog[],
+  areaKeys: Set<AreaKey>,
+  lenient: boolean,
+): { earned: number; possible: number } {
+  let earned = 0;
+  let possible = 0;
+  const active = habits.filter(
+    (h) => !h.archived && areaKeys.has(h.area) && parseISO(h.createdAt) <= parseISO(dateISO),
   );
+  for (const h of active) {
+    if (h.kind === "build") {
+      const pts = PRIORITY_POINTS[h.priority];
+      if (h.schedule.type === "weekly") {
+        const f = Math.min(1, weeklyFraction(h, dateISO, logs));
+        if (lenient && f === 0) continue; // vacation: a missed habit simply doesn't count
+        earned += pts * f;
+        possible += pts;
+      } else if (isDueOn(h, dateISO)) {
+        const f = Math.min(1, fulfillment(h, logFor(logs, h.id, dateISO)));
+        if (lenient && f === 0) continue;
+        earned += pts * f;
+        possible += pts;
+      }
+    } else if (isDueOn(h, dateISO)) {
+      const pts = reducePoints(h.severity);
+      const slipped = !!logFor(logs, h.id, dateISO)?.done;
+      if (lenient && slipped) continue; // vacation: a slip simply doesn't count
+      earned += slipped ? 0 : pts;
+      possible += pts;
+    }
+  }
+  return { earned, possible };
 }
 
 /** Score (0..100) for one habit-driven area on a day, or null if the area has no habits in scope. */
@@ -225,61 +267,64 @@ export interface DayComputation {
 export function computeDay(data: AppData, dateISO: string): DayComputation {
   const { habits, habitLogs, reviews, sleep, settings } = data;
   const enabled = settings.areas.filter((a) => a.enabled);
-  // On vacation days scoring is lenient: missed habits don't count and there's no coverage penalty.
+  // On vacation days scoring is lenient: missed habits and slips simply don't count.
   const lenient = inVacation(settings, dateISO);
   const categories: Partial<Record<AreaKey, number>> = {};
 
-  let weightSum = 0;
-  let weighted = 0;
+  const habitAreaKeys = new Set<AreaKey>();
+  let sleepScoreVal: number | null = null;
+  let reviewScoreVal: number | null = null;
   let hasData = false;
 
+  // Per-area category scores (for display). The Life Score itself is computed from the shared
+  // habit pool + sleep + optional check-in below, not by averaging these.
   for (const area of enabled) {
     let score: number | null = null;
     if (area.key === "sleep") {
       const log = sleep.find((s) => s.date === dateISO);
-      if (log) score = sleepScore(log, settings.sleepTargetMinutes);
+      if (log) {
+        score = sleepScore(log, settings.sleepTargetMinutes);
+        sleepScoreVal = score;
+      }
     } else if (area.key === "reflection") {
       const r = reviews.find((x) => x.date === dateISO);
-      if (r) score = reviewScore(r);
+      if (r) {
+        score = reviewScore(r);
+        reviewScoreVal = score;
+      }
     } else if (area.key === "finances") {
       score = null; // manual net-worth tracking exists, but no daily-scoring engine yet
     } else if (area.key === "health") {
       score = null; // tracked & correlated, but deliberately never part of the Life Score
     } else {
+      habitAreaKeys.add(area.key);
       score = habitAreaScore(area.key, dateISO, habits, habitLogs, lenient);
     }
 
     if (score !== null) {
       categories[area.key] = Math.round(score);
-      weighted += area.weight * score;
-      weightSum += area.weight;
       hasData = true;
     }
   }
 
   const slips = reduceSlips(dateISO, habits, habitLogs);
+  const pool = habitPool(dateISO, habits, habitLogs, habitAreaKeys, lenient);
 
-  // Coverage: of the areas you were set up to act on today, how many did you engage?
-  // Habit areas count when a habit was due (or is a weekly target); sleep and reflection
-  // count every day they're enabled (you can always log sleep and check in). Engaging only a
-  // fraction scales the day down toward COVERAGE_FLOOR, so light days can't post full scores.
-  let expected = 0;
-  let engaged = 0;
-  for (const area of enabled) {
-    let expectedToday = false;
-    if (area.key === "sleep" || area.key === "reflection") expectedToday = true;
-    else if (area.key === "finances" || area.key === "health") expectedToday = false;
-    else expectedToday = habitAreaExpected(area.key, dateISO, habits);
-    if (!expectedToday) continue;
-    expected++;
-    if (categories[area.key] != null) engaged++;
+  // Blend the parts that have data, renormalized over whatever is present today.
+  const parts: { w: number; v: number }[] = [];
+  if (pool.possible > 0) {
+    parts.push({ w: HABIT_WEIGHT, v: clamp((pool.earned / pool.possible) * 100) });
   }
-  const coverage = expected > 0 ? engaged / expected : 1;
-  const coverageFactor = lenient ? 1 : COVERAGE_FLOOR + (1 - COVERAGE_FLOOR) * coverage;
+  if (sleepScoreVal !== null) parts.push({ w: SLEEP_WEIGHT, v: sleepScoreVal });
+  // The daily check-in only counts toward the score when the user opts in — and then lightly.
+  if (settings.checkinCounts && reviewScoreVal !== null) {
+    parts.push({ w: CHECKIN_WEIGHT, v: reviewScoreVal });
+  }
 
   let lifeScore: number | null = null;
-  if (weightSum > 0) {
-    lifeScore = Math.round(clamp((weighted / weightSum) * coverageFactor));
+  if (parts.length > 0) {
+    const wSum = parts.reduce((s, p) => s + p.w, 0);
+    lifeScore = Math.round(clamp(parts.reduce((s, p) => s + p.w * p.v, 0) / wSum));
     // Optional morning "top 3" focus: a small, capped bonus for finishing what you set out to do.
     const focus = data.focus?.find((f) => f.date === dateISO);
     if (focus && focus.items.length > 0) {

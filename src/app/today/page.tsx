@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CalendarDays, ChevronLeft, ChevronRight, Moon, Save } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Moon, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { habitsForToday } from "@/lib/habitView";
 import { todayISO, fmtLong, addDays } from "@/lib/date";
@@ -18,6 +18,7 @@ import {
   Field,
   inputCls,
   Badge,
+  Toggle,
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { QuickLogButton } from "@/components/QuickLog";
@@ -43,7 +44,7 @@ const blankReview = (date: string): DailyReview => ({
 const TRIGGERS = ["Stress", "Boredom", "Tiredness", "Social", "Hunger", "Craving", "Emotions", "Habit"];
 
 export default function TodayPage() {
-  const { data, saveReview, setHabitLog } = useStore();
+  const { data, saveReview, setHabitLog, updateSettings } = useStore();
   const t = useT();
   const today = todayISO();
   const [date, setDate] = useState(today);
@@ -71,6 +72,10 @@ export default function TodayPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date]);
   const [savedFlash, setSavedFlash] = useState(false);
+  const checkinCounts = data.settings.checkinCounts ?? false;
+  // The check-in is optional: keep it collapsed unless there's already an entry, or the user
+  // has opted to let it count toward the score.
+  const [checkinOpen, setCheckinOpen] = useState(!!existing || checkinCounts);
 
   function save() {
     saveReview({ ...review, date });
@@ -220,14 +225,53 @@ export default function TodayPage() {
 
           {/* Daily review */}
           <Card>
-            <SectionTitle
-              right={
-                existing ? <Badge tone="good">{t("Saved")}</Badge> : <Badge>{t("Optional")}</Badge>
-              }
+            <button
+              type="button"
+              onClick={() => setCheckinOpen((o) => !o)}
+              className="flex w-full items-center justify-between gap-2 text-left"
+              aria-expanded={checkinOpen}
             >
-              {t("Daily check-in")}
-            </SectionTitle>
+              <SectionTitle
+                right={
+                  <span className="flex items-center gap-2">
+                    {existing ? (
+                      <Badge tone="good">{t("Saved")}</Badge>
+                    ) : (
+                      <Badge>{t("Optional")}</Badge>
+                    )}
+                    {checkinCounts && <Badge tone="accent">{t("Counts")}</Badge>}
+                    <ChevronDown
+                      size={18}
+                      className={`text-[var(--text-muted)] transition-transform ${checkinOpen ? "rotate-180" : ""}`}
+                    />
+                  </span>
+                }
+              >
+                {t("Daily check-in")}
+              </SectionTitle>
+            </button>
+            {!checkinOpen && (
+              <p className="mt-1 text-sm text-[var(--text-muted)]">
+                {existing
+                  ? t("Tap to review or edit today's ratings.")
+                  : t("Optional ratings for mood, energy and more. Tap to open.")}
+              </p>
+            )}
+            {checkinOpen && (
             <div className="space-y-4">
+              {/* Opt-in: let the check-in count lightly toward the Life Score. */}
+              <div className="flex items-start justify-between gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium">{t("Count toward Life Score")}</p>
+                  <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
+                    {t("When on, your ratings gently influence the score. Off by default.")}
+                  </p>
+                </div>
+                <Toggle
+                  checked={checkinCounts}
+                  onChange={(v) => updateSettings({ checkinCounts: v })}
+                />
+              </div>
               {REVIEW_FIELDS.map((f) => (
                 <div key={f.key}>
                   <div className="mb-1.5 flex items-center justify-between">
@@ -279,6 +323,7 @@ export default function TodayPage() {
                 )}
               </div>
             </div>
+            )}
           </Card>
         </div>
 
