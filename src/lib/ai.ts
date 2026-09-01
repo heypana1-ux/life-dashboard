@@ -93,6 +93,45 @@ export async function askCoachAgent(messages: AgentMsg[], context: string, langu
   }
 }
 
+/* ---------------- Quick-capture (single JSON request, no tools) ---------------- */
+
+export interface CaptureAction {
+  do: string;
+  [key: string]: unknown;
+}
+export interface CaptureResult {
+  actions?: CaptureAction[];
+  reply?: string;
+  error?: CoachErrorCode;
+}
+
+/** Parse the model's capture JSON into a clean action list; tolerant of code fences / stray text. */
+export function parseCapture(reply: string): { actions: CaptureAction[]; reply: string } {
+  let raw = reply.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+  try {
+    const obj = JSON.parse(raw) as { actions?: unknown; reply?: unknown };
+    const actions = Array.isArray(obj.actions)
+      ? (obj.actions as unknown[])
+          .filter((a): a is CaptureAction => !!a && typeof (a as { do?: unknown }).do === "string")
+          .slice(0, 12)
+      : [];
+    return { actions, reply: typeof obj.reply === "string" ? obj.reply : "" };
+  } catch {
+    return { actions: [], reply: "" };
+  }
+}
+
+/** Single request that returns a list of app actions to run locally (no tool schemas, no loop). */
+export async function captureActions(text: string, context: string, language: string): Promise<CaptureResult> {
+  const res = await askCoach([{ role: "user", content: text }], context, language, "capture");
+  if (res.error) return { error: res.error };
+  const parsed = parseCapture(res.reply ?? "");
+  return { actions: parsed.actions, reply: parsed.reply };
+}
+
 /* ---------------- AI goal breakdown ---------------- */
 
 export interface GoalPlanHabit {

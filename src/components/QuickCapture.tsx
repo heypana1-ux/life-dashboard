@@ -6,7 +6,7 @@ import { Mic, Sparkles, Check, ListChecks, X, Square, ArrowUpRight, Send } from 
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { todayISO } from "@/lib/date";
-import { askCoachAgent, AgentMsg } from "@/lib/ai";
+import { captureActions } from "@/lib/ai";
 import { runCoachTool } from "@/lib/coachTools";
 import { DASHBOARD_CARDS } from "@/lib/dashboardCards";
 import { Modal, Button, Toggle } from "@/components/ui";
@@ -227,52 +227,30 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
       `Dashboard card ids that can be shown/hidden: ${DASHBOARD_CARDS.join(", ")}`,
     ].join("\n");
 
-    // A short agent loop so the model can log SEVERAL things (e.g. one entry for yesterday and
-    // another for today) — it may split them across turns — and then confirm. Context is tiny
-    // here, so a few rounds stay well within the provider's per-minute budget.
-    const convo: AgentMsg[] = [{ role: "user", content }];
-    const done: string[] = [];
-    let navigated: string | null = null;
-    let finalText = "";
-    let hadError: string | null = null;
-
-    for (let step = 0; step < 4; step++) {
-      const res = await askCoachAgent(convo, ctx, lang);
-      if (res.error) {
-        hadError = res.error;
-        break;
-      }
-      if (res.toolCalls && res.toolCalls.length) {
-        convo.push({ role: "assistant", content: res.reply ?? "", tool_calls: res.toolCalls });
-        for (const call of res.toolCalls) {
-          let args: Record<string, unknown> = {};
-          try {
-            args = JSON.parse(call.function.arguments || "{}");
-          } catch {
-            args = {};
-          }
-          const result = runCoachTool(store, call.function.name, args, {
-            navigate: (href) => {
-              navigated = href;
-            },
-          });
-          // Navigation is offered as a button on the summary, not counted as a logged action.
-          if (call.function.name !== "navigate" && !/^(Error|No habit|No page|Unknown)/.test(result)) {
-            done.push(result);
-          }
-          convo.push({ role: "tool", tool_call_id: call.id, content: result });
-        }
-        continue;
-      }
-      finalText = res.reply ?? "";
-      break;
-    }
-
-    if (hadError) {
-      setErr(hadError);
+    // ONE request → a JSON list of actions we run locally. No tool schemas, no multi-round loop,
+    // so even a message with several items (across different days) stays cheap and never trips
+    // the provider's per-minute token limit.
+    const res = await captureActions(content, ctx, lang);
+    if (res.error) {
+      setErr(res.error);
       setStage("input");
       return;
     }
+
+    const done: string[] = [];
+    let navigated: string | null = null;
+    for (const act of res.actions ?? []) {
+      const result = runCoachTool(store, act.do, act as Record<string, unknown>, {
+        navigate: (href) => {
+          navigated = href;
+        },
+      });
+      // Navigation is offered as a button on the summary, not counted as a logged action.
+      if (act.do !== "navigate" && !/^(Error|No habit|No page|Unknown)/.test(result)) {
+        done.push(result);
+      }
+    }
+    const finalText = res.reply ?? "";
 
     // Pure navigation (nothing was logged) → go straight there.
     if (navigated && done.length === 0) {
