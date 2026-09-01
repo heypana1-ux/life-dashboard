@@ -165,6 +165,7 @@ const DE: Record<string, string> = {
 
   // --- Quick capture (voice / AI) ---
   "Quick capture": "Schnell eintragen",
+  "Voice log": "Per Sprache",
   "Speak or type what you did — the AI logs it for you. You can also ask it to open a page, change a setting, add vacation days or adjust your dashboard.":
     "Sprich oder tippe, was du gemacht hast — die KI trägt es für dich ein. Du kannst sie auch bitten, eine Seite zu öffnen, eine Einstellung zu ändern, Urlaubstage einzutragen oder dein Dashboard anzupassen.",
   "Ask by category": "Nach Kategorien fragen",
