@@ -73,8 +73,10 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
   const recRef = useRef<Rec>(null);
   const silenceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const finalRef = useRef("");
+  const displayRef = useRef("");
   const stageRef = useRef<Stage>("input");
   stageRef.current = stage;
+  displayRef.current = text;
 
   const lang = data.settings.language;
 
@@ -95,12 +97,13 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
     setListening(false);
   }
 
-  // Auto-stop after a few seconds of silence, then auto-submit what was heard.
+  // Auto-stop after a few seconds of silence, then auto-submit what was heard (finals plus any
+  // trailing interim shown in the box).
   function armSilence() {
     clearSilence();
     silenceRef.current = setTimeout(() => {
       stopListening();
-      const said = finalRef.current.trim();
+      const said = (displayRef.current || finalRef.current).trim();
       if (said && stageRef.current === "input") runWith(said);
     }, 3500);
   }
@@ -113,17 +116,24 @@ function QuickCaptureModal({ onClose }: { onClose: () => void }) {
     rec.lang = navigator.language || (lang === "de" ? "de-DE" : "en-US");
     rec.interimResults = true;
     rec.continuous = true;
+    // Keep already-committed text; dictation appends to it. Only NEW results (from resultIndex)
+    // are processed each event, so finalized phrases are never re-counted (that caused the
+    // "repeats and grows" bug on mobile).
+    finalRef.current = text.trim();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     rec.onresult = (e: any) => {
-      let finalTx = "";
       let interim = "";
-      for (let i = 0; i < e.results.length; i++) {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
         const r = e.results[i];
-        if (r.isFinal) finalTx += r[0].transcript;
-        else interim += r[0].transcript;
+        const chunk = (r[0]?.transcript ?? "").trim();
+        if (!chunk) continue;
+        if (r.isFinal) {
+          finalRef.current = (finalRef.current ? finalRef.current + " " : "") + chunk;
+        } else {
+          interim += (interim ? " " : "") + chunk;
+        }
       }
-      finalRef.current = finalTx;
-      setText((finalTx + " " + interim).trim());
+      setText((finalRef.current + (interim ? " " + interim : "")).trim());
       armSilence();
     };
     rec.onend = () => setListening(false);
