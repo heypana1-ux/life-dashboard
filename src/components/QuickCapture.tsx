@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Mic, Sparkles, Check, ListChecks, X, Square, ArrowUpRight, Send,
-  Settings2, ChevronDown, HeartPulse, Compass, Wallet, Dumbbell, BookOpen, Minus, Plus,
+  Settings2, ChevronLeft, ChevronRight, HeartPulse, Compass, Wallet, Dumbbell, BookOpen, Minus, Plus,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
@@ -429,13 +429,24 @@ const SECTION_DEFS: { key: SectionKey; label: string; hint: string; icon: typeof
 ];
 const DEFAULT_SECTIONS: SectionKey[] = ["habits", "health", "wheel", "finances", "training", "journal"];
 
+/** Sections that first ask a yes/no before showing their form. */
+const GATE_QUESTION: Partial<Record<SectionKey, string>> = {
+  finances: "Anything to log in Finances?",
+  training: "Trained today?",
+  journal: "Anything to note?",
+};
+
 function ManualCaptureModal({ onClose }: { onClose: () => void }) {
   const { data, updateSettings } = useStore();
   const t = useT();
   const qc = data.settings.quickCapture;
   const [configuring, setConfiguring] = useState(!qc?.configured);
   const enabled = (qc?.sections ?? DEFAULT_SECTIONS) as SectionKey[];
-  const [openSection, setOpenSection] = useState<SectionKey | null>(null);
+
+  // Wizard state
+  const steps = SECTION_DEFS.filter((s) => enabled.includes(s.key));
+  const [i, setI] = useState(0);
+  const [answers, setAnswers] = useState<Partial<Record<SectionKey, "yes" | "no">>>({});
 
   function toggleSection(k: SectionKey) {
     const next = enabled.includes(k) ? enabled.filter((x) => x !== k) : [...enabled, k];
@@ -443,6 +454,7 @@ function ManualCaptureModal({ onClose }: { onClose: () => void }) {
   }
   function finishConfig() {
     updateSettings({ quickCapture: { sections: enabled, configured: true } });
+    setI(0);
     setConfiguring(false);
   }
 
@@ -452,9 +464,9 @@ function ManualCaptureModal({ onClose }: { onClose: () => void }) {
     </Button>
   ) : undefined;
 
-  return (
-    <Modal open onClose={onClose} title={t("Quick capture")} headerRight={gear} wide>
-      {configuring ? (
+  if (configuring) {
+    return (
+      <Modal open onClose={onClose} title={t("Quick capture")} headerRight={gear} wide>
         <div>
           <p className="mb-3 text-sm text-[var(--text-muted)]">
             {t("Choose what you'd like to quick-log. You can change this anytime with the gear icon.")}
@@ -479,40 +491,92 @@ function ManualCaptureModal({ onClose }: { onClose: () => void }) {
           </div>
           <Button className="mt-4 w-full" onClick={finishConfig}>{t("Save")}</Button>
         </div>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {SECTION_DEFS.filter((s) => enabled.includes(s.key)).map((s) => {
-            const Icon = s.icon;
-            const isOpen = openSection === s.key;
-            return (
-              <div key={s.key} className="overflow-hidden rounded-xl border border-[var(--border)]">
-                <button
-                  onClick={() => setOpenSection(isOpen ? null : s.key)}
-                  className="flex w-full items-center gap-2.5 px-3 py-3 text-left transition hover:bg-[var(--surface-2)]"
-                >
-                  <Icon size={18} className="shrink-0 text-[var(--accent)]" />
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{t(s.label)}</span>
-                    <span className="block text-[12px] text-[var(--text-muted)]">{t(s.hint)}</span>
-                  </span>
-                  <ChevronDown size={18} className={`shrink-0 text-[var(--text-faint)] transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-                {isOpen && (
-                  <div className="border-t border-[var(--border)] p-3">
-                    {s.key === "habits" && <HabitsPanel />}
-                    {s.key === "health" && <HealthPanel />}
-                    {s.key === "wheel" && <WheelPanel />}
-                    {s.key === "finances" && <FinancePanel />}
-                    {s.key === "training" && <TrainingPanel />}
-                    {s.key === "journal" && <JournalPanel />}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <Button variant="soft" className="w-full" onClick={onClose}>{t("Done")}</Button>
+      </Modal>
+    );
+  }
+
+  if (steps.length === 0) {
+    return (
+      <Modal open onClose={onClose} title={t("Quick capture")} headerRight={gear} wide>
+        <p className="py-4 text-center text-sm text-[var(--text-muted)]">
+          {t("No sections enabled. Tap the gear to choose some.")}
+        </p>
+        <Button className="w-full" onClick={onClose}>{t("Done")}</Button>
+      </Modal>
+    );
+  }
+
+  const step = steps[Math.min(i, steps.length - 1)];
+  const Icon = step.icon;
+  const gateQ = GATE_QUESTION[step.key];
+  const answered = answers[step.key];
+  const showForm = !gateQ || answered === "yes";
+  const isLast = i >= steps.length - 1;
+
+  function go(delta: number) {
+    const n = i + delta;
+    if (n < 0) return;
+    if (n >= steps.length) { onClose(); return; }
+    setI(n);
+  }
+  function answer(v: "yes" | "no") {
+    setAnswers((a) => ({ ...a, [step.key]: v }));
+    if (v === "no") go(1);
+  }
+
+  return (
+    <Modal open onClose={onClose} title={t("Quick capture")} headerRight={gear} wide>
+      {/* progress */}
+      <div className="mb-3 flex items-center gap-1.5">
+        {steps.map((s, idx) => (
+          <span
+            key={s.key}
+            className="h-1.5 flex-1 rounded-full transition-colors"
+            style={{ background: idx <= i ? "var(--accent)" : "var(--ring-track)" }}
+          />
+        ))}
+      </div>
+
+      <div className="mb-3 flex items-center gap-2.5">
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+          <Icon size={18} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-[15px] font-semibold">{t(step.label)}</div>
+          <div className="text-[12px] text-[var(--text-faint)]">{t("Step {n} of {m}", { n: i + 1, m: steps.length })}</div>
         </div>
-      )}
+      </div>
+
+      <div className="min-h-[80px]">
+        {gateQ && answered !== "yes" ? (
+          <div className="py-2">
+            <p className="mb-3 text-sm font-medium">{t(gateQ)}</p>
+            <div className="flex gap-2">
+              <Button variant="soft" className="flex-1" onClick={() => answer("no")}>{t("No")}</Button>
+              <Button className="flex-1" onClick={() => answer("yes")}>{t("Yes")}</Button>
+            </div>
+          </div>
+        ) : showForm ? (
+          <>
+            {step.key === "habits" && <HabitsPanel />}
+            {step.key === "health" && <HealthPanel />}
+            {step.key === "wheel" && <WheelPanel />}
+            {step.key === "finances" && <FinancePanel />}
+            {step.key === "training" && <TrainingPanel />}
+            {step.key === "journal" && <JournalPanel />}
+          </>
+        ) : null}
+      </div>
+
+      <div className="mt-4 flex items-center gap-2 border-t border-[var(--border)] pt-3">
+        <Button variant="ghost" size="sm" disabled={i === 0} onClick={() => go(-1)}>
+          <ChevronLeft size={16} /> {t("Back")}
+        </Button>
+        <span className="flex-1" />
+        <Button onClick={() => go(1)}>
+          {isLast ? t("Finish") : t("Next")} {!isLast && <ChevronRight size={16} />}
+        </Button>
+      </div>
     </Modal>
   );
 }
