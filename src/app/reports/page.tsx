@@ -14,7 +14,7 @@ import { weeklyNarrative, monthlyNarrative } from "@/lib/narrative";
 import { translate } from "@/lib/i18n";
 import { downloadReportImage, downloadStateOfYouImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
-import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button, FocusZone } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
 import { YearWrappedOverlay } from "@/components/YearWrapped";
 import { availableWrapYears } from "@/lib/yearWrapped";
@@ -183,17 +183,13 @@ export default function ReportsPage() {
       ) : (
         <>
           <Card>
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{t("Life Report")}</h2>
-                <p className="text-sm text-[var(--text-muted)]">{report.label}</p>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold tabular-nums">{report.avgScore}</div>
-                <Delta value={report.scoreDelta} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <FocusZone
+              label={`${t("Life Report")} · ${report.label}`}
+              value={report.avgScore}
+              sub={report.scoreDelta !== 0 ? <Delta value={report.scoreDelta} /> : undefined}
+              progress={report.avgScore}
+            />
+            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <Metric label={t("Life Rating")} value={report.elo.toLocaleString()} sub={report.eloDelta} />
               <Metric label={t("Training sessions")} value={String(report.workouts)} />
               <Metric label={t("Sleep")} value={report.avgSleep ? fmtDuration(report.avgSleep) : "—"} suffix={t("avg")} />

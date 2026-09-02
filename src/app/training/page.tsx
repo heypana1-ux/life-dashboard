@@ -25,6 +25,7 @@ import {
   Badge,
   Chip,
   ScaleInput,
+  HairlineStats,
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
@@ -199,11 +200,13 @@ function WorkoutsTab({
 
       <WeeklyDistanceCard workouts={data.workouts} />
 
-      <div className="grid grid-cols-3 gap-3">
-        <MiniStat label={t("Sessions this week")} value={String(thisWeek.length)} />
-        <MiniStat label={t("Total time")} value={totalMin ? fmtDuration(totalMin) : "—"} />
-        <MiniStat label={t("Avg performance")} value={avgPerf} />
-      </div>
+      <HairlineStats
+        items={[
+          { label: t("Sessions this week"), value: String(thisWeek.length) },
+          { label: t("Total time"), value: totalMin ? fmtDuration(totalMin) : "—" },
+          { label: t("Avg performance"), value: avgPerf },
+        ]}
+      />
 
       {data.workouts.length > 0 && (
         <Card>
