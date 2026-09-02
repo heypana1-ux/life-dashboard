@@ -93,6 +93,7 @@ export function TrendLine({
   name = "Value",
   domain,
   unit,
+  refLine,
 }: {
   data: ChartRow[];
   dataKey?: string;
@@ -101,6 +102,8 @@ export function TrendLine({
   name?: string;
   domain?: [number | "auto", number | "auto"];
   unit?: string;
+  /** Dashed horizontal target line (e.g. the sleep target). */
+  refLine?: number;
 }) {
   return (
     <div>
@@ -113,6 +116,9 @@ export function TrendLine({
             </linearGradient>
           </defs>
           <YAxis hide domain={domain ?? ["auto", "auto"]} />
+          {refLine != null && (
+            <ReferenceLine y={refLine} stroke={AXIS} strokeDasharray="4 4" strokeWidth={1} />
+          )}
           <Tooltip content={<ChartTip unit={unit} />} />
           <Area
             type="monotone"

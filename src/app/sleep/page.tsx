@@ -112,7 +112,6 @@ export default function SleepPage() {
       <PageHeader
         kicker={`${t("Manual tracking")} · ${data.sleep.length} ${t("nights")}`}
         title={t("Sleep")}
-        subtitle={t("Manual sleep tracking, scores and your personal pattern.")}
       />
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -182,15 +181,15 @@ export default function SleepPage() {
                 onChange={(v) => setLog((l) => ({ ...l, morningEnergy: v }))}
               />
             </div>
-            <div className="rounded-xl bg-[var(--surface-2)] p-3 text-sm">
-              {t("Duration")}:{" "}
-              <span className="font-semibold">
+            <div className="area-soft flex items-center justify-between rounded-[12px] px-3.5 py-2.5">
+              <span className="text-[13px] font-medium">{t("Duration")}</span>
+              <span className="num text-[15px] font-bold">
                 {fmtDuration(sleepDurationMinutes(log.bedTime, log.wakeTime, log.fallAsleepMinutes ?? 0))}
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <Button onClick={save}>
-                <Save size={16} /> {t("Save")}
+              <Button variant="soft" onClick={save}>
+                <Save size={15} /> {t("Save")}
               </Button>
               {flash && <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>}
             </div>
@@ -210,15 +209,23 @@ export default function SleepPage() {
           </div>
 
           <Card>
-            <SectionTitle>{t("Duration · last 30 nights")}</SectionTitle>
+            <SectionTitle right={<span className="text-[11px] text-[var(--text-faint)]">{t("hours")}</span>}>
+              {t("Duration · last 30 nights")}
+            </SectionTitle>
             {chartData.length >= 2 ? (
-              <TrendLine
-                data={chartData}
-                color="var(--accent)"
-                unit="h"
-                domain={[4, 10]}
-                name={t("hours")}
-              />
+              <>
+                <TrendLine
+                  data={chartData}
+                  color="var(--accent)"
+                  unit="h"
+                  domain={[4, 10]}
+                  name={t("hours")}
+                  refLine={targetH}
+                />
+                <p className="mt-1 text-center text-[10px] text-[var(--text-dim)]">
+                  {t("dashed line = {n} h target", { n: targetH })}
+                </p>
+              </>
             ) : (
               <p className="py-10 text-center text-sm text-[var(--text-muted)]">
                 {t("Log a few nights to see your trend.")}
@@ -257,12 +264,12 @@ export default function SleepPage() {
 
 function MiniStat({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
-    <div className="tile p-4 sm:px-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
+    <div className="tile p-[13px]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">
         {label}
       </div>
-      <div className="num mt-2 text-[22px] font-bold">{value}</div>
-      {hint && <div className="text-xs text-[var(--text-muted)]">{hint}</div>}
+      <div className="num mt-1 whitespace-nowrap text-[18px] font-bold tracking-[-0.02em]">{value}</div>
+      {hint && <div className="mt-0.5 text-[10.5px] text-[var(--good)]">{hint}</div>}
     </div>
   );
 }

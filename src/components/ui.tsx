@@ -11,7 +11,7 @@ export function Card({
   ...rest
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx("card p-[22px] sm:px-6", className)} {...rest}>
+    <div className={clsx("card p-[16px] sm:px-[17px]", className)} {...rest}>
       {children}
     </div>
   );
@@ -401,7 +401,7 @@ export function Field({
 }) {
   return (
     <label className={`block${className ? ` ${className}` : ""}`}>
-      <span className="mb-1 block text-sm font-medium text-[var(--text-muted)]">
+      <span className="mb-1 block text-[11.5px] font-medium text-[var(--text-faint)]">
         {label}
       </span>
       {children}
@@ -411,7 +411,7 @@ export function Field({
 }
 
 export const inputCls =
-  "w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none transition focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-soft)]";
+  "w-full rounded-[10px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-[13px] outline-none transition focus:border-[var(--accent)]";
 
 /**
  * A number input that can actually be cleared. A plain controlled `<input type="number">`
@@ -655,7 +655,7 @@ export function SegmentScale({
   return (
     <div className="flex gap-[3px]">
       {Array.from({ length: max }).map((_, i) => {
-        const on = i < value;
+        const on = i + 1 === value;
         return (
           <button
             key={i}

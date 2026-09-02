@@ -8,7 +8,7 @@ import { AREA_LABELS } from "@/lib/defaults";
 import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
 import { weekdayLabel, fmtShort } from "@/lib/date";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Chip, Badge } from "@/components/ui";
 import { bestSelf } from "@/lib/bestSelf";
 import { TrendLine, MultiLine } from "@/components/charts";
 
@@ -300,13 +300,13 @@ function BestSelfCard() {
 
 function EloStat({ label, value, delta }: { label: string; value?: string; delta?: number }) {
   return (
-    <Card className="!p-4">
-      <div className="text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{label}</div>
+    <Card className="!p-[13px]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">{label}</div>
       {value !== undefined ? (
-        <div className="mt-1 text-xl font-bold tabular-nums">{value}</div>
+        <div className="num mt-1 text-[20px] font-bold tracking-[-0.03em] tabular-nums">{value}</div>
       ) : (
-        <div className="mt-1">
-          <Delta value={delta ?? 0} className="text-base" />
+        <div className="num mt-1 text-[20px] font-bold tracking-[-0.03em] tabular-nums" style={{ color: (delta ?? 0) >= 0 ? "var(--good)" : "var(--bad)" }}>
+          {(delta ?? 0) >= 0 ? "+" : ""}{delta ?? 0}
         </div>
       )}
     </Card>
