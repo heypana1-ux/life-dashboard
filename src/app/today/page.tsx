@@ -101,6 +101,7 @@ export default function TodayPage() {
   return (
     <div>
       <PageHeader
+        kicker={`${build.filter((g) => g.log?.done).length}/${build.length} ${t("goals done")}`}
         title={isToday ? t("Today") : t("Edit day")}
         subtitle={fmtLong(date)}
         action={

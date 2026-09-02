@@ -301,6 +301,7 @@ export default function DashboardPage() {
   return (
     <div>
       <PageHeader
+        kicker={`${t("Life Rating")} · ${elo.toLocaleString()}`}
         title={name ? `${t("Dashboard")} · ${name}` : t("Dashboard")}
         subtitle={fmtLong(d.today)}
         action={
