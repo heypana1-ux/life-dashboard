@@ -138,6 +138,8 @@ const DE: Record<string, string> = {
   "7-day average": "7-Tage-Schnitt",
   "Your context": "Dein Kontext",
   answered: "beantwortet",
+  "Average progress": "Ø Fortschritt",
+  "With deadline": "Mit Frist",
   planned: "geplant",
   Planned: "Geplant",
   week: "Woche",
