@@ -134,7 +134,7 @@ export default function FocusPage() {
 
   return (
     <div>
-      <PageHeader kicker={t("Deep work")} title={t("Focus")} subtitle={t("Deep-work sessions that fuel your score")} />
+      <PageHeader kicker={stats.streak > 0 ? `${t("Deep work")} · ${stats.streak} ${t("day streak")}` : t("Deep work")} title={t("Focus")} subtitle={t("Deep-work sessions that fuel your score")} />
 
       {/* Timer */}
       <Card className="mb-4">
