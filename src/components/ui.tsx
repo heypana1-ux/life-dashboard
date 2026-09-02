@@ -23,6 +23,7 @@ export function Card({
 export function PageHeader({
   title,
   lead,
+  trail,
   subtitle,
   action,
   kicker,
@@ -30,6 +31,8 @@ export function PageHeader({
   title: string;
   /** Optional plain-colour prefix before the gradient title, e.g. "Your" in "Your habits". */
   lead?: string;
+  /** Optional plain-colour suffix after the gradient title, e.g. ", Pana" in "Good morning, Pana". */
+  trail?: string;
   subtitle?: string;
   action?: React.ReactNode;
   kicker?: React.ReactNode;
@@ -41,6 +44,7 @@ export function PageHeader({
         <h1 className="truncate pb-0.5 text-[22px] font-semibold tracking-[-0.03em] sm:text-[27px]">
           {lead && <span className="text-[var(--text)]">{lead} </span>}
           <span className="area-title">{title}</span>
+          {trail && <span className="text-[var(--text)]">{trail}</span>}
         </h1>
         {subtitle && (
           <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>

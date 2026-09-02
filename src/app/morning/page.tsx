@@ -12,7 +12,7 @@ import { sleepScore } from "@/lib/score";
 import { activityStreak } from "@/lib/streak";
 import { buildCoachContext } from "@/lib/coachContext";
 import { coachAsk, checkCoachConfigured } from "@/lib/ai";
-import { fmtDuration, fmtLong, sleepDurationMinutes, todayISO } from "@/lib/date";
+import { fmtDuration, fmtShort, sleepDurationMinutes, todayISO, weekdayOf, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, SectionTitle } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing } from "@/components/Coach";
@@ -37,64 +37,70 @@ export default function MorningPage() {
 
   const hour = new Date().getHours();
   const greeting = hour < 11 ? t("Good morning") : hour < 18 ? t("Good afternoon") : t("Good evening");
+  const gParts = greeting.split(" ");
+  const gLead = gParts.length > 1 ? gParts[0] : undefined;
+  const gWord = gParts.length > 1 ? gParts.slice(1).join(" ") : greeting;
+
+  // Weekly Life-Rating delta for the RATING tile.
+  const scoredHist = d.history.filter((h) => h.lifeScore > 0);
+  const weekAgoElo = scoredHist.length > 7 ? scoredHist[scoredHist.length - 8].elo : scoredHist[0]?.elo ?? data.settings.eloStart;
+  const eloWeekDelta = Math.round(elo - weekAgoElo);
 
   return (
     <div>
-      <PageHeader kicker={greeting} title={t("Morning")} subtitle={fmtLong(date)} />
+      <PageHeader
+        kicker={`${weekdayLabel(weekdayOf(date))} · ${fmtShort(date)}`}
+        lead={gLead}
+        title={gWord}
+        trail={name ? `, ${name}` : undefined}
+        subtitle={t("Set your intention for the day. Small, consistent steps compound.")}
+      />
 
       <div className="flex flex-col gap-[18px]">
-        {/* Gradient greeting banner */}
-        <div className="grad relative overflow-hidden rounded-[22px] p-8 text-white shadow-[var(--shadow)] sm:px-8">
-          <p className="text-sm font-medium opacity-85">{fmtLong(date)}</p>
-          <h2 className="mt-2 text-[32px] font-bold tracking-[-0.03em]">
-            {name ? `${greeting}, ${name}` : greeting}
-          </h2>
-          <p className="mt-1.5 max-w-[460px] text-[15px] leading-[1.5] opacity-90">
-            {t("Set your intention for the day. Small, consistent steps compound.")}
-          </p>
-        </div>
-
-        {/* Proactive coach briefing (only when the AI coach is enabled) */}
-        <CoachBriefing />
-
         {/* 3 tiles */}
-        <div className="grid gap-4 sm:grid-cols-3">
-          <div className="tile p-5">
-            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
-              <Moon size={16} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Last night")}</span>
+        <div className="grid grid-cols-3 gap-[9px]">
+          <div className="tile p-[14px]">
+            <div className="mb-2 flex items-center gap-1.5 text-[var(--text-faint)]">
+              <Moon size={14} />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.05em]">{t("Last night")}</span>
             </div>
             {sleep ? (
               <>
-                <div className="num text-[30px] font-bold tracking-[-0.02em]">{fmtDuration(sleepMin)}</div>
-                <div className="mt-0.5 flex items-center gap-2 text-[12.5px] text-[var(--text-muted)]">
-                  {t("Sleep")}{" "}
-                  <span className="num font-bold text-[var(--good)]">{sScore}</span>
-                  · {t("Morning energy")} {sleep.morningEnergy}/10
+                <div className="num text-[22px] font-bold leading-tight tracking-[-0.02em]">{fmtDuration(sleepMin)}</div>
+                <div className="mt-0.5 text-[11px] text-[var(--text-muted)]">
+                  {t("Sleep")} <span className="num font-bold text-[var(--good)]">{sScore}</span> · {t("energy")} {sleep.morningEnergy}/10
                 </div>
               </>
             ) : (
-              <Link href="/sleep" className="text-sm text-[var(--accent)]">
+              <Link href="/sleep" className="text-[13px] text-[var(--accent)]">
                 {t("Log sleep")}
               </Link>
             )}
           </div>
-          <div className="tile p-5">
-            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
-              <Trophy size={16} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Life Rating")}</span>
+          <div className="tile p-[14px]">
+            <div className="mb-2 flex items-center gap-1.5 text-[var(--text-faint)]">
+              <Trophy size={14} />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.05em]">{t("Rating")}</span>
             </div>
-            <div className="num text-[30px] font-bold tracking-[-0.02em]">{elo.toLocaleString()}</div>
+            <div className="num text-[22px] font-bold leading-tight tracking-[-0.02em]">{elo.toLocaleString()}</div>
+            {eloWeekDelta !== 0 && (
+              <div className="mt-0.5 text-[11px]" style={{ color: eloWeekDelta > 0 ? "var(--good)" : "var(--bad)" }}>
+                {eloWeekDelta > 0 ? "+" : ""}{eloWeekDelta} {t("this week")}
+              </div>
+            )}
           </div>
-          <div className="tile p-5">
-            <div className="mb-3 flex items-center gap-2 text-[var(--text-faint)]">
-              <Flame size={16} />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.05em]">{t("Streak")}</span>
+          <div className="tile p-[14px]">
+            <div className="mb-2 flex items-center gap-1.5 text-[var(--text-faint)]">
+              <Flame size={14} />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.05em]">{t("Streak")}</span>
             </div>
-            <div className="num text-[30px] font-bold tracking-[-0.02em]">{streak}d</div>
-            <div className="mt-0.5 text-[12.5px] text-[var(--text-muted)]">{t("days with activity")}</div>
+            <div className="num text-[22px] font-bold leading-tight tracking-[-0.02em]">{streak}d</div>
+            <div className="mt-0.5 text-[11px] text-[var(--text-muted)]">{t("days with activity")}</div>
           </div>
         </div>
+
+        {/* Proactive coach briefing (only when the AI coach is enabled) */}
+        <CoachBriefing />
 
         {/* Optional top-3 focus for the day */}
         <FocusCard />
