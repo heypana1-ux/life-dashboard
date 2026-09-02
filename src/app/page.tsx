@@ -245,10 +245,12 @@ export default function DashboardPage() {
         {d.insights.length === 0 ? (
           <p className="py-2 text-sm text-[var(--text-muted)]">{t("Insights appear once there's enough data to spot patterns.")}</p>
         ) : (
-          <div className="flex flex-col gap-2.5">
-            {d.insights.slice(0, 4).map((ins) => (
-              <div key={ins.id} className="flex gap-[11px] rounded-[13px] bg-[var(--surface-2)] p-[13px]">
-                <span className="mt-[5px] h-2 w-2 shrink-0 rounded-full" style={{ background: toneColor(ins.tone) }} />
+          <div className="flex flex-col">
+            {d.insights.slice(0, 4).map((ins, i) => (
+              <div key={ins.id} className="flex gap-3 border-b border-[var(--border)] py-3 last:border-0">
+                <span className="num pt-0.5 text-[11px] font-bold tabular-nums" style={{ color: toneColor(ins.tone) }}>
+                  {String(i + 1).padStart(2, "0")}
+                </span>
                 <p className="text-[13px] leading-[1.5]">{ins.text}</p>
               </div>
             ))}
