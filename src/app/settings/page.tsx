@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Activity, BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sparkles, Sun, Trash2, Upload, User } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { Accent, AreaKey, Language, Profile } from "@/lib/types";
+import { AreaKey, Language, Profile } from "@/lib/types";
 import {
   isStravaConfigured,
   authorizeUrl,
@@ -84,10 +84,10 @@ export default function SettingsPage() {
       {/* Profile */}
       <ProfileCard />
 
-      {/* Appearance */}
+      {/* Appearance — theme tiles, density and accent live in one card, as in the design. */}
       <Card>
         <SectionTitle>{t("Appearance")}</SectionTitle>
-        <div className="flex gap-2">
+        <div className="flex gap-[7px]">
           {[
             { k: "light", label: t("Light"), icon: Sun },
             { k: "dark", label: t("Dark"), icon: Moon },
@@ -97,47 +97,45 @@ export default function SettingsPage() {
               key={k}
               onClick={() => updateSettings({ theme: k as typeof s.theme })}
               className={clsx(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition",
+                "flex flex-1 flex-col items-center gap-[5px] rounded-[14px] border py-[11px] text-[11.5px] font-semibold transition",
                 s.theme === k
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface-2)]",
+                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
               )}
             >
               <Icon size={16} /> {label}
             </button>
           ))}
         </div>
-        <div className="mt-4">
-          <div className="mb-2 text-sm font-medium">{t("Density")}</div>
-          <div className="flex gap-2">
-            {[
-              { k: "cozy", label: t("Cozy") },
-              { k: "compact", label: t("Compact") },
-            ].map(({ k, label }) => (
-              <button
-                key={k}
-                onClick={() => updateSettings({ density: k as "cozy" | "compact" })}
-                className={clsx(
-                  "flex flex-1 items-center justify-center gap-2 rounded-xl border py-2.5 text-sm font-medium transition",
-                  (s.density ?? "cozy") === k
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--surface-2)]",
-                )}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </Card>
 
-      {/* Accent */}
-      <AccentCard />
+        <div className="mt-3.5 text-[13px] font-medium">{t("Density")}</div>
+        <div className="mt-[7px] flex gap-[7px]">
+          {[
+            { k: "cozy", label: t("Cozy") },
+            { k: "compact", label: t("Compact") },
+          ].map(({ k, label }) => (
+            <button
+              key={k}
+              onClick={() => updateSettings({ density: k as "cozy" | "compact" })}
+              className={clsx(
+                "whitespace-nowrap rounded-full border px-[13px] py-1.5 text-[12.5px] font-semibold transition",
+                (s.density ?? "cozy") === k
+                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <AccentRow />
+      </Card>
 
       {/* Language */}
       <Card>
         <SectionTitle>{t("Language")}</SectionTitle>
-        <div className="flex gap-2">
+        <div className="flex gap-[7px]">
           {[
             { k: "en", label: t("English"), flag: "🇬🇧" },
             { k: "de", label: t("German"), flag: "🇩🇪" },
@@ -146,10 +144,10 @@ export default function SettingsPage() {
               key={k}
               onClick={() => updateSettings({ language: k as Language })}
               className={clsx(
-                "flex flex-1 items-center justify-center gap-2 rounded-xl border py-3 text-sm font-medium transition",
+                "flex items-center gap-1.5 whitespace-nowrap rounded-full border px-[13px] py-1.5 text-[12.5px] font-semibold transition",
                 s.language === k
-                  ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                  : "border-[var(--border)] bg-[var(--surface-2)]",
+                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]",
               )}
             >
               <span>{flag}</span> {label}
@@ -163,15 +161,15 @@ export default function SettingsPage() {
         <SectionTitle right={<span className="text-xs text-[var(--text-faint)]">{t("normalized to 100%")}</span>}>
           {t("Life areas & score weights")}
         </SectionTitle>
-        <div className="space-y-3">
+        <div className="flex flex-col">
           {s.areas.map((a) => (
-            <div key={a.key} className="rounded-xl border border-[var(--border)] p-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{t(a.label)}</span>
+            <div key={a.key} className="border-b border-[var(--surface-2)] py-[11px] last:border-0">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex min-w-0 items-center gap-2 text-[13px] font-medium">
+                  <span className="truncate">{t(a.label)}</span>
                   {a.key === "finances" && <Badge>{t("manual only")}</Badge>}
                   {a.enabled && <Badge tone="accent">{normalizedPct(a.weight)}%</Badge>}
-                </div>
+                </span>
                 <Toggle checked={a.enabled} onChange={(v) => setAreaEnabled(a.key, v)} />
               </div>
               {a.enabled && a.key !== "finances" && (
@@ -181,7 +179,7 @@ export default function SettingsPage() {
                   max={30}
                   value={a.weight}
                   onChange={(e) => setAreaWeight(a.key, Number(e.target.value))}
-                  className="mt-3 w-full accent-[var(--accent)]"
+                  className="mt-2 w-full accent-[var(--accent)]"
                 />
               )}
             </div>
@@ -192,17 +190,21 @@ export default function SettingsPage() {
       {/* Sleep target */}
       <Card>
         <SectionTitle>{t("Sleep target")}</SectionTitle>
-        <Field label={`${Math.round((s.sleepTargetMinutes / 60) * 10) / 10} ${t("hours")}`}>
-          <input
-            type="range"
-            min={300}
-            max={600}
-            step={15}
-            value={s.sleepTargetMinutes}
-            onChange={(e) => updateSettings({ sleepTargetMinutes: Number(e.target.value) })}
-            className="w-full accent-[var(--accent)]"
-          />
-        </Field>
+        <div className="flex items-center justify-between gap-3 text-[13px]">
+          <span className="font-medium">
+            {Math.round((s.sleepTargetMinutes / 60) * 10) / 10} {t("hours")}
+          </span>
+          <span className="num text-[var(--text-faint)]">{s.sleepTargetMinutes} min</span>
+        </div>
+        <input
+          type="range"
+          min={300}
+          max={600}
+          step={15}
+          value={s.sleepTargetMinutes}
+          onChange={(e) => updateSettings({ sleepTargetMinutes: Number(e.target.value) })}
+          className="mt-2.5 w-full accent-[var(--accent)]"
+        />
       </Card>
 
       {/* Reminders */}
@@ -287,7 +289,7 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 27
+        Pulse Build 28
       </p>
     </div>
   );
@@ -1003,7 +1005,9 @@ function RemindersCard() {
 const SEXES: NonNullable<Profile["sex"]>[] = ["male", "female", "other", "prefer_not"];
 const ACTIVITY: NonNullable<Profile["activityLevel"]>[] = ["sedentary", "light", "moderate", "active", "athlete"];
 
-function AccentCard() {
+/** Accent picker as the design has it: a row of 26px dots inside the Appearance card,
+ *  with a link to the shop for the ones still locked. */
+function AccentRow() {
   const { data, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
@@ -1013,36 +1017,32 @@ function AccentCard() {
   const available = ACCENT_REWARDS.filter((r) => accentOwned(r.accent, level, owned));
   const lockedCount = ACCENT_REWARDS.length - available.length;
   return (
-    <Card>
-      <SectionTitle
-        right={
-          lockedCount > 0 ? (
-            <Link href="/rewards" className="text-xs font-medium text-[var(--accent)] hover:underline">
-              +{lockedCount} {t("in the shop")}
-            </Link>
-          ) : undefined
-        }
-      >
-        {t("Accent")}
-      </SectionTitle>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+    <>
+      <div className="mt-3.5 text-[13px] font-medium">{t("Accent")}</div>
+      <div className="mt-[7px] flex flex-wrap items-center gap-2">
         {available.map((r) => (
           <button
             key={r.accent}
             onClick={() => updateSettings({ accent: r.accent })}
-            className={clsx(
-              "flex items-center gap-2 rounded-xl border px-2.5 py-2.5 text-sm font-medium transition",
-              current === r.accent
-                ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                : "border-[var(--border)] bg-[var(--surface-2)]",
-            )}
-          >
-            <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: ACCENT_SWATCH[r.accent] }} />
-            <span className="truncate">{t(r.name)}</span>
-          </button>
+            title={t(r.name)}
+            aria-label={t(r.name)}
+            className="h-[26px] w-[26px] rounded-full transition"
+            style={{
+              background: ACCENT_SWATCH[r.accent],
+              boxShadow:
+                current === r.accent
+                  ? `0 0 0 2px var(--surface), 0 0 0 4px ${ACCENT_SWATCH[r.accent]}`
+                  : undefined,
+            }}
+          />
         ))}
+        {lockedCount > 0 && (
+          <Link href="/rewards" className="text-[11px] text-[var(--text-dim)] hover:text-[var(--text)]">
+            +{lockedCount} {t("in the shop")}
+          </Link>
+        )}
       </div>
-    </Card>
+    </>
   );
 }
 

@@ -247,7 +247,7 @@ export function CoachChat({
                 <button
                   key={q}
                   onClick={() => send(t(q))}
-                  className="rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-xs font-medium text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--text)]"
+                  className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-[11px] py-1.5 text-[11.5px] font-medium text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--text)]"
                 >
                   {t(q)}
                 </button>
@@ -260,8 +260,8 @@ export function CoachChat({
             <div
               className={
                 m.role === "user"
-                  ? "max-w-[85%] whitespace-pre-wrap rounded-2xl rounded-br-md bg-[var(--accent)] px-3.5 py-2 text-sm text-white"
-                  : "max-w-[90%] whitespace-pre-wrap rounded-2xl rounded-bl-md bg-[var(--surface-2)] px-3.5 py-2 text-sm"
+                  ? "area-grad max-w-[78%] whitespace-pre-wrap rounded-[16px] rounded-br-[5px] px-[13px] py-[11px] text-[13px] leading-[1.5]"
+                  : "max-w-[88%] whitespace-pre-wrap rounded-[16px] rounded-bl-[5px] bg-[var(--surface-2)] px-3.5 py-3 text-[13px] leading-[1.55]"
               }
             >
               {m.content}
@@ -270,10 +270,10 @@ export function CoachChat({
         ))}
         {loading && (
           <div className="flex justify-start">
-            <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-[var(--surface-2)] px-4 py-3">
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-faint)] [animation-delay:-0.3s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-faint)] [animation-delay:-0.15s]" />
-              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[var(--text-faint)]" />
+            <div className="flex items-center gap-[5px] rounded-[16px] rounded-bl-[5px] bg-[var(--surface-2)] px-3.5 py-3">
+              <span className="h-[7px] w-[7px] animate-bounce rounded-full bg-[var(--text-dim)] [animation-delay:-0.3s]" />
+              <span className="h-[7px] w-[7px] animate-bounce rounded-full bg-[var(--text-dim)] [animation-delay:-0.15s]" />
+              <span className="h-[7px] w-[7px] animate-bounce rounded-full bg-[var(--text-dim)]" />
             </div>
           </div>
         )}
@@ -282,28 +282,29 @@ export function CoachChat({
         )}
       </div>
 
+      {/* One bordered composer holding the field and a 32px gradient send button. */}
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="mt-2 flex items-end gap-2 border-t border-[var(--border)] pt-2"
+        className="mt-3 flex items-end gap-[9px] rounded-[16px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5"
       >
         <textarea
           rows={1}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(input); } }}
-          placeholder={t("Ask your coach…")}
-          className="max-h-28 flex-1 resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+          placeholder={t("Ask about your data…")}
+          className="max-h-28 min-w-0 flex-1 resize-none border-0 bg-transparent p-0 text-[12.5px] outline-none placeholder:text-[var(--text-dim)]"
         />
         <button
           type="submit"
           disabled={!input.trim() || loading}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--accent)] text-white disabled:opacity-40"
+          className="area-grad flex h-8 w-8 shrink-0 items-center justify-center rounded-[11px] disabled:opacity-40"
           aria-label={t("Send")}
         >
-          <Send size={17} />
+          <Send size={15} />
         </button>
       </form>
-      <p className="mt-1.5 text-center text-[10px] text-[var(--text-faint)]">{t("AI can be wrong. Interprets your data, not medical or financial advice.")}</p>
+      <p className="mt-2 text-center text-[10px] text-[var(--text-dim)]">{t("AI can be wrong. Interprets your data, not medical or financial advice.")}</p>
     </Shell>
   );
 }
@@ -499,26 +500,33 @@ export function CoachInsightCard({ title, prompt }: { title: string; prompt: str
   }
 
   return (
-    <div className="rounded-2xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-4">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
-            <Sparkles size={15} />
-          </span>
-          <span className="text-sm font-semibold">{title}</span>
-        </div>
-        {enabled && (text || err) && (
-          <button onClick={generate} disabled={loading} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-40">
+    /* Pulse: a normal card whose section head carries a "Coach" badge, with the
+       action as a full-width soft button underneath. */
+    <div className="card p-[18px]">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="slabel">{title}</h2>
+        {enabled && (text || err) ? (
+          <button
+            onClick={generate}
+            disabled={loading}
+            className="text-[11px] text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-40"
+          >
             {t("Regenerate")}
           </button>
+        ) : (
+          <span className="area-soft inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold">
+            {t("Coach")}
+          </span>
         )}
       </div>
 
       {!enabled ? (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-[var(--text-muted)]">{t("Turn on the AI coach for a personal take on this.")}</p>
-          <Button size="sm" variant="soft" onClick={() => updateSettings({ aiCoachEnabled: true })}>{t("Enable")}</Button>
-        </div>
+        <>
+          <p className="text-[12.5px] leading-[1.5] text-[var(--text-muted)]">
+            {t("Turn on the AI coach for a personal take on this.")}
+          </p>
+          <CoachAction onClick={() => updateSettings({ aiCoachEnabled: true })}>{t("Enable")}</CoachAction>
+        </>
       ) : loading ? (
         <div className="space-y-2 py-1">
           <div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" />
@@ -526,21 +534,35 @@ export function CoachInsightCard({ title, prompt }: { title: string; prompt: str
           <div className="h-3 w-3/5 animate-pulse rounded bg-[var(--surface-2)]" />
         </div>
       ) : text ? (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">{text}</p>
+        <p className="whitespace-pre-wrap text-[12.5px] leading-[1.5] text-[var(--text-muted)]">{text}</p>
       ) : err ? (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-[var(--bad)]">{t(ERROR_MSG[err] ?? ERROR_MSG.network)}</p>
-          <Button size="sm" variant="soft" onClick={generate}>{t("Try again")}</Button>
-        </div>
+        <>
+          <p className="text-[12.5px] leading-[1.5] text-[var(--bad)]">{t(ERROR_MSG[err] ?? ERROR_MSG.network)}</p>
+          <CoachAction onClick={generate}>{t("Try again")}</CoachAction>
+        </>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-[var(--text-muted)]">{t("Get a personalised read on this from your coach.")}</p>
-          <Button size="sm" onClick={generate}>
-            <Sparkles size={14} /> {t("Generate")}
-          </Button>
-        </div>
+        <>
+          <p className="text-[12.5px] leading-[1.5] text-[var(--text-muted)]">
+            {t("Get a personalised read on this from your coach.")}
+          </p>
+          <CoachAction onClick={generate}>
+            <Sparkles size={14} /> {t("Ask a follow-up")}
+          </CoachAction>
+        </>
       )}
     </div>
+  );
+}
+
+/** Full-width soft action under a coach card, as in the design. */
+function CoachAction({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className="area-soft mt-3 flex w-full items-center justify-center gap-2 rounded-[14px] py-[11px] text-[12.5px] font-semibold"
+    >
+      {children}
+    </button>
   );
 }
 

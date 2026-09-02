@@ -324,58 +324,61 @@ function ScatterTip({ active, payload, xLabel, yLabel }: ScatterTipProps) {
   );
 }
 
+/** Formats an axis end value compactly ("6 h", "8.4 h", "42"). */
+function endLabel(v: number, unit?: string): string {
+  const n = Number.isInteger(v) ? String(v) : v.toFixed(1);
+  return unit ? `${n} ${unit}` : n;
+}
+
 export function ScatterCorrelation({
   points,
   line,
   xLabel,
   yLabel,
-  height = 260,
+  xUnit,
+  height = 168,
 }: {
   points: { x: number; y: number }[];
   line: { x1: number; y1: number; x2: number; y2: number } | null;
   xLabel: string;
   yLabel: string;
+  /** Optional unit appended to the two x-range labels under the chart. */
+  xUnit?: string;
   height?: number;
 }) {
+  const xs = points.map((p) => p.x);
+  const xMin = xs.length ? Math.min(...xs) : 0;
+  const xMax = xs.length ? Math.max(...xs) : 0;
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <ScatterChart margin={{ top: 10, right: 16, bottom: 4, left: -14 }}>
-        <CartesianGrid stroke={GRID} strokeDasharray="3 3" />
-        <XAxis
-          type="number"
-          dataKey="x"
-          name={xLabel}
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          domain={["dataMin", "dataMax"]}
-        />
-        <YAxis
-          type="number"
-          dataKey="y"
-          name={yLabel}
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          width={44}
-          domain={["dataMin", "dataMax"]}
-        />
-        <ZAxis range={[50, 50]} />
-        <Tooltip content={<ScatterTip xLabel={xLabel} yLabel={yLabel} />} cursor={{ strokeDasharray: "3 3" }} />
-        {line && (
-          <ReferenceLine
-            ifOverflow="extendDomain"
-            segment={[
-              { x: line.x1, y: line.y1 },
-              { x: line.x2, y: line.y2 },
-            ]}
-            stroke="var(--accent)"
-            strokeWidth={2}
-            strokeDasharray="5 4"
-          />
-        )}
-        <Scatter data={points} fill="var(--accent)" fillOpacity={0.65} />
-      </ScatterChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={height}>
+        {/* Pulse draws four hairlines and dots at 55% — no ticks, no vertical grid. */}
+        <ScatterChart margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+          <CartesianGrid stroke={GRID} horizontal vertical={false} />
+          <XAxis type="number" dataKey="x" name={xLabel} hide domain={["dataMin", "dataMax"]} />
+          <YAxis type="number" dataKey="y" name={yLabel} hide domain={["dataMin", "dataMax"]} />
+          <ZAxis range={[46, 46]} />
+          <Tooltip content={<ScatterTip xLabel={xLabel} yLabel={yLabel} />} cursor={{ strokeDasharray: "3 3" }} />
+          {line && (
+            <ReferenceLine
+              ifOverflow="extendDomain"
+              segment={[
+                { x: line.x1, y: line.y1 },
+                { x: line.x2, y: line.y2 },
+              ]}
+              stroke="var(--area-a)"
+              strokeWidth={2}
+              strokeDasharray="5 4"
+            />
+          )}
+          <Scatter data={points} fill="var(--area-a)" fillOpacity={0.55} />
+        </ScatterChart>
+      </ResponsiveContainer>
+      <div className="mt-2 flex justify-between text-[10px] text-[var(--text-dim)]">
+        <span>{endLabel(xMin, xUnit)}</span>
+        <span>{xLabel} →</span>
+        <span>{endLabel(xMax, xUnit)}</span>
+      </div>
+    </div>
   );
 }

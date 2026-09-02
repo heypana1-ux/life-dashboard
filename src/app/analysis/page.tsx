@@ -35,27 +35,32 @@ export default function AnalysisPage() {
 
   return (
     <div className="space-y-[14px]">
-      <PageHeader kicker={t("Cross-analysed")} lead={t("Your")} title={t("Analysis")} subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")} />
+      <PageHeader
+        kicker={`${t("Cross-analysed")} · ${t("{n} days", { n: d.history.length })}`}
+        lead={t("Your")}
+        title={t("Analysis")}
+        subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")}
+      />
 
       {/* Verdict */}
-      <div className="grad relative overflow-hidden rounded-[22px] p-6 text-white shadow-[var(--shadow)]">
-        <div className="flex items-center gap-2 text-sm font-medium opacity-85">
-          <Brain size={16} /> {t("Overall read")}
+      <div className="area-grad relative overflow-hidden rounded-[22px] p-5 shadow-[0_18px_40px_color-mix(in_srgb,var(--area-a)_32%,transparent)]">
+        <div className="flex items-center gap-[7px] text-[12.5px] font-medium opacity-85">
+          <Brain size={15} /> {t("Overall read")}
         </div>
         <div className="mt-2 flex items-end gap-3">
-          <span className="num text-[52px] font-bold leading-none">{verdict.score || "—"}</span>
-          <div className="mb-1">
-            <div className="text-lg font-semibold">{verdict.label}</div>
+          <span className="num text-[48px] font-bold leading-[0.9] tracking-[-0.04em]">{verdict.score || "—"}</span>
+          <div className="pb-1">
+            <div className="text-[15px] font-semibold">{verdict.label}</div>
             {verdict.trend !== 0 && (
-              <div className="flex items-center gap-1 text-sm opacity-90">
-                {verdict.trend > 0 ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
+              <div className="flex items-center gap-1 text-[12.5px] opacity-90">
+                {verdict.trend > 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                 {verdict.trend > 0 ? "+" : ""}
                 {verdict.trend} {t("vs last week")}
               </div>
             )}
           </div>
         </div>
-        <p className="mt-3 max-w-[640px] text-[15px] leading-[1.55] opacity-95">{verdict.summary}</p>
+        <p className="mt-3 max-w-[640px] text-[13px] leading-[1.55] opacity-95">{verdict.summary}</p>
       </div>
 
       <CoachInsightCard
@@ -66,8 +71,8 @@ export default function AnalysisPage() {
       {hasDrivers && (
         <Card>
           <SectionTitle>{t("What drives your score")}</SectionTitle>
-          <p className="mb-3 text-xs text-[var(--text-faint)]">{t("Average Life-Score difference on days with vs. without each factor.")}</p>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <p className="-mt-1.5 mb-3 text-[11px] text-[var(--text-dim)]">{t("Average Life-Score difference on days with vs. without each factor.")}</p>
+          <div className="flex flex-col gap-3.5 sm:grid sm:grid-cols-2">
             <DriverList title={t("Lifts your score")} drivers={drivers.positive} positive />
             <DriverList title={t("Weighs it down")} drivers={drivers.negative} positive={false} />
           </div>
@@ -87,7 +92,7 @@ export default function AnalysisPage() {
           return (
             <Card key={g.kind}>
               <SectionTitle>{g.label}</SectionTitle>
-              <div className="space-y-2.5">
+              <div className="flex flex-col gap-[9px]">
                 {items.map((f) => (
                   <FindingRow key={f.id} finding={f} />
                 ))}
@@ -101,7 +106,7 @@ export default function AnalysisPage() {
 
       <CorrelationExplorer />
 
-      <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
+      <p className="pb-4 text-center text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
         {t("Observations from your own data — associations, not medical or causal advice.")}
       </p>
     </div>
@@ -131,7 +136,7 @@ function WhatIfCard() {
   return (
     <Card>
       <SectionTitle right={<Badge tone="accent">{t("Beta")}</Badge>}>{t("What if you slept…")}</SectionTitle>
-      <p className="mb-3 text-xs text-[var(--text-faint)]">
+      <p className="-mt-1.5 mb-3 text-[11px] text-[var(--text-dim)]">
         {t("Drag to see how sleeping more or less has tracked with your outcomes — modelled from your own data.")}
       </p>
       <div className="flex items-center justify-between text-sm">
@@ -158,7 +163,7 @@ function WhatIfCard() {
           const delta = pred - o.baseline;
           const changed = Math.abs(delta) >= Math.pow(10, -o.decimals) / 2;
           return (
-            <div key={o.key} className="flex items-center justify-between rounded-xl bg-[var(--surface-2)] p-3 text-sm">
+            <div key={o.key} className="flex items-center justify-between rounded-[14px] bg-[var(--surface-2)] px-3 py-2.5 text-[12.5px]">
               <span>{t(o.label)}</span>
               <div className="flex items-center gap-2 tabular-nums">
                 <span className="text-[var(--text-faint)]">{o.baseline.toFixed(o.decimals)}</span>
@@ -174,7 +179,7 @@ function WhatIfCard() {
           );
         })}
       </div>
-      <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("A rough projection from correlation in your data — not a guarantee.")}</p>
+      <p className="mt-2 text-[10.5px] text-[var(--text-dim)]">{t("A rough projection from correlation in your data — not a guarantee.")}</p>
     </Card>
   );
 }
@@ -236,7 +241,7 @@ function CorrelationExplorer() {
   return (
     <Card>
       <SectionTitle>{t("Correlation explorer")}</SectionTitle>
-      <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Pick any two things you track and see how they move together.")}</p>
+      <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">{t("Pick any two things you track and see how they move together.")}</p>
       <div className="mb-3 grid grid-cols-2 gap-2">
         <label className="text-xs font-medium text-[var(--text-faint)]">
           {t("Horizontal")}
@@ -261,8 +266,8 @@ function CorrelationExplorer() {
       ) : (
         <>
           <ScatterCorrelation points={points} line={line} xLabel={x!.label} yLabel={y!.label} />
-          <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3 text-sm">
-            <span className="font-semibold" style={{ color: corrColor(r) }}>
+          <div className="mt-3 rounded-[16px] bg-[var(--surface-2)] px-3.5 py-[13px] text-[12.5px] leading-[1.5]">
+            <span className="font-bold" style={{ color: corrColor(r) }}>
               r = {r.toFixed(2)}
             </span>{" "}
             · {corrText(r, x!.label, y!.label, t)} <span className="text-[var(--text-faint)]">({points.length} {t("days")})</span>
@@ -329,23 +334,26 @@ function DriverList({ title, drivers, positive }: { title: string; drivers: Driv
   if (drivers.length === 0) {
     return (
       <div>
-        <div className="mb-2 text-sm font-semibold" style={{ color }}>{title}</div>
-        <p className="text-xs text-[var(--text-faint)]">—</p>
+        <div className="mb-2 text-[12.5px] font-semibold" style={{ color }}>{title}</div>
+        <p className="text-[11px] text-[var(--text-dim)]">—</p>
       </div>
     );
   }
   return (
     <div>
-      <div className="mb-2 text-sm font-semibold" style={{ color }}>{title}</div>
-      <div className="space-y-1.5">
+      <div className="mb-2 text-[12.5px] font-semibold" style={{ color }}>{title}</div>
+      <div className="flex flex-col gap-[7px]">
         {drivers.map((dr, i) => (
-          <div key={dr.label} className="flex items-center gap-2">
-            <span className="num w-6 text-xs font-bold text-[var(--text-faint)]">{i + 1}</span>
-            <span className="min-w-0 flex-1 truncate text-sm">{dr.label}</span>
-            <div className="hidden h-1.5 w-16 overflow-hidden rounded-full bg-[var(--ring-track)] sm:block">
-              <div className="h-full rounded-full" style={{ width: `${(Math.abs(dr.delta) / max) * 100}%`, background: color }} />
-            </div>
-            <span className="num w-9 text-right text-sm font-bold tabular-nums" style={{ color }}>
+          <div key={dr.label} className="flex items-center gap-[9px]">
+            <span className="num w-3.5 shrink-0 text-[11px] font-bold text-[var(--text-dim)]">{i + 1}</span>
+            <span className="min-w-0 flex-1 truncate text-[12.5px]">{dr.label}</span>
+            <span className="h-[5px] w-[54px] shrink-0 overflow-hidden rounded-full bg-[var(--surface-2)]">
+              <span
+                className="block h-full rounded-full"
+                style={{ width: `${(Math.abs(dr.delta) / max) * 100}%`, background: color }}
+              />
+            </span>
+            <span className="num w-8 shrink-0 text-right text-[12.5px] font-bold" style={{ color }}>
               {dr.delta > 0 ? "+" : ""}{dr.delta}
             </span>
           </div>
@@ -359,13 +367,16 @@ function FindingRow({ finding }: { finding: Finding }) {
   const style = KIND_STYLE[finding.kind];
   const Icon = style.icon;
   return (
-    <div className="flex items-start gap-3 rounded-xl border border-[var(--border)] p-3">
-      <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg" style={{ background: style.soft, color: style.color }}>
-        <Icon size={15} />
+    <div className="flex items-start gap-[11px] rounded-[16px] border border-[var(--border)] px-[13px] py-3">
+      <span
+        className="mt-px flex h-7 w-7 shrink-0 items-center justify-center rounded-[10px]"
+        style={{ background: style.soft, color: style.color }}
+      >
+        <Icon size={14} />
       </span>
       <div className="min-w-0">
-        <div className="text-sm font-semibold">{finding.title}</div>
-        <p className="mt-0.5 text-[13.5px] leading-snug text-[var(--text-muted)]">{finding.detail}</p>
+        <div className="text-[13px] font-semibold">{finding.title}</div>
+        <p className="mt-0.5 text-[12.5px] leading-[1.45] text-[var(--text-faint)]">{finding.detail}</p>
       </div>
     </div>
   );

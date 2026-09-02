@@ -123,6 +123,29 @@ export default function CorrelationsPage() {
     return { points: pts, r: pearson(pts.map((p) => p.x), pts.map((p) => p.y)), line: regression(pts) };
   }, [xVar, yVar]);
 
+  /** Every variable pair with at least 3 shared days, strongest |r| first. */
+  const strongestPairs = useMemo(() => {
+    const out: { a: string; b: string; r: number }[] = [];
+    for (let i = 0; i < variables.length; i++) {
+      for (let j = i + 1; j < variables.length; j++) {
+        const va = variables[i];
+        const vb = variables[j];
+        const xs: number[] = [];
+        const ys: number[] = [];
+        for (const [d, av] of va.map) {
+          const bv = vb.map.get(d);
+          if (bv != null) {
+            xs.push(av);
+            ys.push(bv);
+          }
+        }
+        const rr = pearson(xs, ys);
+        if (rr != null) out.push({ a: va.label, b: vb.label, r: rr });
+      }
+    }
+    return out.sort((p, q) => Math.abs(q.r) - Math.abs(p.r)).slice(0, 6);
+  }, [variables]);
+
   function swap() {
     setXKey(yVar.key);
     setYKey(xVar.key);
@@ -146,13 +169,18 @@ export default function CorrelationsPage() {
   }
 
   return (
-    <div>
-      <PageHeader kicker={t("Two metrics")} title={t("Correlations")} subtitle={t("Explore how any two things you track move together")} />
+    <div className="space-y-[14px]">
+      <PageHeader
+        kicker={t("{n} overlapping days", { n: points.length })}
+        title={t("Correlations")}
+        subtitle={t("Explore how any two things you track move together")}
+      />
 
-      <Card className="mb-4">
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
-          <label className="flex-1">
-            <span className="mb-1 block text-sm font-medium text-[var(--text-muted)]">{t("Horizontal (X)")}</span>
+      <Card>
+        {/* X · swap · Y on one row, exactly as the mock lays it out. */}
+        <div className="flex items-end gap-[9px]">
+          <label className="min-w-0 flex-1">
+            <span className="mb-[5px] block text-[11px] font-medium text-[var(--text-muted)]">{t("Horizontal (X)")}</span>
             <select value={xVar?.key} onChange={(e) => setXKey(e.target.value)} className={inputCls}>
               {variables.map((v) => (
                 <option key={v.key} value={v.key} disabled={v.key === yVar?.key}>{v.label}</option>
@@ -161,13 +189,13 @@ export default function CorrelationsPage() {
           </label>
           <button
             onClick={swap}
-            className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-xl border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)] sm:self-end"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-[var(--border)] text-[var(--text-muted)] hover:bg-[var(--surface-2)]"
             aria-label={t("Swap")}
           >
             <ArrowLeftRight size={16} />
           </button>
-          <label className="flex-1">
-            <span className="mb-1 block text-sm font-medium text-[var(--text-muted)]">{t("Vertical (Y)")}</span>
+          <label className="min-w-0 flex-1">
+            <span className="mb-[5px] block text-[11px] font-medium text-[var(--text-muted)]">{t("Vertical (Y)")}</span>
             <select value={yVar?.key} onChange={(e) => setYKey(e.target.value)} className={inputCls}>
               {variables.map((v) => (
                 <option key={v.key} value={v.key} disabled={v.key === xVar?.key}>{v.label}</option>
@@ -178,7 +206,15 @@ export default function CorrelationsPage() {
       </Card>
 
       <Card>
-        <SectionTitle>{xVar?.label} ↔ {yVar?.label}</SectionTitle>
+        <SectionTitle
+          right={
+            r != null ? (
+              <span className="area-text text-[11.5px] font-semibold">r = {r.toFixed(2)}</span>
+            ) : undefined
+          }
+        >
+          {xVar?.label} ↔ {yVar?.label}
+        </SectionTitle>
         {points.length < 3 ? (
           <p className="py-10 text-center text-sm text-[var(--text-muted)]">
             {t("Only {n} overlapping days so far — log more to see a pattern.", { n: points.length })}
@@ -186,23 +222,23 @@ export default function CorrelationsPage() {
         ) : (
           <>
             <ScatterCorrelation points={points} line={line} xLabel={xVar?.label ?? ""} yLabel={yVar?.label ?? ""} />
-            <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3 text-sm">
+            <div className="mt-3 rounded-[16px] bg-[var(--surface-2)] px-3.5 py-[13px] text-[12.5px]">
               {r == null ? (
                 <span className="text-[var(--text-muted)]">{t("No clear relationship in this pair.")}</span>
               ) : (
                 <>
-                  <span className="font-semibold">r = {r.toFixed(2)}</span>{" "}
+                  <span className="font-bold">r = {r.toFixed(2)}</span>{" "}
                   <span className="text-[var(--text-muted)]">
                     ({strength(r)} {r > 0 ? t("positive") : t("negative")}, {t("{n} days", { n: points.length })})
                   </span>
-                  <p className="mt-1 text-[var(--text-muted)]">
+                  <p className="mt-1.5 leading-[1.5] text-[var(--text-muted)]">
                     {Math.abs(r) < 0.2
                       ? t("These two barely move together in your data.")
                       : r > 0
                         ? t("When {x} is higher, {y} tends to be higher too.", { x: xVar!.label, y: yVar!.label })
                         : t("When {x} is higher, {y} tends to be lower.", { x: xVar!.label, y: yVar!.label })}
                     {" "}
-                    <span className="text-[var(--text-faint)]">{t("Correlation, not causation.")}</span>
+                    <span className="text-[var(--text-dim)]">{t("Correlation, not causation.")}</span>
                   </p>
                 </>
               )}
@@ -210,6 +246,33 @@ export default function CorrelationsPage() {
           </>
         )}
       </Card>
+
+      {strongestPairs.length > 0 && (
+        <Card>
+          <SectionTitle>{t("Strongest pairs in your data")}</SectionTitle>
+          <div className="flex flex-col">
+            {strongestPairs.map((p) => (
+              <div
+                key={`${p.a}-${p.b}`}
+                className="flex items-center gap-2.5 border-b border-[var(--border)] py-[11px] last:border-0"
+              >
+                <div className="min-w-0 flex-1 text-[12.5px]">
+                  {p.a} <span className="text-[var(--text-dim)]">↔</span> {p.b}
+                </div>
+                <span
+                  className="num text-[12.5px] font-bold"
+                  style={{ color: p.r >= 0 ? "var(--good)" : "var(--bad)" }}
+                >
+                  {p.r >= 0 ? p.r.toFixed(2) : `−${Math.abs(p.r).toFixed(2)}`}
+                </span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-[11px] text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
+            {t("Pearson r over days where both values exist. Pairs with fewer than 3 shared days are hidden.")}
+          </p>
+        </Card>
+      )}
     </div>
   );
 }
