@@ -111,6 +111,7 @@ const DE: Record<string, string> = {
   today: "heute",
   "this week": "diese Woche",
   wk: "Wo",
+  "watch-list": "Beobachtung",
   planned: "geplant",
   Planned: "Geplant",
   week: "Woche",

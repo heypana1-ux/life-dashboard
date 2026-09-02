@@ -18,10 +18,10 @@ import { useDerived } from "@/lib/useDerived";
 import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact, habitMomentum } from "@/lib/habitStats";
 import { bestHabitHour } from "@/lib/habitTimes";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
-import { AREA_ICONS } from "@/lib/areaStyle";
+import { AREA_ICONS, areaColor } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
-import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle } from "@/components/ui";
+import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle, IconTile } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
 import { HintCard } from "@/components/HintCard";
 
@@ -54,6 +54,7 @@ export default function HabitsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={`${data.habits.filter((h) => !h.archived).length} ${t("active")} · ${data.habits.filter((h) => h.kind === "reduce" && !h.archived).length} ${t("watch-list")}`}
         title={t("Habits")}
         subtitle={t("Build good routines, reduce the ones you don't want.")}
         action={
@@ -360,12 +361,9 @@ function HabitCard({
 
   return (
     <div className="tile flex items-center gap-4 p-[18px] sm:gap-5 sm:px-[22px]">
-      <div
-        className="flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[12px] bg-[var(--accent-soft)]"
-        style={{ color: h.color ?? "var(--accent)" }}
-      >
+      <IconTile color={h.color ?? areaColor(h.area)} size={42} radius={14}>
         <Icon size={19} />
-      </div>
+      </IconTile>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-[9px]">
