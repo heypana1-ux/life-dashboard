@@ -10,7 +10,7 @@ import { weekdayLabel, fmtShort } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
 import { bestSelf } from "@/lib/bestSelf";
-import { TrendLine, MultiLine, Bars } from "@/components/charts";
+import { TrendLine, MultiLine } from "@/components/charts";
 
 const RANGES: { key: string; days: number; label: string }[] = [
   { key: "7", days: 7, label: "7D" },
@@ -209,7 +209,28 @@ export default function StatisticsPage() {
         {/* Weekday pattern */}
         <Card>
           <SectionTitle>{t("Life Score by weekday")}</SectionTitle>
-          <Bars data={wdData} color="var(--accent)" />
+          <div className="flex items-end gap-1.5" style={{ height: 104 }}>
+            {(() => {
+              const max = Math.max(1, ...wdData.map((x) => x.value));
+              return wdData.map((d0) => {
+                const h = d0.value > 0 ? Math.max(6, (d0.value / max) * 66) : 3;
+                return (
+                  <div key={d0.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+                    <span className="num text-[10px] tabular-nums text-[var(--text-faint)]">{d0.value || "—"}</span>
+                    <span
+                      className="w-full"
+                      style={{
+                        height: h,
+                        borderRadius: "7px 7px 3px 3px",
+                        background: "linear-gradient(180deg, var(--area-a), color-mix(in srgb, var(--area-a) 35%, transparent))",
+                      }}
+                    />
+                    <span className="text-[10px] text-[var(--text-faint)]">{d0.label}</span>
+                  </div>
+                );
+              });
+            })()}
+          </div>
         </Card>
 
         {/* Correlations / insights */}
