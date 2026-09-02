@@ -361,9 +361,9 @@ function HabitCard({
     lvl === "done" ? "var(--good)" : lvl === "missed" ? "var(--bad-soft)" : "var(--surface-3)";
 
   return (
-    <div className="tile flex items-center gap-4 p-[18px] sm:gap-5 sm:px-[22px]">
-      <IconTile color={h.color ?? areaColor(h.area)} size={42} radius={14}>
-        <Icon size={19} />
+    <div className="tile flex items-start gap-3 p-[14px] sm:px-[15px]">
+      <IconTile color={h.color ?? areaColor(h.area)} size={40} radius={14}>
+        <Icon size={18} />
       </IconTile>
 
       <div className="min-w-0 flex-1">
@@ -406,29 +406,28 @@ function HabitCard({
         ))}
       </div>
 
-      <div className="min-w-[64px] text-right">
-        <div className="flex items-center justify-end gap-[5px] text-[var(--warn)]">
+      <div className="flex shrink-0 flex-col items-end gap-0.5 text-right">
+        <div className="flex items-center gap-[5px] text-[var(--warn)]">
           <Flame size={14} />
           <span className="num text-[17px] font-bold">{streak}</span>
         </div>
-        <div className="text-[11px] text-[var(--text-faint)]">{t("day streak")}</div>
-      </div>
-
-      <div className="flex shrink-0 flex-col gap-1">
-        <button
-          onClick={onEdit}
-          className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
-          aria-label={t("Edit")}
-        >
-          <Pencil size={15} />
-        </button>
-        <button
-          onClick={onDelete}
-          className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]"
-          aria-label={t("Delete")}
-        >
-          <Trash2 size={15} />
-        </button>
+        <div className="text-[10.5px] text-[var(--text-faint)]">{t("day streak")}</div>
+        <div className="mt-2 flex gap-1.5 text-[var(--text-faint)]">
+          <button
+            onClick={onEdit}
+            className="rounded-lg p-1 hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
+            aria-label={t("Edit")}
+          >
+            <Pencil size={14} />
+          </button>
+          <button
+            onClick={onDelete}
+            className="rounded-lg p-1 hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]"
+            aria-label={t("Delete")}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       </div>
     </div>
   );

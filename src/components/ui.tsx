@@ -459,7 +459,7 @@ export function Badge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-[10.5px] font-semibold",
         tone === "default" && "grad-soft text-[var(--text-muted)]",
         tone === "good" && "bg-[var(--good-soft)] text-[var(--good)]",
         tone === "bad" && "bg-[var(--bad-soft)] text-[var(--bad)]",
