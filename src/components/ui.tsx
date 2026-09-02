@@ -495,3 +495,107 @@ export function ScaleInput({
     </div>
   );
 }
+
+/* ============================ Pulse building blocks ============================ */
+
+/** A soft, area-tinted rounded icon tile. Pass a hex color (usually the item's area color). */
+export function IconTile({
+  color,
+  size = 30,
+  radius = 11,
+  children,
+}: {
+  color?: string;
+  size?: number;
+  radius?: number;
+  children: React.ReactNode;
+}) {
+  const c = color ?? "var(--area-a)";
+  return (
+    <span
+      className="flex shrink-0 items-center justify-center"
+      style={{
+        height: size,
+        width: size,
+        borderRadius: radius,
+        background: `color-mix(in srgb, ${c} 22%, transparent)`,
+        color: c,
+      }}
+    >
+      {children}
+    </span>
+  );
+}
+
+/** The page's focus zone: a big metric on the background with an optional sublabel + progress. */
+export function FocusZone({
+  label,
+  value,
+  sub,
+  subColor,
+  progress,
+}: {
+  label: React.ReactNode;
+  value: React.ReactNode;
+  sub?: React.ReactNode;
+  subColor?: string;
+  progress?: number | null;
+}) {
+  return (
+    <div>
+      <div className="slabel">{label}</div>
+      <div className="mt-2 flex items-end gap-3">
+        <span className="num text-[56px] font-bold leading-[.86] tracking-[-0.045em] sm:text-[62px]">{value}</span>
+        {sub && (
+          <span className="mb-2 text-[13px] font-semibold" style={subColor ? { color: subColor } : undefined}>
+            {sub}
+          </span>
+        )}
+      </div>
+      {progress != null && (
+        <div className="mt-3.5 h-2 overflow-hidden rounded-full bg-[var(--surface-2)]">
+          <div
+            className="h-full rounded-full"
+            style={{ width: `${Math.max(0, Math.min(100, progress))}%`, background: "linear-gradient(90deg,var(--area-a),var(--area-b))", transition: "width .5s ease" }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** A hairline-bordered row of 2–4 stats (used under a focus zone). */
+export function HairlineStats({
+  items,
+}: {
+  items: { label: React.ReactNode; value: React.ReactNode; color?: string }[];
+}) {
+  return (
+    <div
+      className="mt-3.5 grid border-y border-[var(--border)]"
+      style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
+    >
+      {items.map((it, i) => (
+        <div
+          key={i}
+          className={clsx("py-3", i > 0 && "pl-3", i < items.length - 1 && "border-r border-[var(--border)] pr-3")}
+        >
+          <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{it.label}</div>
+          <div className="num mt-1 text-[20px] font-bold tracking-[-0.03em]" style={it.color ? { color: it.color } : undefined}>
+            {it.value}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** An uppercase section label with an optional right-side element (link, badge, count). */
+export function SectionHead({ children, right }: { children: React.ReactNode; right?: React.ReactNode }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-2">
+      <h2 className="slabel">{children}</h2>
+      {right}
+    </div>
+  );
+}

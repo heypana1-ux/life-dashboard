@@ -10,15 +10,13 @@ import { DailyReview } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import {
-  Card,
   PageHeader,
-  SectionTitle,
   Button,
-  ScaleInput,
-  Field,
-  inputCls,
   Badge,
   Toggle,
+  FocusZone,
+  HairlineStats,
+  SectionHead,
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { BackfillNudge } from "@/components/BackfillNudge";
@@ -42,13 +40,32 @@ const blankReview = (date: string): DailyReview => ({
 
 const TRIGGERS = ["Stress", "Boredom", "Tiredness", "Social", "Hunger", "Craving", "Emotions", "Habit"];
 
+/** 10-segment 1..10 rating bar (Pulse). */
+function RatingBar({ value, onChange }: { value: number; onChange: (n: number) => void }) {
+  return (
+    <div className="flex gap-[3px]">
+      {Array.from({ length: 10 }).map((_, i) => (
+        <button
+          key={i}
+          onClick={() => onChange(i + 1)}
+          aria-label={String(i + 1)}
+          className="h-1.5 flex-1 rounded-full transition"
+          style={{ background: i < value ? "linear-gradient(135deg,var(--area-a),var(--area-b))" : "var(--surface-2)" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+const textAreaCls =
+  "mt-1.5 w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-[13px] leading-[1.45] outline-none focus:border-[var(--accent)]";
+
 export default function TodayPage() {
   const { data, saveReview, setHabitLog, updateSettings } = useStore();
   const t = useT();
   const today = todayISO();
   const [date, setDate] = useState(today);
 
-  // Allow deep-linking to a specific day (e.g. from the calendar) via ?date=YYYY-MM-DD.
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("date");
     if (q && /^\d{4}-\d{2}-\d{2}$/.test(q) && q <= today) {
@@ -64,7 +81,6 @@ export default function TodayPage() {
 
   const existing = data.reviews.find((r) => r.date === date);
   const [review, setReview] = useState<DailyReview>(existing ?? blankReview(date));
-  // Load the selected day's check-in when the date changes.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setReview(data.reviews.find((r) => r.date === date) ?? blankReview(date));
@@ -72,8 +88,6 @@ export default function TodayPage() {
   }, [date]);
   const [savedFlash, setSavedFlash] = useState(false);
   const checkinCounts = data.settings.checkinCounts ?? false;
-  // The check-in is optional: keep it collapsed unless there's already an entry, or the user
-  // has opted to let it count toward the score.
   const [checkinOpen, setCheckinOpen] = useState(!!existing || checkinCounts);
 
   function save() {
@@ -81,7 +95,6 @@ export default function TodayPage() {
     setSavedFlash(true);
     setTimeout(() => setSavedFlash(false), 1800);
   }
-
   function setTrigger(habitId: string, trigger: string | undefined) {
     setHabitLog({ habitId, date, done: true, trigger });
   }
@@ -90,43 +103,41 @@ export default function TodayPage() {
   const doneCount = build.filter((g) => g.log?.done).length;
   const slipCount = reduce.filter((g) => g.log?.done).length;
   const checkinAvg = existing
-    ? (
-        (existing.productivity + existing.mood + existing.energy + existing.satisfaction + existing.discipline) /
-        5
-      ).toFixed(1)
+    ? ((existing.productivity + existing.mood + existing.energy + existing.satisfaction + existing.discipline) / 5).toFixed(1)
     : "—";
-
+  const occurred = reduce.filter((g) => g.log?.done);
+  const sleepLogged = !!data.sleep.find((s) => s.date === date);
   const isToday = date === today;
 
   return (
-    <div>
+    <div className="mx-auto max-w-2xl">
       <PageHeader
-        kicker={`${build.filter((g) => g.log?.done).length}/${build.length} ${t("goals done")}`}
+        kicker={`${doneCount}/${build.length} ${t("goals done")}`}
         title={isToday ? t("Today") : t("Edit day")}
         subtitle={fmtLong(date)}
         action={
           <div className="flex flex-wrap items-center gap-1.5">
             <button
               onClick={() => setDate((d) => addDays(d, -1))}
-              className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+              className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--accent)]"
               aria-label={t("Move left")}
             >
               <ChevronLeft size={18} />
             </button>
             <label className="relative flex items-center">
-              <CalendarDays size={15} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
+              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
               <input
                 type="date"
                 max={today}
                 value={date}
                 onChange={(e) => e.target.value && setDate(e.target.value)}
-                className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-8 pr-2 text-sm outline-none"
+                className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-8 pr-2 text-sm outline-none"
               />
             </label>
             <button
               onClick={() => setDate((d) => (d < today ? addDays(d, 1) : d))}
               disabled={isToday}
-              className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] enabled:hover:bg-[var(--surface-3)] disabled:opacity-40"
+              className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] enabled:hover:border-[var(--accent)] disabled:opacity-40"
               aria-label={t("Move right")}
             >
               <ChevronRight size={18} />
@@ -140,248 +151,171 @@ export default function TodayPage() {
         }
       />
 
-      <BackfillNudge />
+      <div className="flex flex-col gap-6">
+        <BackfillNudge />
 
-      <div className="grid items-start gap-[18px] lg:grid-cols-[1.3fr_1fr]">
-        <div className="flex min-w-0 flex-col gap-[18px]">
-          {/* Goals */}
-          <Card>
-            <SectionTitle
-              right={
-                <span className="text-xs text-[var(--text-faint)]">
-                  {build.filter((g) => g.log?.done).length}/{build.length} {t("Done").toLowerCase()}
-                </span>
-              }
-            >
-              {t("Goals")}
-            </SectionTitle>
-            {build.length === 0 ? (
-              <p className="py-6 text-center text-sm text-[var(--text-muted)]">
-                {t("No habits scheduled today")}.{" "}
-                <Link href="/habits" className="text-[var(--accent)]">
-                  {t("Habits")}
-                </Link>
-              </p>
-            ) : (
-              <div className="divide-y divide-[var(--border)]">
-                {build.map((g) => (
-                  <HabitRow key={g.habit.id} item={g} date={date} showAmount />
-                ))}
-              </div>
-            )}
-          </Card>
+        {/* Focus zone: projected score */}
+        <section>
+          <FocusZone
+            label={t("Projected score")}
+            value={projected}
+            sub={projected > 0 ? t(scoreLabel(projected)) : t("No data yet")}
+            subColor={projected > 0 ? scoreColor(projected) : "var(--text-faint)"}
+            progress={projected}
+          />
+          <HairlineStats
+            items={[
+              { label: t("goals done"), value: `${doneCount}/${build.length}` },
+              { label: t("Watch-list"), value: String(slipCount), color: slipCount > 0 ? "var(--bad)" : undefined },
+              { label: t("Daily check-in"), value: checkinAvg },
+            ]}
+          />
+        </section>
 
-          {/* Reduce habits */}
-          {reduce.length > 0 && (
-            <Card>
-              <SectionTitle right={<Badge tone="bad">{t("Reduce")}</Badge>}>{t("Watch-list")}</SectionTitle>
-              <p className="mb-1 text-xs text-[var(--text-muted)]">
-                {t("Tap only if the behavior happened today. Avoided by default.")}
-              </p>
-              <div className="divide-y divide-[var(--border)]">
-                {reduce.map((g) => (
-                  <HabitRow key={g.habit.id} item={g} date={date} />
-                ))}
-              </div>
+        {/* Goals */}
+        <section>
+          <SectionHead right={<span className="text-xs text-[var(--text-faint)]">{doneCount}/{build.length} {t("done").toLowerCase()}</span>}>
+            {t("Goals")}
+          </SectionHead>
+          {build.length === 0 ? (
+            <p className="py-2 text-sm text-[var(--text-muted)]">
+              {t("No habits scheduled today")}.{" "}
+              <Link href="/habits" className="area-text font-medium">{t("Habits")}</Link>
+            </p>
+          ) : (
+            <div className="flex flex-col">
+              {build.map((g) => <HabitRow key={g.habit.id} item={g} date={date} showAmount />)}
+            </div>
+          )}
+        </section>
 
-              {reduce.some((g) => g.log?.done) && (
-                <div className="mt-4 border-t border-[var(--border)] pt-3">
-                  <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">
-                    {t("What triggered it? (optional)")}
-                  </div>
-                  <div className="space-y-3">
-                    {reduce.filter((g) => g.log?.done).map((g) => (
-                      <div key={g.habit.id}>
-                        <div className="mb-1 text-sm font-medium">{g.habit.name}</div>
-                        <div className="flex flex-wrap gap-1.5">
-                          {TRIGGERS.map((tr) => {
-                            const active = g.log?.trigger === tr;
-                            return (
-                              <button
-                                key={tr}
-                                onClick={() => setTrigger(g.habit.id, active ? undefined : tr)}
-                                className={
-                                  active
-                                    ? "rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-medium text-white"
-                                    : "rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1 text-xs font-medium text-[var(--text-muted)] hover:border-[var(--accent)]"
-                                }
-                              >
-                                {t(tr)}
-                              </button>
-                            );
-                          })}
-                        </div>
+        {/* Watch-list */}
+        {reduce.length > 0 && (
+          <section>
+            <SectionHead right={<Badge tone="bad">{t("Reduce")}</Badge>}>{t("Watch-list")}</SectionHead>
+            <p className="-mt-1 mb-2 text-[11.5px] text-[var(--text-faint)]">
+              {t("Tap only if the behavior happened today. Avoided by default.")}
+            </p>
+            <div className="flex flex-col">
+              {reduce.map((g) => <HabitRow key={g.habit.id} item={g} date={date} />)}
+            </div>
+            {occurred.length > 0 && (
+              <div className="mt-3">
+                <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
+                  {t("What triggered it? (optional)")}
+                </div>
+                <div className="mt-2 space-y-3">
+                  {occurred.map((g) => (
+                    <div key={g.habit.id}>
+                      <div className="mb-1.5 text-[13px] font-medium">{g.habit.name}</div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {TRIGGERS.map((tr) => {
+                          const on = g.log?.trigger === tr;
+                          return (
+                            <button
+                              key={tr}
+                              onClick={() => setTrigger(g.habit.id, on ? undefined : tr)}
+                              className={on
+                                ? "area-grad rounded-full px-2.5 py-1 text-[11.5px] font-medium"
+                                : "rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-[11.5px] font-medium text-[var(--text-muted)] hover:border-[var(--accent)]"}
+                            >
+                              {t(tr)}
+                            </button>
+                          );
+                        })}
                       </div>
-                    ))}
-                  </div>
-                  <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+                    </div>
+                  ))}
+                  <p className="text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
                     {t("Noticing your triggers helps you and the coach spot patterns.")}
                   </p>
                 </div>
-              )}
-            </Card>
-          )}
-
-          {/* Daily review */}
-          <Card>
-            <button
-              type="button"
-              onClick={() => setCheckinOpen((o) => !o)}
-              className="flex w-full items-center justify-between gap-2 text-left"
-              aria-expanded={checkinOpen}
-            >
-              <SectionTitle
-                right={
-                  <span className="flex items-center gap-2">
-                    {existing ? (
-                      <Badge tone="good">{t("Saved")}</Badge>
-                    ) : (
-                      <Badge>{t("Optional")}</Badge>
-                    )}
-                    {checkinCounts && <Badge tone="accent">{t("Counts")}</Badge>}
-                    <ChevronDown
-                      size={18}
-                      className={`text-[var(--text-muted)] transition-transform ${checkinOpen ? "rotate-180" : ""}`}
-                    />
-                  </span>
-                }
-              >
-                {t("Daily check-in")}
-              </SectionTitle>
-            </button>
-            {!checkinOpen && (
-              <p className="mt-1 text-sm text-[var(--text-muted)]">
-                {existing
-                  ? t("Tap to review or edit today's ratings.")
-                  : t("Optional ratings for mood, energy and more. Tap to open.")}
-              </p>
+              </div>
             )}
-            {checkinOpen && (
-            <div className="space-y-4">
-              {/* Opt-in: let the check-in count lightly toward the Life Score. */}
-              <div className="flex items-start justify-between gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+          </section>
+        )}
+
+        {/* Daily check-in */}
+        <section>
+          <button type="button" onClick={() => setCheckinOpen((o) => !o)} className="w-full" aria-expanded={checkinOpen}>
+            <SectionHead
+              right={
+                <span className="flex items-center gap-1.5">
+                  {existing ? <Badge tone="good">{t("Saved")}</Badge> : <Badge>{t("Optional")}</Badge>}
+                  {checkinCounts && <Badge tone="accent">{t("Counts")}</Badge>}
+                  <ChevronDown size={16} className={`text-[var(--text-faint)] transition-transform ${checkinOpen ? "rotate-180" : ""}`} />
+                </span>
+              }
+            >
+              {t("Daily check-in")}
+            </SectionHead>
+          </button>
+
+          {checkinOpen && (
+            <div className="space-y-3.5">
+              <div className="flex items-start justify-between gap-3 rounded-[16px] border border-[var(--border)] bg-[var(--surface)] p-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium">{t("Count toward Life Score")}</p>
-                  <p className="mt-0.5 text-[13px] text-[var(--text-muted)]">
+                  <div className="text-[12.5px] font-semibold">{t("Count toward Life Score")}</div>
+                  <p className="mt-0.5 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
                     {t("When on, your ratings gently influence the score. Off by default.")}
                   </p>
                 </div>
-                <Toggle
-                  checked={checkinCounts}
-                  onChange={(v) => updateSettings({ checkinCounts: v })}
-                />
+                <Toggle checked={checkinCounts} onChange={(v) => updateSettings({ checkinCounts: v })} />
               </div>
-              {REVIEW_FIELDS.map((f) => (
-                <div key={f.key}>
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <span className="text-sm font-medium">{t(f.label)}</span>
-                    <span className="text-sm font-semibold text-[var(--accent)]">
-                      {review[f.key] as number}
-                    </span>
+
+              <div className="flex flex-col gap-3">
+                {REVIEW_FIELDS.map((f) => (
+                  <div key={f.key}>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <span className="text-[13px] font-medium">{t(f.label)}</span>
+                      <span className="area-text text-[13px] font-semibold">{review[f.key] as number}</span>
+                    </div>
+                    <RatingBar value={review[f.key] as number} onChange={(v) => setReview((r) => ({ ...r, [f.key]: v }))} />
                   </div>
-                  <ScaleInput
-                    value={review[f.key] as number}
-                    onChange={(v) => setReview((r) => ({ ...r, [f.key]: v }))}
-                  />
-                </div>
-              ))}
-              <div className="grid gap-3 sm:grid-cols-3">
-                <Field label={t("Went well")}>
-                  <textarea
-                    className={inputCls}
-                    rows={2}
-                    value={review.wentWell ?? ""}
-                    onChange={(e) => setReview((r) => ({ ...r, wentWell: e.target.value }))}
-                  />
-                </Field>
-                <Field label={t("Went badly")}>
-                  <textarea
-                    className={inputCls}
-                    rows={2}
-                    value={review.wentBad ?? ""}
-                    onChange={(e) => setReview((r) => ({ ...r, wentBad: e.target.value }))}
-                  />
-                </Field>
-                <Field label={t("Better tomorrow")}>
-                  <textarea
-                    className={inputCls}
-                    rows={2}
-                    value={review.improveTomorrow ?? ""}
-                    onChange={(e) =>
-                      setReview((r) => ({ ...r, improveTomorrow: e.target.value }))
-                    }
-                  />
-                </Field>
+                ))}
               </div>
+
+              <div className="flex flex-col gap-2.5">
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Went well")}</div>
+                  <textarea rows={2} className={textAreaCls} value={review.wentWell ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentWell: e.target.value }))} />
+                </div>
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Went badly")}</div>
+                  <textarea rows={2} className={textAreaCls} value={review.wentBad ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentBad: e.target.value }))} />
+                </div>
+                <div>
+                  <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Better tomorrow")}</div>
+                  <textarea rows={2} className={textAreaCls} value={review.improveTomorrow ?? ""} onChange={(e) => setReview((r) => ({ ...r, improveTomorrow: e.target.value }))} />
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
-                <Button variant="soft" onClick={save}>
+                <Button className="w-full !py-3" onClick={save}>
                   <Save size={16} /> {t("Save check-in")}
                 </Button>
-                {savedFlash && (
-                  <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>
-                )}
               </div>
+              {savedFlash && <p className="text-center text-sm text-[var(--good)]">{t("Saved ✓")}</p>}
             </div>
-            )}
-          </Card>
-        </div>
+          )}
+        </section>
 
-        {/* Sidebar: projected score + sleep */}
-        <div className="flex min-w-0 flex-col gap-[18px] lg:sticky lg:top-[92px]">
-          <Card>
-            <p className="slabel">{t("Projected score")}</p>
-            <div className="mb-[18px] mt-1.5 flex items-baseline gap-2.5">
-              <span
-                className="num text-[56px] font-bold leading-none tracking-[-0.03em]"
-                style={{ color: scoreColor(projected) }}
-              >
-                {projected}
+        {/* Sleep nudge */}
+        {!sleepLogged && (
+          <Link href="/sleep" className="block">
+            <div className="flex items-center gap-3 rounded-[18px] border p-4" style={{ background: "color-mix(in srgb, #38bdf8 14%, var(--surface))", borderColor: "color-mix(in srgb, #38bdf8 30%, transparent)" }}>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black/10 text-[#0ea5e9] dark:text-[#38bdf8]">
+                <Moon size={17} />
               </span>
-              <span className="text-sm font-semibold" style={{ color: scoreColor(projected) }}>
-                {projected > 0 ? t(scoreLabel(projected)) : t("No data yet")}
-              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-[13px] font-semibold">{t("Not logged for last night.")}</div>
+                <div className="text-[11.5px] text-[var(--text-muted)]">{t("Log last night to sharpen tomorrow's score.")}</div>
+              </div>
+              <span className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 py-1.5 text-xs font-semibold text-[#0ea5e9] dark:text-[#38bdf8]">{t("Log sleep")}</span>
             </div>
-            <div className="mb-5 h-[10px] overflow-hidden rounded-[6px] bg-[var(--ring-track)]">
-              <div className="grad h-full rounded-[6px]" style={{ width: `${projected}%`, transition: "width .5s ease" }} />
-            </div>
-            <div className="flex flex-col gap-3 text-[13px]">
-              <Row label={t("goals done")} value={`${doneCount}/${build.length}`} />
-              <Row label={t("Watch-list")} value={String(slipCount)} />
-              <Row label={t("Daily check-in")} value={checkinAvg} />
-            </div>
-            <div className="mt-[22px]">
-              <Button className="w-full !py-3" onClick={save}>
-                <Save size={16} /> {t("Save check-in")}
-              </Button>
-              {savedFlash && (
-                <p className="mt-2 text-center text-sm text-[var(--good)]">{t("Saved ✓")}</p>
-              )}
-            </div>
-          </Card>
-          <Card>
-            <SectionTitle>{t("Sleep")}</SectionTitle>
-            <p className="mb-3 text-sm text-[var(--text-muted)]">
-              {data.sleep.find((s) => s.date === date)
-                ? t("Logged for last night.")
-                : t("Not logged for last night.")}
-            </p>
-            <Link href="/sleep">
-              <Button variant="soft" size="sm">
-                <Moon size={16} /> {t("Log sleep")}
-              </Button>
-            </Link>
-          </Card>
-        </div>
+          </Link>
+        )}
       </div>
-    </div>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between">
-      <span className="text-[var(--text-muted)]">{label}</span>
-      <span className="num font-semibold">{value}</span>
     </div>
   );
 }

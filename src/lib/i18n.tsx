@@ -228,6 +228,9 @@ const DE: Record<string, string> = {
   "Went badly": "Lief schlecht",
   "Better tomorrow": "Morgen besser",
   "Save check-in": "Check-in speichern",
+  Boredom: "Langeweile",
+  Tiredness: "Müdigkeit",
+  "Log last night to sharpen tomorrow's score.": "Trag die letzte Nacht ein, um den morgigen Score zu schärfen.",
   "Projected score": "Prognostizierter Score",
   "Updates live as you log. Categories with no data yet are excluded.":
     "Aktualisiert sich live beim Eintragen. Kategorien ohne Daten werden ausgeschlossen.",
