@@ -77,7 +77,7 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader kicker={`${t(monthLabelLong(ym.m))} ${ym.y}`} lead={t("Your (n)")} title={t("Calendar")} subtitle={t("Your life, day by day — tap a day to see everything you logged.")} />
 
       <Card className="mx-auto max-w-[760px]">

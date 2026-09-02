@@ -39,7 +39,7 @@ export default function ExperimentsPage() {
   const suggestions = useMemo(() => suggestExperiments(data), [data]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={t("30-day window")}
         title={t("Experiments")}

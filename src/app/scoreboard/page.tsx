@@ -202,7 +202,7 @@ export default function ScoreboardPage() {
 
   if (!isLeaderboardConfigured) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-[14px]">
         <PageHeader kicker={t("7-day average")} title={t("Scoreboard")} subtitle={t("Compare your Life Score with others.")} />
         <EmptyState
           icon={<Trophy size={26} />}
@@ -220,7 +220,7 @@ export default function ScoreboardPage() {
 
   if (!signedIn) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-[14px]">
         <PageHeader kicker={t("7-day average")} title={t("Scoreboard")} subtitle={t("Compare your Life Score with others.")} />
         <EmptyState
           icon={<Trophy size={26} />}
@@ -237,7 +237,7 @@ export default function ScoreboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={t("7-day average")}
         title={t("Scoreboard")}

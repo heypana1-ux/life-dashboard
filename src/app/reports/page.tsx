@@ -82,7 +82,7 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={period === "week" ? `${t("Week of")} ${report.label}` : report.label}
         title={t("Reports")}

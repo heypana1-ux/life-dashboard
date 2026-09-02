@@ -8,13 +8,12 @@ import { resizeImageToDataUrl } from "@/lib/image";
 import { VisionItem } from "@/lib/types";
 import {
   Button,
-  Card,
   EmptyState,
   Field,
   Modal,
   PageHeader,
   inputCls,
-  HeaderAction,
+  HeaderPill,
 } from "@/components/ui";
 
 const emptyDraft = (): VisionItem => ({
@@ -64,12 +63,17 @@ export default function VisionPage() {
     <div>
       <PageHeader
         kicker={t("Where you're headed")}
-        title={t("Vision Board")}
-        subtitle={t("Where you're headed — the picture worth working toward")}
+        lead={t("Vision")}
+        title={t("Board")}
+        subtitle={
+          items.length
+            ? `${t("The picture worth working toward.")} ${t("{n} of {m} visions.", { n: items.filter((v) => !v.done).length, m: items.length })}`
+            : t("The picture worth working toward.")
+        }
         action={
-          <HeaderAction primary label={t("Add vision")} onClick={openNew}>
-            <Plus size={17} />
-          </HeaderAction>
+          <HeaderPill onClick={openNew}>
+            <Plus size={14} strokeWidth={2.4} /> {t("Add")}
+          </HeaderPill>
         }
       />
 
@@ -85,65 +89,79 @@ export default function VisionPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((v) => (
-            <Card key={v.id} className="group relative overflow-hidden !p-0">
-              <div className="relative h-44 w-full">
-                {v.image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={v.image} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className="grad flex h-full w-full items-center justify-center">
-                    <Sparkles size={28} className="text-white/70" />
-                  </div>
-                )}
-                {v.done && (
-                  <span className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-[var(--good)] px-2 py-0.5 text-[11px] font-semibold text-white shadow">
-                    <Check size={12} /> {t("Achieved")}
-                  </span>
-                )}
-                <div className="absolute right-2 top-2 flex gap-1 opacity-0 transition group-hover:opacity-100">
-                  <button
-                    onClick={() => openEdit(v)}
-                    className="rounded-lg bg-black/45 p-1.5 text-white backdrop-blur hover:bg-black/60"
-                    aria-label={t("Edit")}
-                  >
-                    <Pencil size={14} />
-                  </button>
-                  <button
-                    onClick={() => removeVisionItem(v.id)}
-                    className="rounded-lg bg-black/45 p-1.5 text-white backdrop-blur hover:bg-black/60"
-                    aria-label={t("Delete")}
-                  >
-                    <Trash2 size={14} />
-                  </button>
-                </div>
-              </div>
-              <div className="p-4">
-                <div className="flex items-start justify-between gap-2">
-                  <h3 className={`font-semibold ${v.done ? "text-[var(--text-muted)] line-through" : ""}`}>{v.title}</h3>
-                  {v.targetYear && (
-                    <span className="flex shrink-0 items-center gap-1 text-xs text-[var(--text-faint)]">
-                      <Target size={12} /> {v.targetYear}
+        <>
+          <div className="flex flex-col gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((v) => (
+              <div
+                key={v.id}
+                className="overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface)]"
+              >
+                <div className="area-grad relative flex h-[150px] w-full items-center justify-center">
+                  {v.image ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={v.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <Sparkles size={30} className="opacity-55" />
+                  )}
+                  {v.done && (
+                    <span className="absolute left-2.5 top-2.5 flex items-center gap-1 rounded-full bg-[var(--good)] px-2 py-1 text-[10.5px] font-bold text-white">
+                      <Check size={12} strokeWidth={2.6} /> {t("Achieved")}
                     </span>
                   )}
-                </div>
-                {v.category && (
-                  <span className="mt-1.5 inline-block rounded-full bg-[var(--accent-soft)] px-2 py-0.5 text-[11px] font-medium text-[var(--accent)]">
-                    {v.category}
+                  <span className="absolute right-2.5 top-2.5 flex gap-[5px]">
+                    <button
+                      onClick={() => openEdit(v)}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-black/[0.42] text-white backdrop-blur hover:bg-black/60"
+                      aria-label={t("Edit")}
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => removeVisionItem(v.id)}
+                      className="flex h-7 w-7 items-center justify-center rounded-[10px] bg-black/[0.42] text-white backdrop-blur hover:bg-black/60"
+                      aria-label={t("Delete")}
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </span>
-                )}
-                {v.note && <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--text-muted)]">{v.note}</p>}
-                <button
-                  onClick={() => saveVisionItem({ ...v, done: !v.done })}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-[var(--text-faint)] hover:text-[var(--accent)]"
-                >
-                  <Check size={13} /> {v.done ? t("Mark as not yet") : t("Mark as achieved")}
-                </button>
+                </div>
+                <div className="px-4 pb-4 pt-[15px]">
+                  <div className="flex items-start justify-between gap-2.5">
+                    <h3
+                      className={`text-[15px] font-semibold tracking-[-0.01em] ${v.done ? "text-[var(--text-muted)] line-through" : ""}`}
+                    >
+                      {v.title}
+                    </h3>
+                    {v.targetYear && (
+                      <span className="flex shrink-0 items-center gap-1 text-[11px] text-[var(--text-faint)]">
+                        <Target size={12} /> {v.targetYear}
+                      </span>
+                    )}
+                  </div>
+                  {v.category && (
+                    <span className="area-soft mt-2 inline-block rounded-full px-[9px] py-[3px] text-[10.5px] font-semibold">
+                      {v.category}
+                    </span>
+                  )}
+                  {v.note && (
+                    <p className="mt-2.5 whitespace-pre-wrap text-[12.5px] leading-[1.5] text-[var(--text-muted)]">
+                      {v.note}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => saveVisionItem({ ...v, done: !v.done })}
+                    className={`mt-3 flex items-center gap-1.5 text-[11.5px] font-semibold ${v.done ? "area-text" : "text-[var(--text-faint)] hover:text-[var(--area-a)]"}`}
+                  >
+                    <Check size={13} /> {v.done ? t("Mark as not yet") : t("Mark as achieved")}
+                  </button>
+                </div>
               </div>
-            </Card>
-          ))}
-        </div>
+            ))}
+          </div>
+          <p className="mt-3.5 text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
+            {t("Drop your own photo on a card to replace the gradient — images stay on your device.")}
+          </p>
+        </>
       )}
 
       <Modal open={open} onClose={() => setOpen(false)} title={draft.id ? t("Edit vision") : t("New vision")}>

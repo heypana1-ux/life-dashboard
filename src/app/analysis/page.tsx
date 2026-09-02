@@ -34,7 +34,7 @@ export default function AnalysisPage() {
   const hasFindings = findings.length > 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader kicker={t("Cross-analysed")} lead={t("Your")} title={t("Analysis")} subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")} />
 
       {/* Verdict */}

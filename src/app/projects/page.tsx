@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, KanbanSquare, Plus, Trash2 } from "lucide-re
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { BoardKind } from "@/lib/types";
-import { Card, PageHeader, Button, Chip, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
+import { PageHeader, HeaderPill, Button, Chip, Modal, Field, inputCls, EmptyState } from "@/components/ui";
 
 export const BOARD_COLUMNS: Record<BoardKind, string[]> = {
   learning: ["Backlog", "Learning", "Review", "Mastered"],
@@ -40,15 +40,15 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("Creative board")}
+        kicker={`${board === "creative" ? t("Creative board") : t("Learning board")} · ${projects.length} ${t("projects")}`}
         title={t("Projects")}
         subtitle={t("Track learning topics and creative projects from idea to done.")}
         action={
-          <Button onClick={() => setModal(true)}>
-            <Plus size={16} /> {t("New project")}
-          </Button>
+          <HeaderPill onClick={() => setModal(true)}>
+            <Plus size={14} strokeWidth={2.4} /> {t("New")}
+          </HeaderPill>
         }
       />
 
@@ -72,52 +72,72 @@ export default function ProjectsPage() {
           }
         />
       ) : (
-        <div className="no-swipe flex gap-3 overflow-x-auto pb-2">
-          {columns.map((col, ci) => {
-            const items = projects.filter((p) => Math.min(p.column, columns.length - 1) === ci);
-            return (
-              <div key={col} className="w-64 shrink-0">
-                <div className="mb-2 flex items-center justify-between px-1">
-                  <span className="text-sm font-semibold">{t(col)}</span>
-                  <Badge>{items.length}</Badge>
-                </div>
-                <div className="space-y-2 rounded-2xl bg-[var(--surface-2)] p-2">
-                  {items.map((p) => (
-                    <Card key={p.id} className="!p-3">
-                      <div className="mb-1 flex items-start justify-between gap-2">
-                        <span className="text-sm font-medium">{p.title}</span>
-                        <button onClick={() => removeProject(p.id)} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
-                          <Trash2 size={13} />
-                        </button>
+        <>
+          {/* Kanban: 224px columns on a horizontal scroller, exactly as in the design. */}
+          <div className="no-swipe -mx-[22px] flex gap-2.5 overflow-x-auto px-[22px] pb-1">
+            {columns.map((col, ci) => {
+              const items = projects.filter((p) => Math.min(p.column, columns.length - 1) === ci);
+              return (
+                <div key={col} className="w-[224px] shrink-0">
+                  <div className="flex items-center justify-between px-1 pb-2">
+                    <span className="text-[12.5px] font-semibold">{t(col)}</span>
+                    <span className="rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10.5px] font-semibold text-[var(--text-muted)]">
+                      {items.length}
+                    </span>
+                  </div>
+                  <div className="flex min-h-[96px] flex-col gap-2 rounded-[20px] bg-[var(--surface-2)] p-2">
+                    {items.map((p) => (
+                      <div
+                        key={p.id}
+                        className="rounded-[15px] border border-[var(--border)] bg-[var(--surface)] p-3"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <span className="text-[12.5px] font-semibold">{p.title}</span>
+                          <button
+                            onClick={() => removeProject(p.id)}
+                            className="shrink-0 text-[var(--text-dim)] hover:text-[var(--bad)]"
+                            aria-label={t("Delete")}
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        {p.description && (
+                          <p className="mt-1.5 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
+                            {p.description}
+                          </p>
+                        )}
+                        <div className="mt-2.5 flex items-center justify-between">
+                          <button
+                            disabled={ci === 0}
+                            onClick={() => moveProject(p.id, ci - 1)}
+                            className="text-[var(--text-dim)] enabled:hover:text-[var(--text)] disabled:opacity-30"
+                            aria-label={t("Move left")}
+                          >
+                            <ChevronLeft size={15} />
+                          </button>
+                          <span className="text-[9.5px] uppercase tracking-[0.1em] text-[var(--text-faint)]">
+                            {t(col)}
+                          </span>
+                          <button
+                            disabled={ci === columns.length - 1}
+                            onClick={() => moveProject(p.id, ci + 1)}
+                            className="text-[var(--text-faint)] enabled:hover:text-[var(--text)] disabled:opacity-30"
+                            aria-label={t("Move right")}
+                          >
+                            <ChevronRight size={15} />
+                          </button>
+                        </div>
                       </div>
-                      {p.description && <p className="mb-2 text-xs text-[var(--text-muted)]">{p.description}</p>}
-                      <div className="flex items-center justify-between">
-                        <button
-                          disabled={ci === 0}
-                          onClick={() => moveProject(p.id, ci - 1)}
-                          className="rounded-lg p-1 text-[var(--text-faint)] enabled:hover:bg-[var(--surface-2)] disabled:opacity-30"
-                          aria-label={t("Move left")}
-                        >
-                          <ChevronLeft size={16} />
-                        </button>
-                        <span className="text-[10px] uppercase tracking-wide text-[var(--text-faint)]">{t(col)}</span>
-                        <button
-                          disabled={ci === columns.length - 1}
-                          onClick={() => moveProject(p.id, ci + 1)}
-                          className="rounded-lg p-1 text-[var(--text-faint)] enabled:hover:bg-[var(--surface-2)] disabled:opacity-30"
-                          aria-label={t("Move right")}
-                        >
-                          <ChevronRight size={16} />
-                        </button>
-                      </div>
-                    </Card>
-                  ))}
-                  {items.length === 0 && <div className="py-6 text-center text-xs text-[var(--text-faint)]">—</div>}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+          <p className="text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
+            {t("Swipe the board sideways; the arrows move a card between columns.")}
+          </p>
+        </>
       )}
 
       <Modal open={modal} onClose={() => setModal(false)} title={t("New project")}>

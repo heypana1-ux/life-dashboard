@@ -16,7 +16,7 @@ import {
   dailyRate,
   daysToAfford,
 } from "@/lib/rewardShop";
-import { Card, PageHeader, SectionTitle, Button, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
 import { HintCard } from "@/components/HintCard";
 import clsx from "clsx";
 
@@ -50,11 +50,11 @@ export default function RewardsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("Reward points")}
-        title={t("Reward shop")}
-        subtitle={t("Earn points by living well, then cash them in for rewards you set yourself.")}
+        kicker={`${balance.toLocaleString()} ${t("points")} · ${t("~{n} pts/day", { n: rate.toFixed(0) })}`}
+        lead={t("Reward (lead)")}
+        title={t("shop (title)")}
       />
 
       <HintCard id="rewards" title={t("How points work")}>
@@ -62,13 +62,13 @@ export default function RewardsPage() {
       </HintCard>
 
       {/* Balance */}
-      <Card className="flex flex-col items-center gap-1 text-center">
-        <div className="flex items-center gap-2 text-[var(--accent)]">
+      <Card className="flex flex-col items-center gap-[3px] text-center">
+        <div className="area-text flex items-center gap-[9px]">
           <Coins size={22} />
-          <span className="num text-4xl font-bold">{balance.toLocaleString()}</span>
+          <span className="num text-[38px] font-bold leading-none tracking-[-0.04em]">{balance.toLocaleString()}</span>
         </div>
-        <div className="text-sm text-[var(--text-muted)]">{t("points to spend")}</div>
-        <div className="mt-1 flex gap-4 text-xs text-[var(--text-faint)]">
+        <div className="text-[12.5px] text-[var(--text-muted)]">{t("points to spend")}</div>
+        <div className="mt-[5px] flex gap-4 text-[11px] text-[var(--text-faint)]">
           <span>{t("Earned")}: {earned.toLocaleString()}</span>
           <span>{t("~{n} pts / day", { n: rate.toFixed(1) })}</span>
         </div>
@@ -80,68 +80,73 @@ export default function RewardsPage() {
         {items.length === 0 ? (
           <EmptyState icon={<Gift size={26} />} title={t("No rewards yet")} hint={t("Add one below or pick a template to get started.")} />
         ) : (
-          <div className="space-y-2.5">
+          <div className="flex flex-col gap-[9px]">
             {items.map((r) => {
               const affordable = balance >= r.cost;
               const days = daysToAfford(r.cost, balance, rate);
               return (
-                <div key={r.id} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] p-3">
-                  <span className="text-2xl">{r.icon ?? "🎁"}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium">{t(r.name)}</div>
-                    <div className="text-xs text-[var(--text-faint)]">
+                <ShopRow
+                  key={r.id}
+                  plain
+                  swatch={<span className="text-[20px] leading-none">{r.icon ?? "🎁"}</span>}
+                  name={t(r.name)}
+                  sub={
+                    <>
                       {r.cost.toLocaleString()} {t("pts")}
                       {!affordable && days != null && ` · ${t("~{n} days away", { n: days })}`}
                       {!affordable && days == null && ` · ${t("keep logging to earn points")}`}
-                    </div>
-                  </div>
+                    </>
+                  }
+                >
                   <button
                     onClick={() => removeReward(r.id)}
-                    className="text-[var(--text-faint)] hover:text-[var(--bad)]"
+                    className="shrink-0 text-[var(--text-dim)] hover:text-[var(--bad)]"
                     aria-label={t("Delete")}
                   >
                     <Trash2 size={14} />
                   </button>
-                  <Button size="sm" disabled={!affordable} onClick={() => redeemReward(r)}>
+                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => redeemReward(r)}>
                     {affordable ? t("Redeem") : t("Locked")}
-                  </Button>
-                </div>
+                  </ShopPill>
+                </ShopRow>
               );
             })}
           </div>
         )}
 
         {/* Add custom */}
-        <div className="mt-4 border-t border-[var(--border)] pt-4">
-          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Add a reward")}</div>
-          <div className="flex flex-wrap items-end gap-2">
-            <Field label={t("Emoji")} className="w-16">
+        <div className="mt-[15px] border-t border-[var(--border)] pt-[15px]">
+          <div className="mb-[9px] text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">{t("Add a reward")}</div>
+          <div className="flex items-end gap-2">
+            <Field label={t("Emoji")} className="w-[52px] shrink-0">
               <input className={`${inputCls} text-center`} value={icon} maxLength={2} onChange={(e) => setIcon(e.target.value)} />
             </Field>
-            <Field label={t("Name")} className="min-w-[8rem] flex-1">
+            <Field label={t("Name")} className="min-w-0 flex-1">
               <input className={inputCls} placeholder={t("e.g. Spa afternoon")} value={name} onChange={(e) => setName(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") add(); }} />
             </Field>
-            <Field label={t("Cost (pts)")} className="w-24">
+            <Field label={t("Cost")} className="w-[66px] shrink-0">
               <NumberInput value={cost} min={1} onChange={setCost} />
             </Field>
-            <Button onClick={add} disabled={!name.trim() || !cost}>
-              <Plus size={16} /> {t("Add")}
-            </Button>
+          </div>
+          <div className="mt-2.5">
+            <ShopPill tone={!name.trim() || !cost ? "locked" : "primary"} onClick={add}>
+              <Plus size={13} strokeWidth={2.4} /> {t("Add")}
+            </ShopPill>
           </div>
         </div>
 
         {/* Templates */}
-        <div className="mt-4">
-          <div className="mb-2 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Ideas")}</div>
+        <div className="mt-[15px]">
+          <div className="mb-[9px] text-[10px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">{t("Ideas")}</div>
           <div className="flex flex-wrap gap-1.5">
             {REWARD_TEMPLATES.filter((tpl) => !existingNames.has(t(tpl.name).toLowerCase()) && !existingNames.has(tpl.name.toLowerCase())).map((tpl) => (
               <button
                 key={tpl.name}
                 onClick={() => saveReward({ id: "", name: tpl.name, cost: tpl.cost, icon: tpl.icon })}
-                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1.5 text-sm font-medium hover:border-[var(--accent)]"
+                className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-[11px] py-[7px] text-[11.5px] font-medium hover:border-[var(--area-a)]"
               >
                 <span>{tpl.icon}</span> {t(tpl.name)}
-                <span className="text-xs text-[var(--text-faint)]">{tpl.cost}</span>
+                <span className="num text-[10px] text-[var(--text-faint)]">{tpl.cost}</span>
               </button>
             ))}
           </div>
@@ -151,48 +156,37 @@ export default function RewardsPage() {
       {/* Cosmetics */}
       <Card>
         <SectionTitle right={<Palette size={16} className="text-[var(--text-faint)]" />}>{t("Cosmetics")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">
           {t("Spend points on accent themes. Purely cosmetic — they never touch your data or score.")}
         </p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="flex flex-col gap-[9px] sm:grid sm:grid-cols-2">
           {cosmetics.map((r) => {
             const isOwned = accentOwned(r.accent, level.level, owned);
             const active = (data.settings.accent ?? "calm") === r.accent;
             const affordable = balance >= r.cost;
             const days = daysToAfford(r.cost, balance, rate);
             return (
-              <div
+              <ShopRow
                 key={r.accent}
-                className={clsx(
-                  "flex items-center gap-3 rounded-xl border p-3",
-                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
-                )}
+                active={active}
+                swatch={<span className="h-[34px] w-[34px] shrink-0 rounded-[12px]" style={{ background: ACCENT_SWATCH[r.accent] }} />}
+                name={t(r.name)}
+                sub={
+                  isOwned
+                    ? t("Owned")
+                    : `${r.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`
+                }
               >
-                <span className="h-9 w-9 shrink-0 rounded-lg" style={{ background: ACCENT_SWATCH[r.accent] }} />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{t(r.name)}</div>
-                  <div className="text-xs text-[var(--text-faint)]">
-                    {isOwned
-                      ? t("Owned")
-                      : `${r.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
-                  </div>
-                </div>
                 {isOwned ? (
-                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ accent: r.accent })}>
-                    {active ? (
-                      <>
-                        <Check size={14} /> {t("Active")}
-                      </>
-                    ) : (
-                      t("Apply")
-                    )}
-                  </Button>
+                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ accent: r.accent })}>
+                    {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
+                  </ShopPill>
                 ) : (
-                  <Button size="sm" disabled={!affordable} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
+                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </Button>
+                  </ShopPill>
                 )}
-              </div>
+              </ShopRow>
             );
           })}
         </div>
@@ -201,10 +195,10 @@ export default function RewardsPage() {
       {/* Score-ring skins */}
       <Card>
         <SectionTitle right={<CircleDot size={16} className="text-[var(--text-faint)]" />}>{t("Score-ring skins")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">
           {t("Restyle the big Life Score ring on your dashboard. Purely cosmetic.")}
         </p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <div className="flex flex-col gap-[9px] sm:grid sm:grid-cols-2">
           {RING_SKINS.map((s) => {
             const isOwned = ringOwned(s.id, owned);
             const active = (data.settings.ringSkin ?? "default") === s.id;
@@ -212,43 +206,34 @@ export default function RewardsPage() {
             const days = daysToAfford(s.cost, balance, rate);
             const grad = s.id === "default" ? "var(--grad)" : `linear-gradient(135deg, ${s.gradA}, ${s.gradB})`;
             return (
-              <div
+              <ShopRow
                 key={s.id}
-                className={clsx(
-                  "flex items-center gap-3 rounded-xl border p-3",
-                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
-                )}
+                active={active}
+                swatch={
+                  <span
+                    className="flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-full"
+                    style={{ background: grad, boxShadow: s.glow ? `0 0 8px ${s.glow}` : undefined }}
+                  >
+                    <span className="h-[15px] w-[15px] rounded-full bg-[var(--surface)]" />
+                  </span>
+                }
+                name={t(s.name)}
+                sub={
+                  isOwned
+                    ? t("Owned")
+                    : `${s.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`
+                }
               >
-                <span
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
-                  style={{ background: grad, boxShadow: s.glow ? `0 0 8px ${s.glow}` : undefined }}
-                >
-                  <span className="h-4 w-4 rounded-full bg-[var(--surface)]" />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{t(s.name)}</div>
-                  <div className="text-xs text-[var(--text-faint)]">
-                    {isOwned
-                      ? t("Owned")
-                      : `${s.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
-                  </div>
-                </div>
                 {isOwned ? (
-                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ ringSkin: s.id })}>
-                    {active ? (
-                      <>
-                        <Check size={14} /> {t("Active")}
-                      </>
-                    ) : (
-                      t("Apply")
-                    )}
-                  </Button>
+                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ ringSkin: s.id })}>
+                    {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
+                  </ShopPill>
                 ) : (
-                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`ring:${s.id}`, s.cost, `Ring: ${s.name}`); updateSettings({ ringSkin: s.id }); }}>
+                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`ring:${s.id}`, s.cost, `Ring: ${s.name}`); updateSettings({ ringSkin: s.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </Button>
+                  </ShopPill>
                 )}
-              </div>
+              </ShopRow>
             );
           })}
         </div>
@@ -257,40 +242,35 @@ export default function RewardsPage() {
       {/* Titles */}
       <Card>
         <SectionTitle right={<Award size={16} className="text-[var(--text-faint)]" />}>{t("Titles")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Wear a title next to your level. Purely cosmetic.")}</p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">{t("Wear a title next to your level. Purely cosmetic.")}</p>
+        <div className="flex flex-col gap-[9px] sm:grid sm:grid-cols-2">
           {TITLES.filter((x) => x.id !== "none").map((x) => {
             const isOwned = titleOwned(x.id, owned);
             const active = (data.settings.title ?? "none") === x.id;
             const affordable = balance >= x.cost;
             const days = daysToAfford(x.cost, balance, rate);
             return (
-              <div
+              <ShopRow
                 key={x.id}
-                className={clsx(
-                  "flex items-center gap-3 rounded-xl border p-3",
-                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
-                )}
+                active={active}
+                swatch={<BadgeCheck size={18} className="area-text shrink-0" />}
+                name={t(x.name)}
+                sub={
+                  isOwned
+                    ? t("Owned")
+                    : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`
+                }
               >
-                <BadgeCheck size={18} className="shrink-0 text-[var(--accent)]" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{t(x.name)}</div>
-                  <div className="text-xs text-[var(--text-faint)]">
-                    {isOwned
-                      ? t("Owned")
-                      : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
-                  </div>
-                </div>
                 {isOwned ? (
-                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ title: x.id })}>
-                    {active ? (<><Check size={14} /> {t("Active")}</>) : t("Apply")}
-                  </Button>
+                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ title: x.id })}>
+                    {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
+                  </ShopPill>
                 ) : (
-                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`title:${x.id}`, x.cost, `Title: ${x.name}`); updateSettings({ title: x.id }); }}>
+                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`title:${x.id}`, x.cost, `Title: ${x.name}`); updateSettings({ title: x.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </Button>
+                  </ShopPill>
                 )}
-              </div>
+              </ShopRow>
             );
           })}
         </div>
@@ -304,40 +284,35 @@ export default function RewardsPage() {
       {/* Badges */}
       <Card>
         <SectionTitle right={<Coins size={16} className="text-[var(--text-faint)]" />}>{t("Badges")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Pin an emoji badge next to your level. Purely cosmetic.")}</p>
-        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">{t("Pin an emoji badge next to your level. Purely cosmetic.")}</p>
+        <div className="flex flex-col gap-[9px] sm:grid sm:grid-cols-2">
           {BADGES.filter((x) => x.id !== "none").map((x) => {
             const isOwned = badgeOwned(x.id, owned);
             const active = (data.settings.badge ?? "none") === x.id;
             const affordable = balance >= x.cost;
             const days = daysToAfford(x.cost, balance, rate);
             return (
-              <div
+              <ShopRow
                 key={x.id}
-                className={clsx(
-                  "flex items-center gap-3 rounded-xl border p-3",
-                  active ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)] bg-[var(--surface-2)]",
-                )}
+                active={active}
+                swatch={<span className="w-6 shrink-0 text-center text-[20px] leading-none">{x.emoji}</span>}
+                name={t(x.name)}
+                sub={
+                  isOwned
+                    ? t("Owned")
+                    : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`
+                }
               >
-                <span className="w-6 shrink-0 text-center text-xl">{x.emoji}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{t(x.name)}</div>
-                  <div className="text-xs text-[var(--text-faint)]">
-                    {isOwned
-                      ? t("Owned")
-                      : `${x.cost.toLocaleString()} ${t("pts")}${!affordable && days != null ? ` · ${t("~{n} days away", { n: days })}` : ""}`}
-                  </div>
-                </div>
                 {isOwned ? (
-                  <Button size="sm" variant={active ? "soft" : "primary"} disabled={active} onClick={() => updateSettings({ badge: x.id })}>
-                    {active ? (<><Check size={14} /> {t("Active")}</>) : t("Apply")}
-                  </Button>
+                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ badge: x.id })}>
+                    {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
+                  </ShopPill>
                 ) : (
-                  <Button size="sm" disabled={!affordable} onClick={() => { purchaseCosmetic(`badge:${x.id}`, x.cost, `Badge: ${x.name}`); updateSettings({ badge: x.id }); }}>
+                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`badge:${x.id}`, x.cost, `Badge: ${x.name}`); updateSettings({ badge: x.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </Button>
+                  </ShopPill>
                 )}
-              </div>
+              </ShopRow>
             );
           })}
         </div>
@@ -354,14 +329,14 @@ export default function RewardsPage() {
           <SectionTitle>{t("Redeemed")}</SectionTitle>
           <div className="divide-y divide-[var(--border)]">
             {redemptions.map((r) => (
-              <div key={r.id} className="flex items-center justify-between py-2.5 text-sm">
-                <div>
+              <div key={r.id} className="flex items-center justify-between gap-2 py-2.5 text-[12.5px]">
+                <div className="min-w-0 truncate">
                   <span className="font-medium">{t(r.name)}</span>
-                  <span className="ml-2 text-xs text-[var(--text-faint)]">{fmtShort(r.date.slice(0, 10))}</span>
+                  <span className="ml-2 text-[11px] text-[var(--text-faint)]">{fmtShort(r.date.slice(0, 10))}</span>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   <Badge tone="bad">−{r.cost} {t("pts")}</Badge>
-                  <button onClick={() => undoRedemption(r.id)} className="flex items-center gap-1 text-xs text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Undo")}>
+                  <button onClick={() => undoRedemption(r.id)} className="flex items-center gap-1 text-[11px] text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Undo")}>
                     <RotateCcw size={13} /> {t("Undo")}
                   </button>
                 </div>
@@ -370,6 +345,71 @@ export default function RewardsPage() {
           </div>
         </Card>
       )}
+    </div>
+  );
+}
+
+/** Pulse shop pill: 12px radius, 11.5px/600 — gradient for the primary action,
+ *  soft for the active state, hairline for locked. */
+function ShopPill({
+  tone,
+  onClick,
+  children,
+}: {
+  tone: "primary" | "soft" | "locked";
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      disabled={tone === "locked"}
+      onClick={onClick}
+      className={clsx(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-[13px] py-2 text-[11.5px] font-semibold transition",
+        tone === "primary" && "area-grad hover:opacity-90",
+        tone === "soft" && "area-soft",
+        tone === "locked" && "border border-[var(--border)] text-[var(--text-dim)]",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** One purchasable/equippable row: swatch, name + status, action pill. */
+function ShopRow({
+  swatch,
+  name,
+  sub,
+  active,
+  plain,
+  children,
+}: {
+  swatch: React.ReactNode;
+  name: string;
+  sub: React.ReactNode;
+  active?: boolean;
+  /** "Your rewards" rows sit on a plain tinted surface, without a border. */
+  plain?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={clsx(
+        "flex items-center gap-[11px] rounded-[16px] px-[13px] py-3",
+        plain
+          ? "bg-[var(--surface-2)]"
+          : active
+            ? "area-soft !text-[var(--text)] border border-[var(--area-a)]"
+            : "border border-[var(--border)] bg-[var(--surface-2)]",
+      )}
+    >
+      {swatch}
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[12.5px] font-medium">{name}</div>
+        <div className="text-[11px] text-[var(--text-faint)]">{sub}</div>
+      </div>
+      {children}
     </div>
   );
 }

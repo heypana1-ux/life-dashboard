@@ -81,7 +81,7 @@ export default function StatisticsPage() {
     moodEnergy.length ? Math.round((moodEnergy.reduce((a, r) => a + r[k], 0) / moodEnergy.length) * 10) / 10 : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader kicker={t("Trends · 30 days")} lead={t("Your")} title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
 
       <BestSelfCard />

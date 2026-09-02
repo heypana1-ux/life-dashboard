@@ -85,7 +85,7 @@ export default function JournalPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${data.journal.length} ${t("entries")} · ${t("private")}`}
         lead={t("Your (n)")}

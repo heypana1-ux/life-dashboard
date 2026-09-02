@@ -32,7 +32,7 @@ export default function AvatarPage() {
   const set = (patch: Partial<AvatarConfig>) => updateSettings({ avatar: { ...cfg, ...patch } });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={t("Cosmetics")}
         title={t("Character")}

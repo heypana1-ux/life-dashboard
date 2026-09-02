@@ -15,6 +15,42 @@ import { todayISO, addDays, weekdayOf } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Badge } from "@/components/ui";
 import clsx from "clsx";
 
+/** Thin progress track — 5px with an area-tinted rail, as in the Pulse mock. */
+function Track({ pct, done }: { pct: number; done?: boolean }) {
+  return (
+    <div
+      className="h-[5px] overflow-hidden rounded-full"
+      style={{ background: "color-mix(in srgb, var(--area-a) 12%, transparent)" }}
+    >
+      <div
+        className="h-full rounded-full"
+        style={{ width: `${pct}%`, background: done ? "var(--good)" : "var(--area-a)" }}
+      />
+    </div>
+  );
+}
+
+/** Claim pill — area gradient with area ink. */
+function ClaimPill({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className="area-grad inline-flex shrink-0 items-center gap-1 rounded-full px-[9px] py-1 text-[10px] font-bold"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Green "done" badge (claimed quests/challenges, unlocked achievements). */
+function DoneBadge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="shrink-0 rounded-full bg-[color-mix(in_srgb,var(--good)_16%,transparent)] px-2 py-[3px] text-[10px] font-bold text-[var(--good)]">
+      {children}
+    </span>
+  );
+}
+
 export default function AchievementsPage() {
   const { data, updateSettings, claimChallenge, claimQuest } = useStore();
   const d = useDerived();
@@ -39,21 +75,24 @@ export default function AchievementsPage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${t("Level")} ${level.level} · ${level.xp.toLocaleString()} XP`}
         title={t("Achievements")}
-        subtitle={t("Milestones and personal records from your data.")}
       />
 
-      {/* Level / XP */}
-      <div className="grad relative overflow-hidden rounded-[22px] p-6 text-white shadow-[var(--shadow)]">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-medium opacity-85">{t("Level")}</div>
-            <div className="mt-1 flex items-baseline gap-2.5">
-              <span className="num text-[52px] font-bold leading-none">{level.level}</span>
-              <span className="text-lg font-semibold">
+      {/* Level / XP banner — area gradient with area ink, exactly as in the mock. */}
+      <div className="area-grad relative overflow-hidden rounded-[24px] p-[19px] shadow-[var(--shadow)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-75">
+              {t("Level")}
+            </div>
+            <div className="mt-[5px] flex items-baseline gap-[9px]">
+              <span className="num text-[46px] font-bold leading-[0.9] tracking-[-0.04em]">
+                {level.level}
+              </span>
+              <span className="text-[15px] font-semibold">
                 {badgeEmoji(data.settings.badge) && (
                   <span className="mr-1">{badgeEmoji(data.settings.badge)}</span>
                 )}
@@ -61,16 +100,20 @@ export default function AchievementsPage() {
               </span>
             </div>
           </div>
-          <div className="text-right">
-            <div className="num text-2xl font-bold">{level.xp.toLocaleString()}</div>
-            <div className="text-xs opacity-85">{t("total XP")}</div>
+          <div className="shrink-0 text-right">
+            <div className="num text-[20px] font-bold leading-none">{level.xp.toLocaleString()}</div>
+            <div className="mt-1 text-[10.5px] opacity-75">{t("total XP")}</div>
           </div>
         </div>
-        <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/25">
-          <div className="h-full rounded-full bg-white" style={{ width: `${level.pct}%`, transition: "width .6s ease" }} />
+        <div className="mt-[15px] h-[9px] overflow-hidden rounded-full bg-black/[0.16]">
+          <div
+            className="h-full rounded-full bg-[var(--area-ink)]"
+            style={{ width: `${level.pct}%`, transition: "width .6s ease" }}
+          />
         </div>
-        <div className="mt-1.5 text-xs opacity-90">
-          {level.intoLevel.toLocaleString()} / {level.span.toLocaleString()} {t("XP to level {n}", { n: level.level + 1 })}
+        <div className="mt-1.5 text-[11px] opacity-80">
+          {level.intoLevel.toLocaleString()} / {level.span.toLocaleString()}{" "}
+          {t("XP to level {n}", { n: level.level + 1 })}
         </div>
       </div>
 
@@ -79,10 +122,10 @@ export default function AchievementsPage() {
         <SectionTitle right={<Badge tone="accent">{questsDone}/{quests.length} {t("done")}</Badge>}>
           {t("Today's quests")}
         </SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">
           {t("Small daily tasks — claim each for {n} points.", { n: QUEST_POINTS })}
         </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-[9px]">
           {quests.map((q) => (
             <QuestRow
               key={q.id}
@@ -99,10 +142,10 @@ export default function AchievementsPage() {
         <SectionTitle right={<Badge tone="accent">{challengesDone}/{challenges.length} {t("done")}</Badge>}>
           {t("This week's challenges")}
         </SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">
           {t("Complete a challenge, then claim it for {n} XP.", { n: CHALLENGE_XP })}
         </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-[9px]">
           {challenges.map((c) => (
             <ChallengeRow
               key={c.id}
@@ -117,8 +160,10 @@ export default function AchievementsPage() {
       {/* Cosmetic rewards */}
       <Card>
         <SectionTitle right={<Badge tone="accent">{t("Level {n}", { n: level.level })}</Badge>}>{t("Rewards")}</SectionTitle>
-        <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.")}</p>
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">
+          {t("Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.")}
+        </p>
+        <div className="grid grid-cols-2 gap-2">
           {ACCENT_REWARDS.map((r) => {
             const isOwned = accentOwned(r.accent, level.level, owned);
             const activeAccent = (data.settings.accent ?? "calm") === r.accent;
@@ -129,21 +174,35 @@ export default function AchievementsPage() {
                 disabled={!isOwned}
                 onClick={() => updateSettings({ accent: r.accent })}
                 className={clsx(
-                  "flex items-center gap-2.5 rounded-xl border p-3 text-left transition",
-                  activeAccent ? "border-[var(--accent)] bg-[var(--accent-soft)]" : "border-[var(--border)]",
-                  isOwned ? "hover:border-[var(--accent)]" : "opacity-60",
+                  "flex items-center gap-2.5 rounded-[15px] border px-3 py-[11px] text-left transition",
+                  activeAccent
+                    ? "area-soft border-[var(--area-a)]"
+                    : "border-[var(--border)] hover:border-[var(--area-a)]",
+                  !isOwned && "opacity-60",
                 )}
               >
-                <span className="h-8 w-8 shrink-0 rounded-lg" style={{ background: ACCENT_SWATCH[r.accent] }} />
+                <span
+                  className="h-[30px] w-[30px] shrink-0 rounded-[11px]"
+                  style={{ background: ACCENT_SWATCH[r.accent] }}
+                />
                 <div className="min-w-0">
-                  <div className="truncate text-sm font-medium">{t(r.name)}</div>
-                  <div className="text-[11px] text-[var(--text-faint)]">
+                  <div className="truncate text-[12.5px] font-medium text-[var(--text)]">{t(r.name)}</div>
+                  <div
+                    className={clsx(
+                      "flex items-center gap-1 text-[10.5px]",
+                      activeAccent ? "area-text" : "text-[var(--text-faint)]",
+                    )}
+                  >
                     {isOwned ? (
                       activeAccent ? t("Active") : t("Apply")
                     ) : levelGated ? (
-                      <span className="inline-flex items-center gap-1"><Lock size={10} /> {t("Level {n}", { n: r.unlockLevel })}</span>
+                      <>
+                        <Lock size={10} /> {t("Level {n}", { n: r.unlockLevel })}
+                      </>
                     ) : (
-                      <span className="inline-flex items-center gap-1"><Coins size={10} /> {r.cost} {t("pts")}</span>
+                      <>
+                        <Coins size={10} /> {r.cost} {t("pts")}
+                      </>
                     )}
                   </div>
                 </div>
@@ -153,36 +212,37 @@ export default function AchievementsPage() {
         </div>
       </Card>
 
+      {/* Badges */}
       <Card>
         <SectionTitle right={<Badge tone="accent">{unlocked}/{achievements.length} {t("Unlocked")}</Badge>}>
           {t("Achievements")}
         </SectionTitle>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="flex flex-col gap-[9px]">
           {achievements.map((a) => {
             const pct = Math.min(100, Math.round((a.current / a.target) * 100));
             return (
               <div
                 key={a.id}
                 className={clsx(
-                  "flex items-start gap-3 rounded-xl border p-3 transition",
+                  "flex items-start gap-[11px] rounded-[16px] border px-[13px] py-3",
                   a.unlocked
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)]"
+                    ? "area-soft !text-[var(--text)] border-[color-mix(in_srgb,var(--area-a)_35%,transparent)]"
                     : "border-[var(--border)] bg-[var(--surface-2)]",
                 )}
               >
-                <div className={clsx("text-2xl", !a.unlocked && "opacity-40 grayscale")}>{a.icon}</div>
+                <span className={clsx("text-[20px] leading-none", !a.unlocked && "opacity-40 grayscale")}>
+                  {a.icon}
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold">{t(a.title)}</span>
-                    {a.unlocked && <Badge tone="good">✓</Badge>}
+                    <span className="text-[12.5px] font-semibold">{t(a.title)}</span>
+                    {a.unlocked && <DoneBadge>✓</DoneBadge>}
                   </div>
-                  <p className="text-xs text-[var(--text-muted)]">{t(a.description)}</p>
+                  <p className="mt-0.5 text-[11.5px] text-[var(--text-muted)]">{t(a.description)}</p>
                   {!a.unlocked && (
                     <div className="mt-2">
-                      <div className="h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
-                        <div className="h-full rounded-full bg-[var(--accent)]" style={{ width: `${pct}%` }} />
-                      </div>
-                      <div className="mt-1 text-[11px] tabular-nums text-[var(--text-faint)]">
+                      <Track pct={pct} />
+                      <div className="num mt-1 text-[10px] text-[var(--text-faint)]">
                         {a.current} / {a.target}
                       </div>
                     </div>
@@ -192,17 +252,17 @@ export default function AchievementsPage() {
             );
           })}
         </div>
-        <p className="mt-3 text-[11px] text-[var(--text-faint)]">{t("Keep logging to unlock more.")}</p>
+        <p className="mt-3 text-[10.5px] text-[var(--text-dim)]">{t("Keep logging to unlock more.")}</p>
       </Card>
 
       <Card>
         <SectionTitle>{t("Personal records")}</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2">
           {records.map((r) => (
-            <div key={r.id} className="rounded-xl bg-[var(--surface-2)] p-4">
-              <div className="mb-1 text-2xl">{r.icon}</div>
-              <div className="text-lg font-bold tabular-nums">{r.value}</div>
-              <div className="text-xs text-[var(--text-muted)]">{t(r.label)}</div>
+            <div key={r.id} className="rounded-[16px] bg-[var(--surface-2)] p-3.5">
+              <div className="text-[19px] leading-none">{r.icon}</div>
+              <div className="num mt-2 text-[17px] font-bold">{r.value}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">{t(r.label)}</div>
             </div>
           ))}
         </div>
@@ -219,31 +279,30 @@ function ChallengeRow({ c, claimed, onClaim }: { c: Challenge; claimed: boolean;
   return (
     <div
       className={clsx(
-        "flex items-center gap-3 rounded-xl border p-3 transition",
-        c.done ? "border-[var(--good)] bg-[var(--good)]/10" : "border-[var(--border)] bg-[var(--surface-2)]",
+        "flex items-center gap-[11px] rounded-[16px] border bg-[var(--surface-2)] px-[13px] py-3",
+        c.done ? "border-[color-mix(in_srgb,var(--good)_35%,transparent)]" : "border-[var(--border)]",
       )}
     >
-      <div className={clsx("text-2xl", !c.done && "opacity-70")}>{c.icon}</div>
+      <span className={clsx("text-[19px] leading-none", !c.done && "opacity-70")}>{c.icon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium">{label}</span>
+          <span className="text-[12.5px] font-medium">{label}</span>
           {c.done ? (
             claimed ? (
-              <Badge tone="good">+{CHALLENGE_XP} XP</Badge>
+              <DoneBadge>+{CHALLENGE_XP} XP</DoneBadge>
             ) : (
-              <button
-                onClick={onClaim}
-                className="grad flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold text-white"
-              >
-                <Sparkles size={11} /> {t("Claim {n} XP", { n: CHALLENGE_XP })}
-              </button>
+              <ClaimPill onClick={onClaim}>
+                <Sparkles size={10} /> {t("Claim {n} XP", { n: CHALLENGE_XP })}
+              </ClaimPill>
             )
           ) : (
-            <span className="shrink-0 text-xs tabular-nums text-[var(--text-faint)]">{fmt(c.current)}/{fmt(c.target)}</span>
+            <span className="num shrink-0 text-[10.5px] text-[var(--text-faint)]">
+              {fmt(c.current)}/{fmt(c.target)}
+            </span>
           )}
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.done ? "var(--good)" : "var(--accent)" }} />
+        <div className="mt-[7px]">
+          <Track pct={pct} done={c.done} />
         </div>
       </div>
     </div>
@@ -257,31 +316,30 @@ function QuestRow({ q, claimed, onClaim }: { q: Quest; claimed: boolean; onClaim
   return (
     <div
       className={clsx(
-        "flex items-center gap-3 rounded-xl border p-3 transition",
-        q.done ? "border-[var(--good)] bg-[var(--good)]/10" : "border-[var(--border)] bg-[var(--surface-2)]",
+        "flex items-center gap-[11px] rounded-[16px] border bg-[var(--surface-2)] px-[13px] py-3",
+        q.done ? "border-[color-mix(in_srgb,var(--good)_35%,transparent)]" : "border-[var(--border)]",
       )}
     >
-      <div className={clsx("text-2xl", !q.done && "opacity-70")}>{q.icon}</div>
+      <span className={clsx("text-[19px] leading-none", !q.done && "opacity-70")}>{q.icon}</span>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-sm font-medium">{label}</span>
+          <span className="text-[12.5px] font-medium">{label}</span>
           {q.done ? (
             claimed ? (
-              <Badge tone="good">+{QUEST_POINTS} {t("pts")}</Badge>
+              <DoneBadge>+{QUEST_POINTS} {t("pts")}</DoneBadge>
             ) : (
-              <button
-                onClick={onClaim}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-[var(--accent)] px-2.5 py-1 text-xs font-semibold text-white"
-              >
-                <Coins size={11} /> {t("Claim {n} pts", { n: QUEST_POINTS })}
-              </button>
+              <ClaimPill onClick={onClaim}>
+                <Coins size={10} /> {t("Claim {n} pts", { n: QUEST_POINTS })}
+              </ClaimPill>
             )
           ) : (
-            <span className="shrink-0 text-xs tabular-nums text-[var(--text-faint)]">{q.current}/{q.target}</span>
+            <span className="num shrink-0 text-[10.5px] text-[var(--text-faint)]">
+              {q.current}/{q.target}
+            </span>
           )}
         </div>
-        <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
-          <div className="h-full rounded-full" style={{ width: `${pct}%`, background: q.done ? "var(--good)" : "var(--accent)" }} />
+        <div className="mt-[7px]">
+          <Track pct={pct} done={q.done} />
         </div>
       </div>
     </div>

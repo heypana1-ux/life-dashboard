@@ -69,7 +69,7 @@ export default function TrainingPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${data.workouts.filter((w) => isoRange(todayISO(), 7).includes(w.date)).length} ${t("sessions this week")}`}
         lead={t("Your (n)")}

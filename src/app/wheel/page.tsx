@@ -1,14 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Compass, Database, Save, Trash2 } from "lucide-react";
+import clsx from "clsx";
+import { Compass, Database, Plus, Save, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { fmtShort, todayISO } from "@/lib/date";
 import { WHEEL_DIMS, blankWheelScores, wheelAverage, latestWheel, previousWheel } from "@/lib/wheel";
 import { dataWheelScores } from "@/lib/dataWheel";
-import { Card, PageHeader, SectionTitle, Button, ScaleInput, Badge, Chip, EmptyState } from "@/components/ui";
+import { Card, PageHeader, HeaderAction, SectionTitle, Button, ScaleInput, Badge, Chip, EmptyState } from "@/components/ui";
 import { RadarChart } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
 import { HintCard } from "@/components/HintCard";
@@ -63,16 +64,24 @@ export default function WheelPage() {
   }, [latest, dataDims, dataScores]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("8 areas")}
-        title={t("Wheel of Life")}
-        subtitle={t("Rate 8 areas of your life 1–10 to see your balance and how it shifts over time.")}
+        kicker={
+          latest
+            ? `${t("8 areas")} · ${t("check-in")} ${fmtShort(latest.date)}`
+            : t("8 areas")
+        }
+        lead={t("Wheel of")}
+        title={t("Life (wheel)")}
         action={
           latest && !editing ? (
-            <Button variant="soft" onClick={() => { setDraft(todayCheck?.scores ?? latest.scores); setEditing(true); }}>
-              {todayCheck ? t("Update today") : t("New check-in")}
-            </Button>
+            <HeaderAction
+              primary
+              label={todayCheck ? t("Update today") : t("New check-in")}
+              onClick={() => { setDraft(todayCheck?.scores ?? latest.scores); setEditing(true); }}
+            >
+              <Plus size={17} strokeWidth={2.4} />
+            </HeaderAction>
           ) : undefined
         }
       />
@@ -88,18 +97,25 @@ export default function WheelPage() {
 
       {/* ---- Feeling mode ---- */}
       {mode === "feeling" && (latest ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <Card className="flex flex-col items-center">
+        <div className="grid gap-[14px] lg:grid-cols-[1fr_1fr]">
+          <Card>
             <SectionTitle right={<Badge tone="accent">{t("Avg {n}", { n: wheelAverage(latest.scores).toFixed(1) })}</Badge>}>
               {t("Your wheel")}
             </SectionTitle>
             <RadarChart
+              labels={false}
               axes={WHEEL_DIMS.map((dm) => t(dm.short))}
               values={WHEEL_DIMS.map((dm) => latest.scores[dm.key] ?? 0)}
               prev={prev ? WHEEL_DIMS.map((dm) => prev.scores[dm.key] ?? 0) : undefined}
             />
+            {/* Pulse lists the axis names under the wheel, four per row. */}
+            <div className="mt-1.5 grid grid-cols-4 gap-1 text-center">
+              {WHEEL_DIMS.map((dm) => (
+                <span key={dm.key} className="text-[10px] text-[var(--text-faint)]">{t(dm.short)}</span>
+              ))}
+            </div>
             {prev && (
-              <p className="mt-1 text-[11px] text-[var(--text-faint)]">
+              <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-dim)]">
                 {t("Dashed = previous check-in ({d})", { d: fmtShort(prev.date) })}
               </p>
             )}
@@ -107,23 +123,32 @@ export default function WheelPage() {
 
           <Card>
             <SectionTitle>{t("Areas")}</SectionTitle>
-            <div className="space-y-2.5">
+            <div className="flex flex-col gap-2.5">
               {WHEEL_DIMS.map((dim) => {
                 const v = latest.scores[dim.key] ?? 0;
                 const pv = prev?.scores[dim.key];
                 const delta = pv != null ? v - pv : 0;
                 return (
-                  <div key={dim.key} className="flex items-center gap-3">
-                    <span className="w-28 shrink-0 text-sm">{t(dim.label)}</span>
-                    <div className="h-2 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
-                      <div className="grad h-full rounded-full" style={{ width: `${(v / 10) * 100}%` }} />
+                  <div key={dim.key} className="flex items-center gap-2.5">
+                    <span className="w-[104px] shrink-0 text-[12.5px] leading-tight">{t(dim.label)}</span>
+                    <div className="h-[7px] flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${(v / 10) * 100}%`,
+                          background: "linear-gradient(90deg, var(--area-a), var(--area-b))",
+                        }}
+                      />
                     </div>
-                    <span className="num w-6 text-right text-sm font-semibold">{v}</span>
-                    {delta !== 0 && (
-                      <span className={`w-8 text-right text-xs tabular-nums ${delta > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}`}>
-                        {delta > 0 ? "+" : ""}{delta}
-                      </span>
-                    )}
+                    <span className="num w-3.5 shrink-0 text-right text-[12.5px] font-bold">{v}</span>
+                    <span
+                      className={clsx(
+                        "num w-[22px] shrink-0 text-right text-[11px]",
+                        delta > 0 ? "text-[var(--good)]" : delta < 0 ? "text-[var(--bad)]" : "text-[var(--text-dim)]",
+                      )}
+                    >
+                      {delta === 0 ? "·" : delta > 0 ? `+${delta}` : delta}
+                    </span>
                   </div>
                 );
               })}
@@ -136,62 +161,74 @@ export default function WheelPage() {
 
       {/* ---- Data mode ---- */}
       {mode === "data" && (dataDims.length >= 3 ? (
-        <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-          <Card className="flex flex-col items-center">
+        <div className="grid gap-[14px] lg:grid-cols-[1fr_1fr]">
+          <Card>
             <SectionTitle right={<Badge tone="accent">{t("Avg {n}", { n: dataAvg.toFixed(1) })}</Badge>}>
               {t("Data wheel")}
             </SectionTitle>
             <RadarChart
+              labels={false}
               axes={dataDims.map((dm) => t(dm.short))}
               values={dataDims.map((dm) => dataScores[dm.key])}
               prev={latest ? dataDims.map((dm) => latest.scores[dm.key] ?? 0) : undefined}
             />
-            <p className="mt-1 text-[11px] text-[var(--text-faint)]">
+            <div className="mt-1.5 grid grid-cols-4 gap-1 text-center">
+              {dataDims.map((dm) => (
+                <span key={dm.key} className="text-[10px] text-[var(--text-faint)]">{t(dm.short)}</span>
+              ))}
+            </div>
+            <p className="mt-2.5 text-center text-[10.5px] text-[var(--text-dim)]">
               {latest ? t("Solid = from your data · dashed = how you feel") : t("Scored 1–10 from your last 30 days of data.")}
             </p>
           </Card>
 
           <Card>
-            <SectionTitle right={<Database size={16} className="text-[var(--text-faint)]" />}>{t("Feeling vs data")}</SectionTitle>
-            <div className="space-y-3">
+            <SectionTitle right={<Database size={15} className="text-[var(--text-faint)]" />}>{t("Feeling vs data")}</SectionTitle>
+            <div className="flex flex-col gap-3">
               {dataDims.map((dim) => {
                 const dv = dataScores[dim.key];
                 const fv = latest?.scores[dim.key];
                 const delta = fv != null ? fv - dv : null;
                 return (
                   <div key={dim.key}>
-                    <div className="mb-1 flex items-center justify-between text-sm">
-                      <span>{t(dim.label)}</span>
+                    <div className="mb-[5px] flex items-center justify-between gap-2">
+                      <span className="text-[12.5px]">{t(dim.label)}</span>
                       {delta != null ? (
-                        <span className="text-xs text-[var(--text-muted)]">
+                        <span className="shrink-0 text-[11px] text-[var(--text-muted)]">
                           {t("feel")} {fv} · {t("data")} {dv}
-                          <span className={`ml-1.5 font-medium ${delta > 0 ? "text-[var(--warn)]" : delta < 0 ? "text-[var(--info)]" : "text-[var(--text-faint)]"}`}>
+                          <span className={clsx("ml-1 font-semibold", delta > 0 ? "text-[var(--warn)]" : delta < 0 ? "area-text" : "text-[var(--text-faint)]")}>
                             {delta > 0 ? `+${delta}` : delta}
                           </span>
                         </span>
                       ) : (
-                        <span className="text-xs text-[var(--text-muted)]">{t("data")} {dv}</span>
+                        <span className="shrink-0 text-[11px] text-[var(--text-muted)]">{t("data")} {dv}</span>
                       )}
                     </div>
                     {fv != null && (
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="w-9 shrink-0 text-[10px] text-[var(--text-faint)]">{t("feel")}</span>
-                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
+                      <div className="mb-1 flex items-center gap-[7px]">
+                        <span className="w-[26px] shrink-0 text-[9.5px] text-[var(--text-faint)]">{t("feel")}</span>
+                        <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
                           <div className="h-full rounded-full bg-[var(--text-faint)]" style={{ width: `${(fv / 10) * 100}%` }} />
                         </div>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <span className="w-9 shrink-0 text-[10px] text-[var(--text-faint)]">{t("data")}</span>
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[var(--ring-track)]">
-                        <div className="grad h-full rounded-full" style={{ width: `${(dv / 10) * 100}%` }} />
+                    <div className="flex items-center gap-[7px]">
+                      <span className="w-[26px] shrink-0 text-[9.5px] text-[var(--text-faint)]">{t("data")}</span>
+                      <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${(dv / 10) * 100}%`,
+                            background: "linear-gradient(90deg, var(--area-a), var(--area-b))",
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-            <p className="mt-3 text-[11px] leading-[1.5] text-[var(--text-faint)]">
+            <p className="mt-3 text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
               {t("Data covers only measurable areas (relationships and home stay feeling-only). A gap isn't wrong — it's worth a look.")}
             </p>
           </Card>
@@ -249,10 +286,10 @@ export default function WheelPage() {
           <SectionTitle right={<Compass size={16} className="text-[var(--text-faint)]" />}>{t("History")}</SectionTitle>
           <div className="divide-y divide-[var(--border)]">
             {history.map((w) => (
-              <div key={w.id} className="flex items-center justify-between py-2.5 text-sm">
+              <div key={w.id} className="flex items-center justify-between py-2.5 text-[12.5px]">
                 <span className="font-medium">{fmtShort(w.date)}</span>
                 <div className="flex items-center gap-3">
-                  <span className="tabular-nums text-[var(--text-muted)]">{t("avg")} {wheelAverage(w.scores).toFixed(1)}</span>
+                  <span className="num text-[var(--text-muted)]">{t("avg")} {wheelAverage(w.scores).toFixed(1)}</span>
                   <button onClick={() => removeWheelCheck(w.id)} className="text-[var(--text-faint)] hover:text-[var(--bad)]" aria-label={t("Delete")}>
                     <Trash2 size={13} />
                   </button>

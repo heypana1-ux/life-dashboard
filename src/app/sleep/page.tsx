@@ -108,7 +108,7 @@ export default function SleepPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${t("Manual tracking")} · ${data.sleep.length} ${t("nights")}`}
         title={t("Sleep")}

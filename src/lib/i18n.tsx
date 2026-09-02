@@ -131,6 +131,20 @@ const DE: Record<string, string> = {
   "Milestones & records": "Meilensteine & Rekorde",
   "Weekly & monthly": "Wöchentlich & monatlich",
   "8 areas": "8 Bereiche",
+  "~{n} pts/day": "~{n} Pkt./Tag",
+  "Reward (lead)": "",
+  "shop (title)": "Belohnungsshop",
+  "Board": "Board",
+  "Vision": "Vision",
+  "The picture worth working toward.": "Das Bild, für das sich die Arbeit lohnt.",
+  "{n} of {m} visions.": "{n} von {m} Visionen.",
+  "Drop your own photo on a card to replace the gradient — images stay on your device.": "Lege ein eigenes Foto auf eine Karte, um den Verlauf zu ersetzen — Bilder bleiben auf deinem Gerät.",
+  "Learning board": "Lern-Board",
+  "projects": "Projekte",
+  "Swipe the board sideways; the arrows move a card between columns.": "Wische das Board zur Seite; die Pfeile verschieben eine Karte zwischen den Spalten.",
+  "check-in": "Check-in",
+  "Wheel of": "",
+  "Life (wheel)": "Lebensrad",
   "Your coach": "Dein Coach",
   "Your profile": "Dein Profil",
   "Your": "Deine",
@@ -2245,7 +2259,10 @@ const DE: Record<string, string> = {
   "AI suggestions — review before adding.": "KI-Vorschläge — vor dem Hinzufügen prüfen.",
 };
 
-const DICTS: Record<Language, Record<string, string>> = { en: { "Your (n)": "Your" }, de: DE };
+const DICTS: Record<Language, Record<string, string>> = {
+  en: { "Your (n)": "Your", "Life (wheel)": "Life", "Reward (lead)": "Reward", "shop (title)": "shop" },
+  de: DE,
+};
 
 export function translate(lang: Language, key: string, vars?: Vars): string {
   const dict = DICTS[lang] ?? {};

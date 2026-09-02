@@ -11,7 +11,7 @@ export function Card({
   ...rest
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={clsx("card p-[16px] sm:px-[17px]", className)} {...rest}>
+    <div className={clsx("card p-[18px]", className)} {...rest}>
       {children}
     </div>
   );
@@ -87,6 +87,32 @@ export function HeaderAction({
   );
 }
 
+/** Labelled header pill (the design's "+ New" button): 13px radius, area gradient, 12px/600. */
+export function HeaderPill({
+  onClick,
+  children,
+  soft,
+}: {
+  onClick?: () => void;
+  children: React.ReactNode;
+  /** Bordered surface variant for secondary header actions. */
+  soft?: boolean;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={clsx(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-[13px] px-[13px] py-[9px] text-[12px] font-semibold transition",
+        soft
+          ? "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--area-a)]"
+          : "area-grad hover:opacity-90",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function SectionTitle({
   children,
   right,
@@ -95,7 +121,7 @@ export function SectionTitle({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-2">
+    <div className="mb-[13px] flex items-center justify-between gap-2">
       <h2 className="slabel">{children}</h2>
       {right}
     </div>
@@ -289,10 +315,10 @@ export function Chip({
     <button
       onClick={onClick}
       className={clsx(
-        "rounded-full px-3.5 py-1.5 text-xs font-medium transition",
+        "rounded-full px-[13px] py-[7px] text-[12px] transition",
         active
-          ? "area-soft shadow-sm"
-          : "grad-soft text-[var(--text-muted)] hover:brightness-95 dark:hover:brightness-110",
+          ? "area-grad font-semibold"
+          : "border border-[var(--border)] bg-[var(--surface)] font-medium text-[var(--text-muted)] hover:border-[var(--area-a)]",
         className,
       )}
     >
@@ -372,7 +398,7 @@ export function Modal({
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between gap-2">
+        <div className="mb-[13px] flex items-center justify-between gap-2">
           <h3 className="min-w-0 truncate text-lg font-semibold">{title}</h3>
           <div className="flex shrink-0 items-center gap-1">
             {headerRight}

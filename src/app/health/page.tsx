@@ -99,7 +99,7 @@ export default function HealthPage() {
   }, [data.health]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${weekdayLabel(weekdayOf(date))} · ${fmtShort(date)}`}
         lead={t("Your")}

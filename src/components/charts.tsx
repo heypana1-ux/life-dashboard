@@ -242,17 +242,20 @@ export function RadarChart({
   values,
   prev,
   max = 10,
-  size = 260,
+  size = 208,
+  labels = true,
 }: {
   axes: string[];
   values: number[];
   prev?: number[];
   max?: number;
   size?: number;
+  /** Pulse puts the axis names in a grid under the chart instead of around it. */
+  labels?: boolean;
 }) {
   const cx = size / 2;
   const cy = size / 2;
-  const r = size / 2 - 46;
+  const r = size / 2 - (labels ? 46 : 22);
   const n = axes.length;
   const angle = (i: number) => (Math.PI * 2 * i) / n - Math.PI / 2;
   const point = (i: number, radius: number) => ({
@@ -285,11 +288,11 @@ export function RadarChart({
         return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="var(--border)" strokeWidth={1} />;
       })}
       {prev && (
-        <polygon points={poly(prev)} fill="var(--text-faint)" fillOpacity={0.12} stroke="var(--text-faint)" strokeWidth={1.5} strokeDasharray="4 3" />
+        <polygon points={poly(prev)} fill="none" stroke="var(--text-faint)" strokeWidth={1.5} strokeDasharray="4 4" />
       )}
-      <polygon points={poly(values)} fill="var(--accent)" fillOpacity={0.22} stroke="var(--accent)" strokeWidth={2} />
-      {values.map((_, i) => { const p = point(i, (Math.max(0, Math.min(max, values[i])) / max) * r); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="var(--accent)" />; })}
-      {axes.map((label, i) => {
+      <polygon points={poly(values)} fill="var(--area-a)" fillOpacity={0.22} stroke="var(--area-a)" strokeWidth={2} />
+      {values.map((_, i) => { const p = point(i, (Math.max(0, Math.min(max, values[i])) / max) * r); return <circle key={i} cx={p.x} cy={p.y} r={3} fill="var(--area-a)" />; })}
+      {labels && axes.map((label, i) => {
         const p = point(i, r + 18);
         const anchor = Math.abs(p.x - cx) < 8 ? "middle" : p.x > cx ? "start" : "end";
         return (

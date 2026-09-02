@@ -72,7 +72,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader kicker={t("Tracking & scoring")} lead={t("Your")} title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
 
       {/* Install as an app (PWA) */}
@@ -287,7 +287,7 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 25
+        Pulse Build 26
       </p>
     </div>
   );

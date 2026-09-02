@@ -15,7 +15,7 @@ export default function AboutPage() {
   const total = ABOUT_QUESTIONS.length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={`${answered}/${total} ${t("answered")}`}
         title={t("About you")}

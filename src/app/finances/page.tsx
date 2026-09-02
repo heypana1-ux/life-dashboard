@@ -68,7 +68,7 @@ export default function FinancesPage() {
   }, [runRecurring]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-[14px]">
       <PageHeader
         kicker={t("Manual tracking")}
         lead={t("Your")}
