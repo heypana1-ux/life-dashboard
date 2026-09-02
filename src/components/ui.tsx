@@ -38,19 +38,21 @@ export function PageHeader({
   kicker?: React.ReactNode;
 }) {
   return (
-    <div className="sticky top-0 z-20 -mx-5 mb-[18px] flex flex-col gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-[18px] sm:-mx-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
-      <div className="min-w-0 pr-24 sm:pr-0">
-        {kicker && <div className="kicker mb-1 truncate">{kicker}</div>}
-        <h1 className="truncate pb-0.5 text-[22px] font-semibold tracking-[-0.03em] sm:text-[27px]">
-          {lead && <span className="text-[var(--text)]">{lead} </span>}
-          <span className="area-title">{title}</span>
-          {trail && <span className="text-[var(--text)]">{trail}</span>}
-        </h1>
-        {subtitle && (
-          <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>
-        )}
+    <div className="mb-[22px] pt-[22px]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {kicker && <div className="kicker truncate">{kicker}</div>}
+          <h1 className="mt-1.5 whitespace-nowrap text-[27px] font-semibold leading-[1.1] tracking-[-0.03em]">
+            {lead && <span className="text-[var(--text)]">{lead} </span>}
+            <span className="area-title">{title}</span>
+            {trail && <span className="text-[var(--text)]">{trail}</span>}
+          </h1>
+        </div>
+        {action && <div className="flex shrink-0 items-center gap-1.5 pt-1">{action}</div>}
       </div>
-      {action && <div className="min-w-0 max-w-full">{action}</div>}
+      {subtitle && (
+        <p className="mt-2 text-[12.5px] leading-[1.45] text-[var(--text-faint)]">{subtitle}</p>
+      )}
     </div>
   );
 }

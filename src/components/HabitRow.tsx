@@ -1,7 +1,7 @@
 "use client";
 
 import clsx from "clsx";
-import { Check, Minus, Plus, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { Habit, HabitLog } from "@/lib/types";
 import { HabitToday } from "@/lib/habitView";
 import { useStore } from "@/lib/store";
@@ -10,7 +10,7 @@ import { fmtDuration } from "@/lib/date";
 import { AREA_LABELS } from "@/lib/defaults";
 import { AreaKey } from "@/lib/types";
 import { AREA_ICONS, areaColor } from "@/lib/areaStyle";
-import { Badge, IconTile } from "@/components/ui";
+import { IconTile } from "@/components/ui";
 
 const areaLabel = (a: AreaKey): string => AREA_LABELS[a];
 
@@ -24,10 +24,13 @@ export function HabitRow({
   item,
   date,
   showAmount = false,
+  meta,
 }: {
   item: HabitToday;
   date: string;
   showAmount?: boolean;
+  /** Overrides the default meta line (Today passes the schedule, e.g. "Daily · 45 min"). */
+  meta?: string;
 }) {
   const { toggleHabit, setHabitLog } = useStore();
   const t = useT();
@@ -70,46 +73,30 @@ export function HabitRow({
       </IconTile>
 
       <div className="min-w-0 flex-1">
-        <div className="flex min-w-0 items-center gap-2">
-          <span
-            className={clsx(
-              "line-clamp-2 break-words text-[13.5px] font-medium leading-snug",
-              struck && "text-[var(--text-muted)] line-through",
-            )}
-          >
-            {habit.name}
-          </span>
-          {habit.priority === "high" && <span className="shrink-0"><Badge tone="accent">{t("High")}</Badge></span>}
-          {isReduce && <span className="shrink-0"><Badge tone="bad">{t("Reduce")}</Badge></span>}
-        </div>
-        <div className="mt-0.5 truncate text-[11.5px] text-[var(--text-faint)]">{metaParts.join(" · ")}</div>
+        <span
+          className={clsx(
+            "block line-clamp-2 break-words text-[13.5px] font-medium leading-snug",
+            struck && "text-[var(--text-muted)] line-through",
+          )}
+        >
+          {habit.name}
+        </span>
+        <div className="mt-0.5 truncate text-[11.5px] text-[var(--text-faint)]">{meta ?? metaParts.join(" · ")}</div>
       </div>
 
+      {/* Progress reads as plain right-aligned text, as in the design. */}
       {isCount && showAmount && (
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setCount(count - 1)}
-            disabled={count <= 0}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] enabled:hover:bg-[var(--surface-3)] disabled:opacity-40"
-            aria-label={t("Less")}
-          >
-            <Minus size={14} />
-          </button>
-          <span className={clsx("num min-w-[38px] text-center text-sm font-semibold tabular-nums", count >= countTarget && count > 0 ? "text-[var(--good)]" : "text-[var(--text)]")}>
-            {count}/{countTarget}
-          </span>
-          <button
-            onClick={() => setCount(count + 1)}
-            className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
-            aria-label={t("More")}
-          >
-            <Plus size={14} />
-          </button>
-        </div>
+        <button
+          onClick={() => setCount(count >= countTarget ? 0 : count + 1)}
+          className="num shrink-0 text-[11.5px] font-semibold tabular-nums text-[var(--text-muted)]"
+          aria-label={t("More")}
+        >
+          {count}/{countTarget}
+        </button>
       )}
 
       {canEnterAmount && (
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-baseline">
           <input
             type="number"
             inputMode="numeric"
@@ -124,32 +111,32 @@ export function HabitRow({
               else next.value = n;
               setHabitLog(next);
             }}
-            className="w-12 rounded-lg border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-right text-xs outline-none focus:border-[var(--accent)]"
+            className="num w-[34px] border-0 bg-transparent p-0 text-right text-[11.5px] font-semibold tabular-nums text-[var(--text-muted)] outline-none [appearance:textfield] placeholder:text-[var(--text-dim)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             aria-label={t("Amount")}
           />
-          <span className="text-[11px] text-[var(--text-faint)]">{amountUnit}</span>
+          <span className="text-[11.5px] font-semibold text-[var(--text-muted)]">
+            {amountKind === "minutes" ? "m" : `/${amountTarget}`}
+          </span>
         </div>
       )}
 
-      {!isCount && (
-        <button
-          onClick={onCircle}
-          aria-label={isReduce ? "Record occurrence" : "Mark done"}
-          className={clsx(
-            "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition active:scale-90",
-            marked && !isReduce && "pop",
-            isReduce
-              ? marked
-                ? "border-transparent bg-[var(--bad)] text-white"
-                : "border-[var(--border)] text-transparent hover:border-[var(--bad)]"
-              : marked
-                ? "area-grad border-transparent"
-                : "border-[var(--border)] text-transparent hover:border-[var(--area-a)]",
-          )}
-        >
-          {isReduce ? marked ? <X size={14} strokeWidth={2.6} /> : null : marked ? <Check size={14} strokeWidth={2.6} /> : null}
-        </button>
-      )}
+      <button
+        onClick={onCircle}
+        aria-label={isReduce ? "Record occurrence" : "Mark done"}
+        className={clsx(
+          "flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-full border-[1.5px] transition active:scale-90",
+          marked && !isReduce && "pop",
+          isReduce
+            ? marked
+              ? "border-transparent bg-[var(--bad)] text-white"
+              : "border-[var(--border)] text-transparent hover:border-[var(--bad)]"
+            : marked
+              ? "area-grad border-transparent"
+              : "border-[var(--border)] text-transparent hover:border-[var(--area-a)]",
+        )}
+      >
+        {isReduce ? marked ? <X size={14} strokeWidth={2.6} /> : null : marked ? <Check size={14} strokeWidth={2.6} /> : null}
+      </button>
     </div>
   );
 }

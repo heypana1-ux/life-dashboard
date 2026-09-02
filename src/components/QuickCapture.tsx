@@ -35,20 +35,24 @@ export function QuickCaptureButton() {
   const [manual, setManual] = useState(false);
   return (
     <>
-      <button
-        onClick={() => setVoice(true)}
-        aria-label={t("Voice log")}
-        className="fixed right-14 top-2.5 z-50 flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:border-[var(--accent)]"
-      >
-        <Mic size={16} className="text-[var(--accent)]" />
-      </button>
-      <button
-        onClick={() => setManual(true)}
-        className="fixed right-3 top-[50px] z-50 flex h-8 items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 text-[12px] font-medium text-[var(--text)] shadow-[var(--shadow)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
-      >
-        <ListChecks size={14} className="text-[var(--accent)]" />
-        {t("Quick capture")}
-      </button>
+      {/* Capture controls sit above the bottom nav so every page header stays clean,
+          exactly as in the design. */}
+      <div className="fixed bottom-[88px] right-3 z-50 flex items-center gap-2 md:bottom-6">
+        <button
+          onClick={() => setVoice(true)}
+          aria-label={t("Voice log")}
+          className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:border-[var(--accent)]"
+        >
+          <Mic size={16} className="text-[var(--accent)]" />
+        </button>
+        <button
+          onClick={() => setManual(true)}
+          className="flex h-9 items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface)] px-3 text-[12px] font-medium text-[var(--text)] shadow-[var(--shadow)] transition hover:border-[var(--accent)] hover:text-[var(--accent)]"
+        >
+          <ListChecks size={14} className="text-[var(--accent)]" />
+          {t("Quick capture")}
+        </button>
+      </div>
       {voice && <VoiceCaptureModal onClose={() => setVoice(false)} />}
       {manual && <ManualCaptureModal onClose={() => setManual(false)} />}
     </>

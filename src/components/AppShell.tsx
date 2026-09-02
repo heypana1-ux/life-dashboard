@@ -186,7 +186,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <Link
         href="/profile"
         aria-label={t("Profile")}
-        className="fixed right-3 top-2.5 z-50 block h-9 w-9 overflow-hidden rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:ring-2 hover:ring-[var(--accent)]"
+        className="fixed right-3 top-2.5 z-50 hidden h-9 w-9 overflow-hidden md:block rounded-full border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow)] transition hover:ring-2 hover:ring-[var(--accent)]"
       >
         {data.settings.profile.avatar ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -200,7 +200,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div className="mx-auto w-full max-w-[1160px] px-5 pb-28 sm:px-8 md:pb-12">
+        <div className="mx-auto w-full max-w-[1160px] px-[22px] pb-28 sm:px-8 md:pb-12">
           <PWARegister />
           <Reminders />
           <Tour />
@@ -210,9 +210,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <CommandPalette />
           {!isActive(pathname, "/coach") && <CoachLauncher />}
           <div key={pathname} data-area={pageArea(pathname)} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
+            {children}
+            {/* Nudges live below the page so every screen opens on its own header,
+                exactly as in the design. */}
             <AppPromoBanner />
             <BackupReminder />
-            {children}
           </div>
         </div>
       </main>

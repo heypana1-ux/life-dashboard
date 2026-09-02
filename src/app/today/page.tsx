@@ -40,6 +40,17 @@ const blankReview = (date: string): DailyReview => ({
 
 const TRIGGERS = ["Stress", "Boredom", "Tiredness", "Social", "Hunger", "Craving", "Emotions", "Habit"];
 
+/** Schedule-first meta line, exactly as in the design: "Daily · 45 min", "Daily · 2×", "5 days / week". */
+function scheduleMeta(h: { schedule: { type: string; timesPerWeek?: number; days?: number[] }; targetMinutes?: number; timesPerDay?: number; targetValue?: number; unit?: string }, t: (k: string) => string): string {
+  const parts: string[] = [];
+  if (h.schedule.type === "daily") parts.push(t("Daily"));
+  else if (h.schedule.type === "weekly") parts.push(`${h.schedule.timesPerWeek}× / ${t("week")}`);
+  else parts.push(`${(h.schedule.days ?? []).length} ${t("days / week")}`);
+  if (h.targetMinutes) parts.push(`${h.targetMinutes} ${t("min")}`);
+  if (h.timesPerDay) parts.push(`${h.timesPerDay}×`);
+  return parts.join(" · ");
+}
+
 /** 10-segment 1..10 rating bar (Pulse). */
 function RatingBar({ value, onChange }: { value: number; onChange: (n: number) => void }) {
   return (
@@ -180,7 +191,7 @@ export default function TodayPage() {
             </p>
           ) : (
             <div className="flex flex-col">
-              {build.map((g) => <HabitRow key={g.habit.id} item={g} date={date} showAmount />)}
+              {build.map((g) => <HabitRow key={g.habit.id} item={g} date={date} showAmount meta={scheduleMeta(g.habit, t)} />)}
             </div>
           )}
         </section>
@@ -193,7 +204,7 @@ export default function TodayPage() {
               {t("Tap only if the behavior happened today. Avoided by default.")}
             </p>
             <div className="flex flex-col">
-              {reduce.map((g) => <HabitRow key={g.habit.id} item={g} date={date} />)}
+              {reduce.map((g) => <HabitRow key={g.habit.id} item={g} date={date} meta={`${t("Reduce")} · ${scheduleMeta(g.habit, t)}`} />)}
             </div>
             {occurred.length > 0 && (
               <div className="mt-3">

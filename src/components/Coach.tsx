@@ -563,7 +563,7 @@ export function CoachLauncher() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="grad fixed bottom-[84px] right-4 z-[54] flex h-13 w-13 items-center justify-center rounded-full text-white shadow-[var(--shadow)] md:bottom-6"
+          className="grad fixed bottom-[144px] right-4 z-[54] flex h-13 w-13 items-center justify-center rounded-full text-white shadow-[var(--shadow)] md:bottom-6"
           style={{ height: 52, width: 52 }}
           aria-label={t("Open coach")}
         >
