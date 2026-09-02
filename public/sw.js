@@ -1,5 +1,5 @@
 /* Life Dashboard service worker — offline app shell + asset caching + web push. */
-const CACHE = "ld-cache-v2";
+const CACHE = "ld-cache-v3";
 
 // ---- Web push ----
 self.addEventListener("push", (e) => {
