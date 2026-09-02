@@ -283,8 +283,11 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <p className="pb-4 text-center text-xs text-[var(--text-faint)]">
+      <p className="pb-1 text-center text-xs text-[var(--text-faint)]">
         {t("Life Dashboard · your data lives in this browser only.")}
+      </p>
+      <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
+        Pulse Build 1
       </p>
     </div>
   );
