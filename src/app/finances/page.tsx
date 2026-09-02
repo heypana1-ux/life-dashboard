@@ -47,8 +47,6 @@ import {
   EmptyState,
   Badge,
   Delta,
-  FocusZone,
-  HairlineStats,
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
@@ -110,14 +108,26 @@ function Overview({ cur }: { cur: string }) {
 
   return (
     <div className="space-y-4">
-      <FocusZone label={t("Net worth")} value={fmtMoney(totals.netWorth, cur)} />
-      <HairlineStats
-        items={[
-          { label: t("Assets"), value: fmtMoney(totals.assets, cur) },
-          { label: t("Investments value"), value: fmtMoney(totals.invest, cur) },
-          { label: t("Liabilities"), value: fmtMoney(totals.debt, cur), color: totals.debt > 0 ? "var(--bad)" : undefined },
-        ]}
-      />
+      <div className="grid grid-cols-2 gap-[9px]">
+        <div className="col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-[15px] py-[14px]">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">{t("Net worth")}</div>
+          <div className="num mt-1 text-[24px] font-bold tracking-[-0.02em]">{fmtMoney(totals.netWorth, cur)}</div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-[13px] py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">{t("Assets")}</div>
+          <div className="num mt-1 text-[16px] font-bold tracking-[-0.02em]">{fmtMoney(totals.assets, cur)}</div>
+        </div>
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-[13px] py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">{t("Investments value")}</div>
+          <div className="num mt-1 text-[16px] font-bold tracking-[-0.02em]">{fmtMoney(totals.invest, cur)}</div>
+        </div>
+        <div className="col-span-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] px-[13px] py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.06em] text-[var(--text-faint)]">{t("Liabilities")}</div>
+          <div className="num mt-1 text-[16px] font-bold tracking-[-0.02em]" style={{ color: totals.debt > 0 ? "var(--bad)" : undefined }}>
+            {totals.debt > 0 ? "− " : ""}{fmtMoney(totals.debt, cur)}
+          </div>
+        </div>
+      </div>
 
       <NetWorthCard cur={cur} />
 
