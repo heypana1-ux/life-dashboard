@@ -47,6 +47,8 @@ import {
   EmptyState,
   Badge,
   Delta,
+  FocusZone,
+  HairlineStats,
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
@@ -107,12 +109,14 @@ function Overview({ cur }: { cur: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Stat label={t("Net worth")} value={fmtMoney(totals.netWorth, cur)} big />
-        <Stat label={t("Assets")} value={fmtMoney(totals.assets, cur)} />
-        <Stat label={t("Investments value")} value={fmtMoney(totals.invest, cur)} />
-        <Stat label={t("Liabilities")} value={fmtMoney(totals.debt, cur)} tone="bad" />
-      </div>
+      <FocusZone label={t("Net worth")} value={fmtMoney(totals.netWorth, cur)} />
+      <HairlineStats
+        items={[
+          { label: t("Assets"), value: fmtMoney(totals.assets, cur) },
+          { label: t("Investments value"), value: fmtMoney(totals.invest, cur) },
+          { label: t("Liabilities"), value: fmtMoney(totals.debt, cur), color: totals.debt > 0 ? "var(--bad)" : undefined },
+        ]}
+      />
 
       <NetWorthCard cur={cur} />
 
