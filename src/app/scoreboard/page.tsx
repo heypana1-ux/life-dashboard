@@ -239,6 +239,7 @@ export default function ScoreboardPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("7-day average")}
         title={t("Scoreboard")}
         subtitle={t("Compare your Life Score with others.")}
         action={

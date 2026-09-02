@@ -69,7 +69,7 @@ export default function ProfilePage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title={t("Profile")} subtitle={t("How you show up — to yourself and others.")} />
+      <PageHeader kicker={t("Your profile")} title={t("Profile")} subtitle={t("How you show up — to yourself and others.")} />
 
       <ProfileView p={card} />
 

@@ -17,6 +17,7 @@ export default function AboutPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={`${answered}/${total} ${t("answered")}`}
         title={t("About you")}
         subtitle={t("Answer at your own pace — the more the coach knows, the better its advice.")}
         action={<Badge tone="accent">{answered}/{total}</Badge>}

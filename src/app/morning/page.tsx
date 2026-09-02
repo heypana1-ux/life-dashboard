@@ -40,7 +40,7 @@ export default function MorningPage() {
 
   return (
     <div>
-      <PageHeader title={t("Morning")} subtitle={fmtLong(date)} />
+      <PageHeader kicker={greeting} title={t("Morning")} subtitle={fmtLong(date)} />
 
       <div className="flex flex-col gap-[18px]">
         {/* Gradient greeting banner */}

@@ -139,7 +139,7 @@ export default function CorrelationsPage() {
   if (variables.length < 2) {
     return (
       <div>
-        <PageHeader title={t("Correlations")} subtitle={t("Explore how any two things you track move together")} />
+        <PageHeader kicker={t("Two metrics")} title={t("Correlations")} subtitle={t("Explore how any two things you track move together")} />
         <EmptyState icon={<Sparkles size={22} />} title={t("Not enough data yet")} hint={t("Log a couple of weeks across a few areas, then come back to explore the links.")} />
       </div>
     );
@@ -147,7 +147,7 @@ export default function CorrelationsPage() {
 
   return (
     <div>
-      <PageHeader title={t("Correlations")} subtitle={t("Explore how any two things you track move together")} />
+      <PageHeader kicker={t("Two metrics")} title={t("Correlations")} subtitle={t("Explore how any two things you track move together")} />
 
       <Card className="mb-4">
         <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-end">
