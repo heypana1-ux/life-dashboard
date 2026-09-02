@@ -13,7 +13,7 @@ import { habit30dRate } from "@/lib/habitStats";
 import { goalForecast } from "@/lib/goalForecast";
 import { buildCoachContext } from "@/lib/coachContext";
 import { planGoal, parseGoalPlan, checkCoachConfigured, GoalPlan } from "@/lib/ai";
-import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge, FocusZone, HairlineStats, HeaderAction } from "@/components/ui";
+import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge, HeaderAction } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
 import clsx from "clsx";
 
@@ -103,23 +103,6 @@ export default function GoalsPage() {
           </>
         }
       />
-
-      {active.length > 0 && (
-        <section>
-          <FocusZone
-            label={t("Average progress")}
-            value={`${active.length ? Math.round(active.reduce((a, g) => a + g.progress, 0) / active.length) : 0}%`}
-            progress={active.length ? Math.round(active.reduce((a, g) => a + g.progress, 0) / active.length) : 0}
-          />
-          <HairlineStats
-            items={[
-              { label: t("Active"), value: active.length },
-              { label: t("Done"), value: active.filter((g) => g.progress >= 100).length },
-              { label: t("With deadline"), value: active.filter((g) => g.deadline).length },
-            ]}
-          />
-        </section>
-      )}
 
       {tpl && (
         <Card>

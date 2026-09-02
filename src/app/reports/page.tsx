@@ -87,24 +87,24 @@ export default function ReportsPage() {
         kicker={period === "week" ? `${t("Week of")} ${report.label}` : report.label}
         title={t("Reports")}
         subtitle={t("Automatic summaries of your week and month.")}
-        action={
-          <div className="flex items-center gap-2">
-            {wrapYears.length > 0 && (
-              <Button onClick={() => setWrapYear(wrapYears[0])}>
-                <Gift size={16} /> {t("Year in review")}
-              </Button>
-            )}
-            <Button variant="soft" onClick={() => setRecap(true)}>
-              <Sparkles size={16} /> {t("Play recap")}
-            </Button>
-            {report.hasData && (
-              <Button variant="soft" onClick={() => shareImage(report, data.finances.currency, t)}>
-                <ImageDown size={16} /> {t("Share as image")}
-              </Button>
-            )}
-          </div>
-        }
       />
+
+      {/* The mock keeps these as a wrapped pill row under the header, not in the title bar. */}
+      <div className="flex flex-wrap gap-2">
+        {wrapYears.length > 0 && (
+          <Button className="!rounded-full !px-3 !py-1.5 !text-[12.5px]" onClick={() => setWrapYear(wrapYears[0])}>
+            <Gift size={14} /> {t("Year in review")}
+          </Button>
+        )}
+        <Button variant="soft" className="!rounded-full !px-3 !py-1.5 !text-[12.5px]" onClick={() => setRecap(true)}>
+          <Sparkles size={14} /> {t("Play recap")}
+        </Button>
+        {report.hasData && (
+          <Button variant="soft" className="!rounded-full !px-3 !py-1.5 !text-[12.5px]" onClick={() => shareImage(report, data.finances.currency, t)}>
+            <ImageDown size={14} /> {t("Share")}
+          </Button>
+        )}
+      </div>
 
       <div className="flex gap-1.5">
         <Chip active={period === "week"} onClick={() => setPeriod("week")}>
