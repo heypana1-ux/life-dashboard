@@ -17,20 +17,25 @@ export function Card({
   );
 }
 
-/** Sticky topbar carrying the screen title / subtitle and its primary action. */
+/** Sticky topbar carrying the screen title / subtitle and its primary action.
+ *  The title renders as the page's area-accent gradient ("Pulse" headline); an optional kicker
+ *  sits above it (small uppercase line, usually a real number from the data). */
 export function PageHeader({
   title,
   subtitle,
   action,
+  kicker,
 }: {
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
+  kicker?: React.ReactNode;
 }) {
   return (
     <div className="sticky top-0 z-20 -mx-5 mb-[18px] flex flex-col gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-[18px] sm:-mx-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
       <div className="min-w-0 pr-24 sm:pr-0">
-        <h1 className="truncate text-[21px] font-semibold tracking-[-0.025em]">{title}</h1>
+        {kicker && <div className="kicker mb-1 truncate">{kicker}</div>}
+        <h1 className="area-title truncate pb-0.5 text-[22px] font-semibold tracking-[-0.03em] sm:text-[27px]">{title}</h1>
         {subtitle && (
           <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>
         )}
