@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Moon, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { habitsForToday } from "@/lib/habitView";
-import { todayISO, fmtLong, addDays } from "@/lib/date";
+import { todayISO, fmtShort, addDays, weekdayOf, weekdayLabel } from "@/lib/date";
 import { DailyReview } from "@/lib/types";
 import { useT } from "@/lib/i18n";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
@@ -112,41 +112,37 @@ export default function TodayPage() {
   return (
     <div className="mx-auto max-w-2xl">
       <PageHeader
-        kicker={`${doneCount}/${build.length} ${t("goals done")}`}
+        kicker={`${weekdayLabel(weekdayOf(date))} · ${fmtShort(date)}`}
         title={isToday ? t("Today") : t("Edit day")}
-        subtitle={fmtLong(date)}
         action={
-          <div className="flex flex-wrap items-center gap-1.5">
+          <div className="flex items-center gap-1.5">
             <button
               onClick={() => setDate((d) => addDays(d, -1))}
-              className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--accent)]"
+              className="flex h-8 w-8 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--accent)]"
               aria-label={t("Move left")}
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={16} />
             </button>
-            <label className="relative flex items-center">
-              <CalendarDays size={14} className="pointer-events-none absolute left-2.5 text-[var(--text-faint)]" />
+            <label className="relative flex h-8 cursor-pointer items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[12px] font-medium">
+              <CalendarDays size={14} className="text-[var(--text-faint)]" />
+              <span className="whitespace-nowrap">{fmtShort(date)}</span>
               <input
                 type="date"
                 max={today}
                 value={date}
                 onChange={(e) => e.target.value && setDate(e.target.value)}
-                className="rounded-[11px] border border-[var(--border)] bg-[var(--surface)] py-1.5 pl-8 pr-2 text-sm outline-none"
+                className="absolute inset-0 cursor-pointer opacity-0"
+                aria-label={t("Pick a date")}
               />
             </label>
             <button
               onClick={() => setDate((d) => (d < today ? addDays(d, 1) : d))}
               disabled={isToday}
-              className="flex h-9 w-9 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] enabled:hover:border-[var(--accent)] disabled:opacity-40"
+              className="flex h-8 w-8 items-center justify-center rounded-[11px] border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] enabled:hover:border-[var(--accent)] disabled:opacity-45"
               aria-label={t("Move right")}
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={16} />
             </button>
-            {!isToday && (
-              <Button variant="soft" size="sm" onClick={() => setDate(today)}>
-                {t("Today")}
-              </Button>
-            )}
           </div>
         }
       />
