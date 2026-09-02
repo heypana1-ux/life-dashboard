@@ -14,7 +14,7 @@ import { weeklyNarrative, monthlyNarrative } from "@/lib/narrative";
 import { translate } from "@/lib/i18n";
 import { downloadReportImage, downloadStateOfYouImage } from "@/lib/reportImage";
 import { Language } from "@/lib/types";
-import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button, FocusZone } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Chip, Delta, Badge, Button } from "@/components/ui";
 import { RecapOverlay } from "@/components/Recap";
 import { YearWrappedOverlay } from "@/components/YearWrapped";
 import { availableWrapYears } from "@/lib/yearWrapped";
@@ -84,7 +84,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t("Weekly & monthly")}
+        kicker={period === "week" ? `${t("Week of")} ${report.label}` : report.label}
         title={t("Reports")}
         subtitle={t("Automatic summaries of your week and month.")}
         action={
@@ -183,13 +183,17 @@ export default function ReportsPage() {
       ) : (
         <>
           <Card>
-            <FocusZone
-              label={`${t("Life Report")} · ${report.label}`}
-              value={report.avgScore}
-              sub={report.scoreDelta !== 0 ? <Delta value={report.scoreDelta} /> : undefined}
-              progress={report.avgScore}
-            />
-            <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h2 className="text-[17px] font-bold tracking-[-0.02em]">{t("Life Report")}</h2>
+                <div className="mt-0.5 text-[12px] text-[var(--text-faint)]">{report.label}</div>
+              </div>
+              <div className="text-right">
+                <div className="num text-[40px] font-bold leading-none tracking-[-0.03em]">{report.avgScore}</div>
+                {report.scoreDelta !== 0 && <div className="mt-1 flex justify-end"><Delta value={report.scoreDelta} /></div>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
               <Metric label={t("Life Rating")} value={report.elo.toLocaleString()} sub={report.eloDelta} />
               <Metric label={t("Training sessions")} value={String(report.workouts)} />
               <Metric label={t("Sleep")} value={report.avgSleep ? fmtDuration(report.avgSleep) : "—"} suffix={t("avg")} />

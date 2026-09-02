@@ -944,6 +944,7 @@ const DE: Record<string, string> = {
   "A guided two-minute reflection on your week. Do it any time, or wait for the Sunday nudge.":
     "Eine geführte Zwei-Minuten-Reflexion über deine Woche. Jederzeit oder mit dem Sonntags-Hinweis.",
   "Week of {d}": "Woche vom {d}",
+  "Week of": "Woche vom",
   "Focus:": "Fokus:",
   // --- AI coach ---
   Coach: "Coach",

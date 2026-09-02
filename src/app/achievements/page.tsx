@@ -41,7 +41,7 @@ export default function AchievementsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t("Milestones & records")}
+        kicker={`${t("Level")} ${level.level} · ${level.xp.toLocaleString()} XP`}
         title={t("Achievements")}
         subtitle={t("Milestones and personal records from your data.")}
       />
