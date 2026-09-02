@@ -47,6 +47,8 @@ import {
   EmptyState,
   Badge,
   Delta,
+  IconTile,
+  HeaderAction,
 } from "@/components/ui";
 import { TrendLine } from "@/components/charts";
 
@@ -57,6 +59,8 @@ export default function FinancesPage() {
   const t = useT();
   const [tab, setTab] = useState<Tab>("overview");
   const cur = data.finances.currency;
+  // Bumped by the header "+" to open the add-account sheet on the Overview tab.
+  const [addSignal, setAddSignal] = useState(0);
 
   // Auto-book any due recurring transactions (rent, salary, subscriptions…).
   useEffect(() => {
@@ -70,6 +74,18 @@ export default function FinancesPage() {
         lead={t("Your")}
         title={t("Finances")}
         subtitle={t("Net worth, portfolio and budget. Values are entered manually.")}
+        action={
+          <HeaderAction
+            primary
+            label={t("Add")}
+            onClick={() => {
+              setTab("overview");
+              setAddSignal((n) => n + 1);
+            }}
+          >
+            <Plus size={17} />
+          </HeaderAction>
+        }
       />
 
       <div className="flex gap-1.5">
@@ -84,7 +100,7 @@ export default function FinancesPage() {
         </Chip>
       </div>
 
-      {tab === "overview" && <Overview cur={cur} />}
+      {tab === "overview" && <Overview cur={cur} addSignal={addSignal} />}
       {tab === "portfolio" && <PortfolioTab cur={cur} />}
       {tab === "budget" && <BudgetTab cur={cur} />}
 
@@ -97,7 +113,7 @@ export default function FinancesPage() {
 
 /* ---------------- Overview ---------------- */
 
-function Overview({ cur }: { cur: string }) {
+function Overview({ cur, addSignal }: { cur: string; addSignal: number }) {
   const { data, saveAccount, removeAccount, saveLiability, removeLiability } = useStore();
   const t = useT();
   const totals = financeTotals(data.finances);
@@ -105,6 +121,14 @@ function Overview({ cur }: { cur: string }) {
   const [liaModal, setLiaModal] = useState(false);
   const [editAcc, setEditAcc] = useState<FinanceAccount | undefined>();
   const [editLia, setEditLia] = useState<Liability | undefined>();
+
+  // The page header's "+" opens the add-account sheet.
+  useEffect(() => {
+    if (addSignal > 0) {
+      setEditAcc(undefined);
+      setAccModal(true);
+    }
+  }, [addSignal]);
 
   return (
     <div className="space-y-4">
@@ -986,6 +1010,7 @@ function Row({
   subtitle,
   value,
   valueTone,
+  icon,
   onEdit,
   onDelete,
 }: {
@@ -993,17 +1018,21 @@ function Row({
   subtitle?: string;
   value: string;
   valueTone?: "bad";
+  icon?: React.ReactNode;
   onEdit: () => void;
   onDelete: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-2.5">
-      <div>
-        <div className="text-sm font-medium">{title}</div>
-        {subtitle && <div className="text-xs text-[var(--text-faint)]">{subtitle}</div>}
+    <div className="flex items-center gap-3 py-2.5">
+      <IconTile size={34} radius={11} color={valueTone === "bad" ? "var(--bad)" : undefined}>
+        {icon ?? <Wallet size={16} />}
+      </IconTile>
+      <div className="min-w-0 flex-1">
+        <div className="truncate text-[13.5px] font-semibold">{title}</div>
+        {subtitle && <div className="truncate text-[11.5px] text-[var(--text-faint)]">{subtitle}</div>}
       </div>
       <div className="flex items-center gap-2">
-        <span className={`text-sm font-semibold tabular-nums ${valueTone === "bad" ? "text-[var(--bad)]" : ""}`}>
+        <span className={`num shrink-0 text-[13.5px] font-bold tabular-nums ${valueTone === "bad" ? "text-[var(--bad)]" : ""}`}>
           {value}
         </span>
         <button onClick={onEdit} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">
