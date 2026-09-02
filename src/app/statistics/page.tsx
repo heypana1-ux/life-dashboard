@@ -124,15 +124,15 @@ export default function StatisticsPage() {
             {t("Not enough data in this range yet.")}
           </p>
         ) : metric === "life" ? (
-          <TrendLine data={lifeSeries} color="var(--accent)" domain={[0, 100]} name={t("Life Score")} height={280} />
+          <TrendLine data={lifeSeries} color="var(--accent)" domain={[0, 100]} name={t("Life Score")} height={150} />
         ) : metric === "elo" ? (
-          <TrendLine data={eloSeries} color="#d97706" name="ELO" height={280} />
+          <TrendLine data={eloSeries} color="#d97706" name="ELO" height={150} />
         ) : (
           <>
             <MultiLine
               data={catSeries}
               domain={[0, 100]}
-              height={280}
+              height={150}
               series={(soloCat ? enabledCats.filter((c) => c === soloCat) : enabledCats).map((c) => ({
                 key: c,
                 name: t(AREA_LABELS[c]),
@@ -193,7 +193,7 @@ export default function StatisticsPage() {
           <MultiLine
             data={moodEnergy}
             domain={[0, 10]}
-            height={240}
+            height={150}
             series={[
               { key: "mood", name: t("Mood"), color: "var(--accent)" },
               { key: "energy", name: t("Energy"), color: "var(--good)" },
@@ -209,11 +209,11 @@ export default function StatisticsPage() {
         {/* Weekday pattern */}
         <Card>
           <SectionTitle>{t("Life Score by weekday")}</SectionTitle>
-          <div className="flex items-end gap-1.5" style={{ height: 104 }}>
+          <div className="flex items-end gap-1.5" style={{ height: 78 }}>
             {(() => {
               const max = Math.max(1, ...wdData.map((x) => x.value));
               return wdData.map((d0) => {
-                const h = d0.value > 0 ? Math.max(6, (d0.value / max) * 66) : 3;
+                const h = d0.value > 0 ? Math.max(6, (d0.value / max) * 40) : 3;
                 return (
                   <div key={d0.label} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
                     <span className="num text-[10px] tabular-nums text-[var(--text-faint)]">{d0.value || "—"}</span>

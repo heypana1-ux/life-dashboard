@@ -11,7 +11,7 @@ import { promptForDate, JOURNAL_PROMPTS } from "@/lib/journalPrompts";
 import { buildCoachContext } from "@/lib/coachContext";
 import { coachAsk, checkCoachConfigured } from "@/lib/ai";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge } from "@/components/ui";
+import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge, HeaderAction } from "@/components/ui";
 
 export default function JournalPage() {
   const { data, saveJournal, removeJournal } = useStore();
@@ -92,9 +92,9 @@ export default function JournalPage() {
         title={t("Journal")}
         subtitle={t("Private by default. Stored only on this device.")}
         action={
-          <Button onClick={newEntry}>
-            <Plus size={16} /> {t("New entry")}
-          </Button>
+          <HeaderAction primary label={t("New entry")} onClick={newEntry}>
+            <Plus size={17} />
+          </HeaderAction>
         }
       />
 

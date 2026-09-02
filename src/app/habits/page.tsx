@@ -21,7 +21,7 @@ import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS, areaColor } from "@/lib/areaStyle";
 import { AREA_LABELS } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
-import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle, IconTile } from "@/components/ui";
+import { PageHeader, Button, Badge, EmptyState, Chip, Modal, Card, SectionTitle, IconTile, HeaderAction } from "@/components/ui";
 import { HabitForm } from "@/components/HabitForm";
 import { HintCard } from "@/components/HintCard";
 
@@ -59,19 +59,21 @@ export default function HabitsPage() {
         title={t("Habits")}
         subtitle={t("Build good routines, reduce the ones you don't want.")}
         action={
-          <div className="flex items-center gap-2">
-            <Button variant="soft" onClick={() => setTpl(true)}>
-              <LayoutTemplate size={16} /> {t("Library")}
-            </Button>
-            <Button
+          <>
+            <HeaderAction label={t("Library")} onClick={() => setTpl(true)}>
+              <LayoutTemplate size={17} />
+            </HeaderAction>
+            <HeaderAction
+              primary
+              label={t("New habit")}
               onClick={() => {
                 setEditing(undefined);
                 setOpen(true);
               }}
             >
-              <Plus size={16} /> {t("New habit")}
-            </Button>
-          </div>
+              <Plus size={17} />
+            </HeaderAction>
+          </>
         }
       />
 

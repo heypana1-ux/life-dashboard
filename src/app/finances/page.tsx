@@ -249,7 +249,7 @@ function NetWorthCard({ cur }: { cur: string }) {
             </span>
             <Delta value={change} />
           </div>
-          <TrendLine data={history} color="var(--accent)" name={t("Net worth")} height={220} />
+          <TrendLine data={history} color="var(--accent)" name={t("Net worth")} height={150} />
         </>
       ) : (
         <p className="py-10 text-center text-sm text-[var(--text-muted)]">

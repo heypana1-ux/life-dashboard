@@ -14,6 +14,7 @@ import {
   Modal,
   PageHeader,
   inputCls,
+  HeaderAction,
 } from "@/components/ui";
 
 const emptyDraft = (): VisionItem => ({
@@ -66,9 +67,9 @@ export default function VisionPage() {
         title={t("Vision Board")}
         subtitle={t("Where you're headed — the picture worth working toward")}
         action={
-          <Button onClick={openNew}>
-            <Plus size={16} /> {t("Add vision")}
-          </Button>
+          <HeaderAction primary label={t("Add vision")} onClick={openNew}>
+            <Plus size={17} />
+          </HeaderAction>
         }
       />
 

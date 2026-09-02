@@ -26,6 +26,7 @@ import {
   Chip,
   ScaleInput,
   HairlineStats,
+  HeaderAction,
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
@@ -76,9 +77,9 @@ export default function TrainingPage() {
         title={t("Training")}
         subtitle={t("Plan workouts, log sets and track strength progress.")}
         action={
-          <Button onClick={() => newWorkout()}>
-            <Plus size={16} /> {t("Log workout")}
-          </Button>
+          <HeaderAction primary label={t("Log workout")} onClick={() => newWorkout()}>
+            <Plus size={17} />
+          </HeaderAction>
         }
       />
 
@@ -212,7 +213,7 @@ function WorkoutsTab({
       {data.workouts.length > 0 && (
         <Card>
           <SectionTitle>{t("Volume")} · h / {t("week")}</SectionTitle>
-          <Bars data={volume} color="var(--accent)" unit="h" height={180} />
+          <Bars data={volume} color="var(--accent)" unit="h" height={150} />
         </Card>
       )}
 
@@ -560,7 +561,7 @@ function CardioProgressCard({ workouts }: { workouts: Workout[] }) {
       {distSeries.length >= 2 ? (
         <>
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Distance (km)")}</div>
-          <TrendLine data={distSeries} color="var(--accent)" unit=" km" name={t("Distance (km)")} height={180} />
+          <TrendLine data={distSeries} color="var(--accent)" unit=" km" name={t("Distance (km)")} height={150} />
           <div className="mb-1 mt-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Pace")} ({t("min/km")})</div>
           <TrendLine data={paceSeries} color="var(--accent)" name={t("Pace")} height={140} />
           <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Lower pace is faster.")}</p>

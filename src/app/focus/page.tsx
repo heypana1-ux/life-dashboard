@@ -222,7 +222,7 @@ export default function FocusPage() {
       {/* Week chart */}
       <Card className="mb-4">
         <SectionTitle>{t("Focus this week")}</SectionTitle>
-        <Bars data={stats.bars} unit=" min" height={180} />
+        <Bars data={stats.bars} unit=" min" height={150} />
       </Card>
 
       {/* Recent */}

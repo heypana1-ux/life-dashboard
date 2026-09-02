@@ -57,6 +57,36 @@ export function PageHeader({
   );
 }
 
+/** 34px icon-only header action, as used in the design's page headers.
+ *  `primary` renders the area-gradient "+" button; otherwise a bordered surface button. */
+export function HeaderAction({
+  onClick,
+  label,
+  primary,
+  children,
+}: {
+  onClick?: () => void;
+  label: string;
+  primary?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className={clsx(
+        "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[12px] transition",
+        primary
+          ? "area-grad shadow-[0_8px_20px_color-mix(in_srgb,var(--area-a)_35%,transparent)]"
+          : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--accent)]",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function SectionTitle({
   children,
   right,

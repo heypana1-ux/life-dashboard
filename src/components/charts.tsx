@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   Bar,
+  LabelList,
   BarChart,
   CartesianGrid,
   Line,
@@ -62,11 +63,33 @@ function ChartTip({ active, payload, label, unit }: TipProps) {
   );
 }
 
+/** First / middle / last x-labels, rendered under the chart as in the design. */
+function edgeLabels(data: ChartRow[]): string[] {
+  const pick = (r: ChartRow | undefined) => {
+    const v = r?.date;
+    return typeof v === "string" && v.includes("-") ? fmtShort(v) : String(v ?? "");
+  };
+  if (data.length < 2) return [];
+  return [pick(data[0]), pick(data[Math.floor((data.length - 1) / 2)]), pick(data[data.length - 1])];
+}
+
+function AxisLabels({ data }: { data: ChartRow[] }) {
+  const labels = edgeLabels(data);
+  if (labels.length !== 3) return null;
+  return (
+    <div className="mt-1.5 flex justify-between text-[10px] text-[var(--text-dim)]">
+      {labels.map((l, i) => (
+        <span key={i}>{l}</span>
+      ))}
+    </div>
+  );
+}
+
 export function TrendLine({
   data,
   dataKey = "value",
   color = "var(--accent)",
-  height = 220,
+  height = 150,
   name = "Value",
   domain,
   unit,
@@ -80,50 +103,40 @@ export function TrendLine({
   unit?: string;
 }) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <AreaChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-        <defs>
-          <linearGradient id={`g-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-            <stop offset="100%" stopColor={color} stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(v) => (typeof v === "string" && v.includes("-") ? fmtShort(v) : v)}
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          minTickGap={24}
-        />
-        <YAxis
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          domain={domain ?? ["auto", "auto"]}
-          width={40}
-        />
-        <Tooltip content={<ChartTip unit={unit} />} />
-        <Area
-          type="monotone"
-          dataKey={dataKey}
-          name={name}
-          stroke={color}
-          strokeWidth={2.5}
-          fill={`url(#g-${dataKey})`}
-          dot={false}
-          activeDot={{ r: 4 }}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={height}>
+        <AreaChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+          <defs>
+            <linearGradient id={`g-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity={0.28} />
+              <stop offset="100%" stopColor={color} stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <YAxis hide domain={domain ?? ["auto", "auto"]} />
+          <Tooltip content={<ChartTip unit={unit} />} />
+          <Area
+            type="monotone"
+            dataKey={dataKey}
+            name={name}
+            stroke={color}
+            strokeWidth={2.2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            fill={`url(#g-${dataKey})`}
+            dot={false}
+            activeDot={{ r: 4 }}
+          />
+        </AreaChart>
+      </ResponsiveContainer>
+      <AxisLabels data={data} />
+    </div>
   );
 }
 
 export function MultiLine({
   data,
   series,
-  height = 260,
+  height = 150,
   domain,
 }: {
   data: ChartRow[];
@@ -132,39 +145,29 @@ export function MultiLine({
   domain?: [number | "auto", number | "auto"];
 }) {
   return (
-    <ResponsiveContainer width="100%" height={height}>
-      <LineChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-        <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
-        <XAxis
-          dataKey="date"
-          tickFormatter={(v) => (typeof v === "string" && v.includes("-") ? fmtShort(v) : v)}
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          minTickGap={24}
-        />
-        <YAxis
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          domain={domain ?? ["auto", "auto"]}
-          width={40}
-        />
-        <Tooltip content={<ChartTip />} />
-        {series.map((s) => (
-          <Line
-            key={s.key}
-            type="monotone"
-            dataKey={s.key}
-            name={s.name}
-            stroke={s.color}
-            strokeWidth={2}
-            dot={false}
-            activeDot={{ r: 4 }}
-          />
-        ))}
-      </LineChart>
-    </ResponsiveContainer>
+    <div>
+      <ResponsiveContainer width="100%" height={height}>
+        <LineChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+          <YAxis hide domain={domain ?? ["auto", "auto"]} />
+          <Tooltip content={<ChartTip />} />
+          {series.map((s) => (
+            <Line
+              key={s.key}
+              type="monotone"
+              dataKey={s.key}
+              name={s.name}
+              stroke={s.color}
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              dot={false}
+              activeDot={{ r: 4 }}
+            />
+          ))}
+        </LineChart>
+      </ResponsiveContainer>
+      <AxisLabels data={data} />
+    </div>
   );
 }
 
@@ -198,7 +201,7 @@ export function Bars({
   data,
   dataKey = "value",
   color = "var(--accent)",
-  height = 220,
+  height = 150,
   unit,
 }: {
   data: ChartRow[];
@@ -209,22 +212,18 @@ export function Bars({
 }) {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} margin={{ top: 6, right: 8, bottom: 0, left: -18 }}>
-        <CartesianGrid stroke={GRID} strokeDasharray="3 3" vertical={false} />
+      <BarChart data={data} margin={{ top: 18, right: 4, bottom: 0, left: 4 }}>
         <XAxis
           dataKey="label"
-          tick={{ fill: AXIS, fontSize: 11 }}
+          tick={{ fill: AXIS, fontSize: 10 }}
           axisLine={false}
           tickLine={false}
         />
-        <YAxis
-          tick={{ fill: AXIS, fontSize: 11 }}
-          axisLine={false}
-          tickLine={false}
-          width={40}
-        />
+        <YAxis hide />
         <Tooltip content={<ChartTip unit={unit} />} cursor={{ fill: "var(--surface-2)" }} />
-        <Bar dataKey={dataKey} fill={color} radius={[6, 6, 0, 0]} />
+        <Bar dataKey={dataKey} fill={color} radius={[7, 7, 3, 3]}>
+          <LabelList dataKey={dataKey} position="top" fill={AXIS} fontSize={10} />
+        </Bar>
       </BarChart>
     </ResponsiveContainer>
   );

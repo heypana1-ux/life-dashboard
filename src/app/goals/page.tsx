@@ -13,7 +13,7 @@ import { habit30dRate } from "@/lib/habitStats";
 import { goalForecast } from "@/lib/goalForecast";
 import { buildCoachContext } from "@/lib/coachContext";
 import { planGoal, parseGoalPlan, checkCoachConfigured, GoalPlan } from "@/lib/ai";
-import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge, FocusZone, HairlineStats } from "@/components/ui";
+import { Card, PageHeader, Button, Modal, Field, inputCls, EmptyState, Badge, FocusZone, HairlineStats, HeaderAction } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
 import clsx from "clsx";
 
@@ -93,14 +93,14 @@ export default function GoalsPage() {
         title={t("Goals")}
         subtitle={t("Longer-term outcomes, distinct from daily habits.")}
         action={
-          <div className="flex items-center gap-2">
-            <Button variant="soft" onClick={() => setTpl(true)}>
-              <LayoutTemplate size={16} /> {t("Templates")}
-            </Button>
-            <Button onClick={newGoal}>
-              <Plus size={16} /> {t("New goal")}
-            </Button>
-          </div>
+          <>
+            <HeaderAction label={t("Templates")} onClick={() => setTpl(true)}>
+              <LayoutTemplate size={17} />
+            </HeaderAction>
+            <HeaderAction primary label={t("New goal")} onClick={newGoal}>
+              <Plus size={17} />
+            </HeaderAction>
+          </>
         }
       />
 
