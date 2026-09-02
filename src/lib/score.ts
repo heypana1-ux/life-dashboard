@@ -40,7 +40,7 @@ const PRIORITY_WEIGHT: Record<Priority, number> = { low: 1, medium: 2, high: 3 }
 
 /** Points a habit is worth in the shared Life-Score pool, by priority. Deliberately spread
  *  (1 / 3 / 6) so a "high" habit clearly outweighs a "low" one. */
-const PRIORITY_POINTS: Record<Priority, number> = { low: 1, medium: 3, high: 6 };
+export const PRIORITY_POINTS: Record<Priority, number> = { low: 1, medium: 3, high: 6 };
 
 /** Points at stake for a reduce habit, scaled by how bad a slip is (severity 1..5). */
 function reducePoints(severity?: number): number {

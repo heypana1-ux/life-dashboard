@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import clsx from "clsx";
 import { Check, X } from "lucide-react";
 import { Habit, HabitLog } from "@/lib/types";
@@ -25,12 +26,15 @@ export function HabitRow({
   date,
   showAmount = false,
   meta,
+  trailing,
 }: {
   item: HabitToday;
   date: string;
   showAmount?: boolean;
   /** Overrides the default meta line (Today passes the schedule, e.g. "Daily · 45 min"). */
   meta?: string;
+  /** Extra right-aligned content before the check circle (Morning shows the "+N" points). */
+  trailing?: React.ReactNode;
 }) {
   const { toggleHabit, setHabitLog } = useStore();
   const t = useT();
@@ -119,6 +123,8 @@ export function HabitRow({
           </span>
         </div>
       )}
+
+      {trailing}
 
       <button
         onClick={onCircle}

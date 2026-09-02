@@ -100,9 +100,9 @@ export function monthLabel(n: number): string {
 export function fmtDuration(min: number): string {
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
-  if (h === 0) return `${m}min`;
+  if (h === 0) return `${m}m`;
   if (m === 0) return `${h}h`;
-  return `${h}h ${String(m).padStart(2, "0")}min`;
+  return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
 /** Whole years from a birth date (YYYY-MM-DD) to today. */

@@ -8,7 +8,9 @@ import { uid } from "@/lib/defaults";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { habitsForToday } from "@/lib/habitView";
-import { sleepScore } from "@/lib/score";
+import { habitCurrentStreak } from "@/lib/habitStats";
+import { AREA_LABELS } from "@/lib/defaults";
+import { sleepScore, PRIORITY_POINTS } from "@/lib/score";
 import { activityStreak } from "@/lib/streak";
 import { buildCoachContext } from "@/lib/coachContext";
 import { coachAsk, checkCoachConfigured } from "@/lib/ai";
@@ -115,7 +117,17 @@ export default function MorningPage() {
           ) : (
             <div className="grid gap-x-[26px] sm:grid-cols-2">
               {goals.map((g) => (
-                <HabitRow key={g.habit.id} item={g} date={date} />
+                <HabitRow
+                  key={g.habit.id}
+                  item={g}
+                  date={date}
+                  meta={`${t(AREA_LABELS[g.habit.area])} · ${habitCurrentStreak(data, g.habit)} ${t("day streak")}`}
+                  trailing={
+                    <span className="num shrink-0 text-[11.5px] font-semibold text-[var(--good)]">
+                      +{PRIORITY_POINTS[g.habit.priority]}
+                    </span>
+                  }
+                />
               ))}
             </div>
           )}

@@ -105,25 +105,19 @@ export default function HealthPage() {
         lead={t("Your")}
         title={t("Health")}
         action={
-          <div className="flex items-center gap-2">
-            <div className="flex rounded-xl bg-[var(--surface-2)] p-1 text-sm">
-              {(["form", "questions"] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => updateSettings({ healthMode: m })}
-                  className={clsx("rounded-lg px-3 py-1.5 font-medium transition", mode === m ? "bg-[var(--surface)] text-[var(--text)] shadow-sm" : "text-[var(--text-muted)]")}
-                >
-                  {m === "form" ? t("Form") : t("Questions")}
-                </button>
-              ))}
-            </div>
-            <input
-              type="date"
-              max={today}
-              value={date}
-              onChange={(e) => e.target.value && setDate(e.target.value)}
-              className="rounded-[10px] border border-[var(--border)] bg-[var(--surface)] px-2 py-1.5 text-sm outline-none"
-            />
+          <div className="flex rounded-[11px] bg-[var(--surface-2)] p-[3px]">
+            {(["form", "questions"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => updateSettings({ healthMode: m })}
+                className={clsx(
+                  "rounded-[9px] px-[11px] py-[5px] text-[11.5px] font-semibold transition",
+                  mode === m ? "bg-[var(--surface)] text-[var(--text)] shadow-sm" : "text-[var(--text-muted)]",
+                )}
+              >
+                {m === "form" ? t("Form") : t("Questions")}
+              </button>
+            ))}
           </div>
         }
       />
@@ -136,7 +130,24 @@ export default function HealthPage() {
         <QuestionFlow log={log} setLog={setLog} cycleSymptom={cycleSymptom} onSave={save} t={t} flash={flash} cycleOn={cycleOn} meds={meds} toggleMed={toggleMed} setFlow={setFlow} existing={!!existing} />
       ) : (
         <Card>
-          <SectionTitle right={existing ? <Badge tone="good">{t("Logged")}</Badge> : <Badge>{t("New")}</Badge>}>
+          <SectionTitle
+            right={
+              <div className="flex items-center gap-2">
+                <label className="relative flex h-[26px] cursor-pointer items-center gap-1.5 rounded-[9px] border border-[var(--border)] bg-[var(--surface-2)] px-2 text-[11.5px] font-medium">
+                  <span className="whitespace-nowrap">{fmtShort(date)}</span>
+                  <input
+                    type="date"
+                    max={today}
+                    value={date}
+                    onChange={(e) => e.target.value && setDate(e.target.value)}
+                    className="absolute inset-0 cursor-pointer opacity-0"
+                    aria-label={t("Pick a date")}
+                  />
+                </label>
+                {existing ? <Badge tone="good">{t("Logged")}</Badge> : <Badge>{t("New")}</Badge>}
+              </div>
+            }
+          >
             {t("Daily health check")}
           </SectionTitle>
           <div className="space-y-5">
@@ -185,11 +196,11 @@ export default function HealthPage() {
             <Field label={t("Note")}>
               <textarea className={inputCls} rows={2} value={log.note ?? ""} onChange={(e) => setLog((l) => ({ ...l, note: e.target.value }))} />
             </Field>
-            <div className="flex items-center gap-3">
-              <Button onClick={save}>
+            <div>
+              <Button className="w-full !py-3" onClick={save}>
                 <Save size={16} /> {t("Save")}
               </Button>
-              {flash && <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>}
+              {flash && <p className="mt-2 text-center text-sm text-[var(--good)]">{t("Saved ✓")}</p>}
             </div>
           </div>
         </Card>
