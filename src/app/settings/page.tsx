@@ -73,7 +73,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
+      <PageHeader kicker={t("Tracking & scoring")} title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
 
       {/* Install as an app (PWA) */}
       <InstallAppCard />
