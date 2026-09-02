@@ -147,6 +147,17 @@
 [data-area] { --area-text: var(--area-a); }
 .dark [data-area] { --area-text: var(--area-b); }
 
+/* Re-point the accent + gradient tokens at the current area, so every existing use of
+   --accent / --accent-soft / .grad across the app adopts the page's Pulse color automatically. */
+[data-area] {
+  --accent: var(--area-a);
+  --accent-soft: color-mix(in srgb, var(--area-a) 14%, var(--surface));
+  --grad-a: var(--area-a);
+  --grad-b: var(--area-b);
+  --grad: linear-gradient(135deg, var(--area-a), var(--area-b));
+}
+.dark [data-area] { --accent: var(--area-b); }
+
 [data-area="core"]      { --area-a:#4f46e5; --area-b:#6366f1; --area-ink:#ffffff; }
 .dark [data-area="core"]      { --area-a:#7c7bff; --area-b:#a78bfa; --area-ink:#0a0b0e; }
 [data-area="focus"]     { --area-a:#059669; --area-b:#10b981; --area-ink:#04140e; }

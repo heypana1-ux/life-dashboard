@@ -268,7 +268,7 @@ function BestSelfCard() {
         </div>
       </div>
       <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-[var(--ring-track)]">
-        <div className="grad h-full rounded-full" style={{ width: `${pct}%` }} />
+        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: "linear-gradient(90deg,var(--area-a),var(--area-b))" }} />
       </div>
       <p className="mt-2 text-[11px] text-[var(--text-faint)]">
         {atPeak ? t("You're matching or beating your best 30-day stretch. Keep it up.") : t("Compared with your own peak — not anyone else's.")}

@@ -119,7 +119,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="mx-auto flex min-h-screen w-full max-w-7xl">
+    <div data-area={pageArea(pathname)} className="mx-auto flex min-h-screen w-full max-w-7xl">
       {/* Desktop sidebar */}
       <aside className="sticky top-0 hidden h-screen w-[236px] shrink-0 flex-col border-r border-[var(--border)] bg-[var(--surface)] px-4 py-[22px] md:flex">
         <div className="mb-[22px] flex items-center gap-[11px] px-1.5">
