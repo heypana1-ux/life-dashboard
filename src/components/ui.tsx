@@ -22,11 +22,14 @@ export function Card({
  *  sits above it (small uppercase line, usually a real number from the data). */
 export function PageHeader({
   title,
+  lead,
   subtitle,
   action,
   kicker,
 }: {
   title: string;
+  /** Optional plain-colour prefix before the gradient title, e.g. "Your" in "Your habits". */
+  lead?: string;
   subtitle?: string;
   action?: React.ReactNode;
   kicker?: React.ReactNode;
@@ -35,7 +38,10 @@ export function PageHeader({
     <div className="sticky top-0 z-20 -mx-5 mb-[18px] flex flex-col gap-3 border-b border-[var(--border)] bg-[var(--bg)] px-5 py-[18px] sm:-mx-8 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-4 sm:px-8">
       <div className="min-w-0 pr-24 sm:pr-0">
         {kicker && <div className="kicker mb-1 truncate">{kicker}</div>}
-        <h1 className="area-title truncate pb-0.5 text-[22px] font-semibold tracking-[-0.03em] sm:text-[27px]">{title}</h1>
+        <h1 className="truncate pb-0.5 text-[22px] font-semibold tracking-[-0.03em] sm:text-[27px]">
+          {lead && <span className="text-[var(--text)]">{lead} </span>}
+          <span className="area-title">{title}</span>
+        </h1>
         {subtitle && (
           <p className="mt-[3px] truncate text-[13px] text-[var(--text-muted)]">{subtitle}</p>
         )}

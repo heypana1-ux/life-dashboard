@@ -82,7 +82,7 @@ export default function StatisticsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker={t("Trends · 30 days")} title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
+      <PageHeader kicker={t("Trends · 30 days")} lead={t("Your")} title={t("Statistics")} subtitle={t("Trends, ratings and correlations from your data.")} />
 
       <BestSelfCard />
 

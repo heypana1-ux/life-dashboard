@@ -69,6 +69,7 @@ export default function FinancesPage() {
     <div className="space-y-6">
       <PageHeader
         kicker={t("Manual tracking")}
+        lead={t("Your")}
         title={t("Finances")}
         subtitle={t("Net worth, portfolio and budget. Values are entered manually.")}
       />

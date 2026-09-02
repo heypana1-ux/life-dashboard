@@ -133,6 +133,7 @@ const DE: Record<string, string> = {
   "8 areas": "8 Bereiche",
   "Your coach": "Dein Coach",
   "Your profile": "Dein Profil",
+  "Your": "Deine",
   "Day by day": "Tag für Tag",
   "Two metrics": "Zwei Kennzahlen",
   "7-day average": "7-Tage-Schnitt",

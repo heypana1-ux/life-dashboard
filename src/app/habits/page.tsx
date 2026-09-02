@@ -55,6 +55,7 @@ export default function HabitsPage() {
     <div className="space-y-6">
       <PageHeader
         kicker={`${data.habits.filter((h) => !h.archived).length} ${t("active")} · ${data.habits.filter((h) => h.kind === "reduce" && !h.archived).length} ${t("watch-list")}`}
+        lead={t("Your")}
         title={t("Habits")}
         subtitle={t("Build good routines, reduce the ones you don't want.")}
         action={

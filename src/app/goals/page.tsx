@@ -89,6 +89,7 @@ export default function GoalsPage() {
     <div className="space-y-6">
       <PageHeader
         kicker={`${active.length} ${t("active goals")}`}
+        lead={t("Your")}
         title={t("Goals")}
         subtitle={t("Longer-term outcomes, distinct from daily habits.")}
         action={
