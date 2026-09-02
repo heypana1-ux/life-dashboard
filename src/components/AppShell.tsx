@@ -209,7 +209,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <WeeklyReviewGate />
           <CommandPalette />
           {!isActive(pathname, "/coach") && <CoachLauncher />}
-          <div key={pathname} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
+          <div key={pathname} data-area={pageArea(pathname)} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             <AppPromoBanner />
             <BackupReminder />
             {children}
@@ -217,8 +217,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </main>
 
-      {/* Mobile bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-stretch justify-around border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur md:hidden">
+      {/* Mobile bottom nav — floating pill */}
+      <nav className="fixed bottom-4 left-3.5 right-3.5 z-40 flex items-stretch justify-around gap-1 rounded-[22px] border border-[var(--border)] bg-[var(--surface)]/90 p-1.5 shadow-[0_12px_40px_rgba(16,18,22,0.12)] backdrop-blur-lg md:hidden dark:shadow-[0_12px_40px_rgba(0,0,0,0.55)]">
         {bottomItems.map((item) => (
           <BottomLink
             key={item.href}
@@ -230,8 +230,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <button
           onClick={() => setMoreOpen((o) => !o)}
           className={clsx(
-            "flex flex-1 flex-col items-center gap-1 py-2 text-[11px]",
-            moreOpen ? "text-[var(--accent)]" : "text-[var(--text-faint)]",
+            "flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[11px] transition",
+            moreOpen ? "area-soft font-semibold" : "text-[var(--text-faint)]",
           )}
         >
           <Menu size={20} />
@@ -331,6 +331,23 @@ function isActive(pathname: string, href: string): boolean {
   return pathname.startsWith(href);
 }
 
+/** Maps a route to its "Pulse" area accent (sets --area-* via data-area on the page wrapper). */
+const AREA_BY_PREFIX: [string, string][] = [
+  ["/today", "core"], ["/morning", "core"], ["/habits", "core"], ["/calendar", "core"], ["/coach", "core"],
+  ["/focus", "focus"], ["/training", "training"], ["/sleep", "sleep"], ["/health", "health"],
+  ["/journal", "journal"], ["/goals", "goals"], ["/vision", "vision"],
+  ["/projects", "projects"], ["/experiments", "projects"],
+  ["/finances", "finances"], ["/statistics", "statistics"],
+  ["/correlations", "analysis"], ["/analysis", "analysis"], ["/wheel", "wheel"],
+  ["/profile", "profile"], ["/about", "profile"], ["/avatar", "profile"], ["/settings", "profile"],
+  ["/reports", "reports"], ["/achievements", "achievements"], ["/rewards", "achievements"], ["/scoreboard", "achievements"],
+];
+function pageArea(pathname: string): string {
+  if (pathname === "/") return "core";
+  for (const [prefix, area] of AREA_BY_PREFIX) if (pathname.startsWith(prefix)) return area;
+  return "core";
+}
+
 function NavLink({
   item,
   label,
@@ -399,8 +416,8 @@ function BottomLink({ item, label, active }: { item: NavItem; label: string; act
     <Link
       href={item.href}
       className={clsx(
-        "flex flex-1 flex-col items-center gap-1 py-2 text-[11px]",
-        active ? "text-[var(--accent)]" : "text-[var(--text-faint)]",
+        "flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[11px] transition",
+        active ? "area-soft font-semibold" : "text-[var(--text-faint)]",
       )}
     >
       <Icon size={20} />

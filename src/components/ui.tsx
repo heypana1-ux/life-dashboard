@@ -174,9 +174,8 @@ export function Button({
       className={clsx(
         "inline-flex items-center justify-center gap-2 rounded-[12px] font-medium transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50",
         size === "sm" ? "px-3 py-1.5 text-sm" : "px-4 py-2.5 text-sm",
-        variant === "primary" && "grad text-white shadow-sm hover:opacity-90",
-        variant === "soft" &&
-          "bg-[var(--accent-soft)] text-[var(--accent)] hover:brightness-105",
+        variant === "primary" && "area-grad shadow-sm hover:opacity-90",
+        variant === "soft" && "area-soft hover:brightness-105",
         variant === "ghost" &&
           "text-[var(--text-muted)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]",
         variant === "outline" &&
@@ -245,7 +244,7 @@ export function Chip({
       className={clsx(
         "rounded-full px-3.5 py-1.5 text-xs font-medium transition",
         active
-          ? "grad text-white shadow-sm"
+          ? "area-soft shadow-sm"
           : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
         className,
       )}
@@ -454,7 +453,7 @@ export function Badge({
         tone === "good" && "bg-[var(--good-soft)] text-[var(--good)]",
         tone === "bad" && "bg-[var(--bad-soft)] text-[var(--bad)]",
         tone === "warn" && "bg-[var(--good-soft)] text-[var(--warn)]",
-        tone === "accent" && "bg-[var(--accent-soft)] text-[var(--accent)]",
+        tone === "accent" && "area-soft",
       )}
     >
       {children}
