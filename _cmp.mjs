@@ -5,7 +5,8 @@ const PROTO='file:///home/user/life-dashboard/design_handoff_pulse_redesign/Dash
 const BASE='http://localhost:3000';
 const OUT='/tmp/shots';
 fs.mkdirSync(OUT,{recursive:true});
-const [id, path] = process.argv.slice(2); // e.g. 3a today
+const [id, path, maxHArg] = process.argv.slice(2);
+const MAXH = maxHArg ? Number(maxHArg) : 0; // e.g. 3a today
 const b=await chromium.launch({executablePath:EXEC});
 
 // 1) prototype dark frame
@@ -39,6 +40,7 @@ fs.writeFileSync('/tmp/shots/_cmp.html',html);
 const cp=await b.newPage({viewport:{width:880,height:Math.min(H+80,20000)}});
 await cp.goto('file:///tmp/shots/_cmp.html',{waitUntil:'load'});
 await cp.waitForTimeout(600);
-await cp.screenshot({path:`${OUT}/cmp-${id}.png`,fullPage:true});
+if (MAXH) await cp.screenshot({path:`${OUT}/cmp-${id}.png`, clip:{x:0,y:0,width:880,height:MAXH}});
+else await cp.screenshot({path:`${OUT}/cmp-${id}.png`,fullPage:true});
 console.log('composed',`${OUT}/cmp-${id}.png`,'protoH',Math.round(pbox.height),'appH',abox.h);
 await b.close();

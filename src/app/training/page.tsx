@@ -25,7 +25,6 @@ import {
   Badge,
   Chip,
   ScaleInput,
-  HairlineStats,
   HeaderAction,
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
@@ -72,7 +71,7 @@ export default function TrainingPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t("Strength & cardio")}
+        kicker={`${data.workouts.filter((w) => isoRange(todayISO(), 7).includes(w.date)).length} ${t("sessions this week")}`}
         lead={t("Your (n)")}
         title={t("Training")}
         subtitle={t("Plan workouts, log sets and track strength progress.")}
@@ -202,18 +201,16 @@ function WorkoutsTab({
 
       <WeeklyDistanceCard workouts={data.workouts} />
 
-      <HairlineStats
-        items={[
-          { label: t("Sessions this week"), value: String(thisWeek.length) },
-          { label: t("Total time"), value: totalMin ? fmtDuration(totalMin) : "—" },
-          { label: t("Avg performance"), value: avgPerf },
-        ]}
-      />
+      <div className="grid grid-cols-3 gap-[9px]">
+        <MiniStat label={t("This week")} value={String(thisWeek.length)} />
+        <MiniStat label={t("Total time")} value={totalMin ? fmtDuration(totalMin) : "—"} />
+        <MiniStat label={t("Avg perf.")} value={avgPerf} />
+      </div>
 
       {data.workouts.length > 0 && (
         <Card>
           <SectionTitle>{t("Volume")} · h / {t("week")}</SectionTitle>
-          <Bars data={volume} color="var(--accent)" unit="h" height={150} />
+          <Bars data={volume} color="var(--accent)" unit="h" height={104} />
         </Card>
       )}
 
@@ -238,10 +235,10 @@ function WorkoutsTab({
           <div className="space-y-2">
             {workouts.map((w) => (
               <div key={w.id} className="rounded-xl border border-[var(--border)] p-3">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{w.sport}</span>
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-[14.5px] font-semibold">{w.sport}</span>
                       <Badge>{fmtDuration(w.durationMin)}</Badge>
                       {w.performance ? <Badge tone="accent">{t("Performance")} {w.performance}/10</Badge> : null}
                     </div>

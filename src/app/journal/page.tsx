@@ -367,17 +367,17 @@ function MoodHeatmap() {
       <div className="mb-2 flex items-center gap-2 text-sm font-medium">
         <Sparkles size={15} className="text-[var(--accent)]" /> {t("Mood over the year")}
       </div>
-      <div className="no-swipe overflow-x-auto">
-        <div className="grid grid-flow-col grid-rows-7 gap-[3px]" style={{ width: "max-content" }}>
-          {cells.map((c) => (
-            <span
-              key={c.date}
-              title={c.mood != null ? `${fmtShort(c.date)}: ${c.mood}/10` : ""}
-              className="h-[11px] w-[11px] rounded-[2px]"
-              style={{ background: c.future ? "transparent" : c.mood != null ? moodColor(c.mood) : "var(--surface-3)" }}
-            />
-          ))}
-        </div>
+      {/* The whole year fits the card, as in the design — no horizontal scroll, so the
+          most recent (coloured) weeks are always visible. */}
+      <div className="grid grid-flow-col grid-rows-7 gap-[2px]" style={{ gridAutoColumns: "minmax(0, 1fr)" }}>
+        {cells.map((c) => (
+          <span
+            key={c.date}
+            title={c.mood != null ? `${fmtShort(c.date)}: ${c.mood}/10` : ""}
+            className="aspect-square w-full rounded-[2px]"
+            style={{ background: c.future ? "transparent" : c.mood != null ? moodColor(c.mood) : "var(--surface-3)" }}
+          />
+        ))}
       </div>
       <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--text-faint)]">
         {t("Low")}

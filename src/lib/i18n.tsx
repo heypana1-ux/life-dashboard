@@ -945,6 +945,7 @@ const DE: Record<string, string> = {
     "Eine geführte Zwei-Minuten-Reflexion über deine Woche. Jederzeit oder mit dem Sonntags-Hinweis.",
   "Week of {d}": "Woche vom {d}",
   "Week of": "Woche vom",
+  "Avg perf.": "Ø Leistung",
   "January": "Januar",
   "February": "Februar",
   "March": "März",
