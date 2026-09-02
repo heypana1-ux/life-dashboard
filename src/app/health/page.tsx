@@ -6,13 +6,13 @@ import { useStore } from "@/lib/store";
 import { HealthLog } from "@/lib/types";
 import { SYMPTOMS, SYMPTOM_LABEL, SEVERITY_LABEL, Symptom, WELLBEING_DIMS, computeWellbeing } from "@/lib/health";
 import { analyzeCycle, FLOW_LABEL } from "@/lib/cycle";
-import { addDays, fmtLong, fmtShort, todayISO } from "@/lib/date";
+import { addDays, fmtShort, todayISO, weekdayOf, weekdayLabel } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { BODY_SITES, muscleForSite } from "@/lib/bodySites";
 import { muscleVolume } from "@/lib/trainingStats";
 import { measurementForecast } from "@/lib/goalForecast";
 import { MUSCLE_LABEL, Muscle } from "@/lib/exercises";
-import { Card, PageHeader, SectionTitle, Button, Field, inputCls, ScaleInput, Badge, Toggle, EmptyState } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Button, Field, inputCls, Badge, Toggle, EmptyState } from "@/components/ui";
 import { TrendLine, MiniSpark } from "@/components/charts";
 import { Ruler, Dumbbell } from "lucide-react";
 import { HintCard } from "@/components/HintCard";
@@ -101,9 +101,9 @@ export default function HealthPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        kicker={t("Wellbeing & body")}
+        kicker={`${weekdayLabel(weekdayOf(date))} · ${fmtShort(date)}`}
+        lead={t("Your")}
         title={t("Health")}
-        subtitle={fmtLong(date)}
         action={
           <div className="flex items-center gap-2">
             <div className="flex rounded-xl bg-[var(--surface-2)] p-1 text-sm">
@@ -465,7 +465,17 @@ function WellbeingField({ log, setLog, t }: { log: HealthLog; setLog: React.Disp
             </span>
             <span className="text-[var(--text-muted)]">{dimValue(d.key)}/10</span>
           </div>
-          <ScaleInput value={dimValue(d.key)} onChange={(v) => setDim(d.key, v)} />
+          <div className="flex gap-[3px]">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setDim(d.key, i + 1)}
+                aria-label={String(i + 1)}
+                className="h-1.5 flex-1 rounded-full transition"
+                style={{ background: i < dimValue(d.key) ? "linear-gradient(135deg,var(--area-a),var(--area-b))" : "var(--surface-2)" }}
+              />
+            ))}
+          </div>
         </div>
       ))}
     </div>
