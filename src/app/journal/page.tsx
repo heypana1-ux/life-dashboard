@@ -87,6 +87,7 @@ export default function JournalPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={`${data.journal.length} ${t("entries")} · ${t("private")}`}
         title={t("Journal")}
         subtitle={t("Private by default. Stored only on this device.")}
         action={

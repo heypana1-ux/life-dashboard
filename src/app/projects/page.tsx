@@ -42,6 +42,7 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("Creative board")}
         title={t("Projects")}
         subtitle={t("Track learning topics and creative projects from idea to done.")}
         action={

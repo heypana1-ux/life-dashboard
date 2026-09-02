@@ -84,6 +84,7 @@ export default function ReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("Weekly & monthly")}
         title={t("Reports")}
         subtitle={t("Automatic summaries of your week and month.")}
         action={

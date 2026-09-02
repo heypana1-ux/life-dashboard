@@ -65,6 +65,7 @@ export default function WheelPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("8 areas")}
         title={t("Wheel of Life")}
         subtitle={t("Rate 8 areas of your life 1–10 to see your balance and how it shifts over time.")}
         action={

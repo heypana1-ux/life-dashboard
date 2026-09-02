@@ -34,6 +34,7 @@ export default function AvatarPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("Cosmetics")}
         title={t("Character")}
         subtitle={t("Build your look and unlock cosmetics as you level up.")}
         action={

@@ -62,6 +62,7 @@ export default function VisionPage() {
   return (
     <div>
       <PageHeader
+        kicker={t("Where you're headed")}
         title={t("Vision Board")}
         subtitle={t("Where you're headed — the picture worth working toward")}
         action={

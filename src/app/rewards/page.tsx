@@ -52,6 +52,7 @@ export default function RewardsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("Reward points")}
         title={t("Reward shop")}
         subtitle={t("Earn points by living well, then cash them in for rewards you set yourself.")}
       />

@@ -41,6 +41,7 @@ export default function ExperimentsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("30-day window")}
         title={t("Experiments")}
         subtitle={t("Test a hypothesis against your own data — correlation, not proof.")}
         action={

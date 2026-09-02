@@ -101,6 +101,7 @@ export default function HealthPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        kicker={t("Wellbeing & body")}
         title={t("Health")}
         subtitle={fmtLong(date)}
         action={
