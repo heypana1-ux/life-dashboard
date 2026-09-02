@@ -35,7 +35,7 @@ export default function AnalysisPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker={t("Cross-analysed")} title={t("Analysis")} subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")} />
+      <PageHeader kicker={t("Cross-analysed")} lead={t("Your")} title={t("Analysis")} subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")} />
 
       {/* Verdict */}
       <div className="grad relative overflow-hidden rounded-[22px] p-6 text-white shadow-[var(--shadow)]">

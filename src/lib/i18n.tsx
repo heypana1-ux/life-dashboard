@@ -134,6 +134,7 @@ const DE: Record<string, string> = {
   "Your coach": "Dein Coach",
   "Your profile": "Dein Profil",
   "Your": "Deine",
+  "Your (n)": "Dein",
   "Day by day": "Tag für Tag",
   "Two metrics": "Zwei Kennzahlen",
   "7-day average": "7-Tage-Schnitt",
@@ -2228,7 +2229,7 @@ const DE: Record<string, string> = {
   "AI suggestions — review before adding.": "KI-Vorschläge — vor dem Hinzufügen prüfen.",
 };
 
-const DICTS: Record<Language, Record<string, string>> = { en: {}, de: DE };
+const DICTS: Record<Language, Record<string, string>> = { en: { "Your (n)": "Your" }, de: DE };
 
 export function translate(lang: Language, key: string, vars?: Vars): string {
   const dict = DICTS[lang] ?? {};

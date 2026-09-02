@@ -72,6 +72,7 @@ export default function TrainingPage() {
     <div className="space-y-6">
       <PageHeader
         kicker={t("Strength & cardio")}
+        lead={t("Your (n)")}
         title={t("Training")}
         subtitle={t("Plan workouts, log sets and track strength progress.")}
         action={
