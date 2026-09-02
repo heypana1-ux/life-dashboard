@@ -11,7 +11,7 @@ import {
   PageHeader,
   SectionTitle,
   Button,
-  ScaleInput,
+  SegmentScale,
   Field,
   inputCls,
   Badge,
@@ -109,7 +109,11 @@ export default function SleepPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t("Sleep")} subtitle={t("Manual sleep tracking, scores and your personal pattern.")} />
+      <PageHeader
+        kicker={`${t("Manual tracking")} · ${data.sleep.length} ${t("nights")}`}
+        title={t("Sleep")}
+        subtitle={t("Manual sleep tracking, scores and your personal pattern.")}
+      />
 
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Log form */}
@@ -164,16 +168,16 @@ export default function SleepPage() {
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-sm font-medium">{t("Quality")}</span>
-                <span className="text-sm font-semibold text-[var(--accent)]">{log.quality}</span>
+                <span className="area-text text-sm font-semibold">{log.quality}</span>
               </div>
-              <ScaleInput value={log.quality} onChange={(v) => setLog((l) => ({ ...l, quality: v }))} />
+              <SegmentScale value={log.quality} onChange={(v) => setLog((l) => ({ ...l, quality: v }))} />
             </div>
             <div>
               <div className="mb-1.5 flex items-center justify-between">
                 <span className="text-sm font-medium">{t("Morning energy")}</span>
-                <span className="text-sm font-semibold text-[var(--accent)]">{log.morningEnergy}</span>
+                <span className="area-text text-sm font-semibold">{log.morningEnergy}</span>
               </div>
-              <ScaleInput
+              <SegmentScale
                 value={log.morningEnergy}
                 onChange={(v) => setLog((l) => ({ ...l, morningEnergy: v }))}
               />

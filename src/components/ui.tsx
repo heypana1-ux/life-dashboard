@@ -599,3 +599,35 @@ export function SectionHead({ children, right }: { children: React.ReactNode; ri
     </div>
   );
 }
+
+/** Labeled 1..max segment scale (Pulse) — numbered tiles, filled up to the value. */
+export function SegmentScale({
+  value,
+  max = 10,
+  onChange,
+}: {
+  value: number;
+  max?: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <div className="flex gap-[3px]">
+      {Array.from({ length: max }).map((_, i) => {
+        const on = i < value;
+        return (
+          <button
+            key={i}
+            onClick={() => onChange(i + 1)}
+            className="flex h-[26px] flex-1 items-center justify-center rounded-lg text-[10.5px] font-semibold tabular-nums transition"
+            style={{
+              background: on ? "linear-gradient(135deg,var(--area-a),var(--area-b))" : "var(--surface-2)",
+              color: on ? "var(--area-ink)" : "var(--text-dim)",
+            }}
+          >
+            {i + 1}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
