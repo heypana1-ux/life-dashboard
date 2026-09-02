@@ -14,7 +14,7 @@ import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import { resizeImageToDataUrl } from "@/lib/image";
 import { ageFrom, todayISO } from "@/lib/date";
 import { ProfileView, ProfileCardData } from "@/components/ProfileView";
-import { Card, PageHeader, SectionTitle, Button, Field, Toggle, inputCls } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Field, Toggle, inputCls } from "@/components/ui";
 import clsx from "clsx";
 
 const SEXES: NonNullable<Profile["sex"]>[] = ["male", "female", "other", "prefer_not"];
@@ -23,7 +23,7 @@ const SEX_LABEL: Record<string, string> = { male: "Male", female: "Female", othe
 const ACT_LABEL: Record<string, string> = { sedentary: "Sedentary", light: "Light", moderate: "Moderate", active: "Active", athlete: "Athlete" };
 
 export default function ProfilePage() {
-  const { data, updateProfile, updateSettings, saveWeight } = useStore();
+  const { data, updateProfile, saveWeight } = useStore();
   const d = useDerived();
   const t = useT();
   const p = data.settings.profile;
@@ -68,23 +68,26 @@ export default function ProfilePage() {
   const age = p.birthDate ? ageFrom(p.birthDate) : undefined;
 
   return (
-    <div className="space-y-5">
-      <PageHeader kicker={t("Your profile")} title={t("Profile")} subtitle={t("How you show up — to yourself and others.")} />
+    <div className="space-y-[14px]">
+      <PageHeader
+        kicker={`${t("Level")} ${card.level} · ${t("{n} day streak", { n: card.streak ?? 0 })}`}
+        title={t("Profile")}
+      />
 
       <ProfileView p={card} />
 
       {/* Public / private */}
       <Card>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-start gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[var(--accent-soft)] text-[var(--accent)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-start gap-[11px]">
+            <span className="grad-soft flex h-9 w-9 shrink-0 items-center justify-center rounded-[13px] text-[var(--text-muted)]">
               {p.isPublic ? <Globe size={17} /> : <Lock size={17} />}
             </span>
             <div className="min-w-0">
-              <div className="text-sm font-medium">{t("Public profile")}</div>
-              <div className="text-xs text-[var(--text-muted)]">
+              <div className="text-[12.5px] font-semibold">{t("Public profile")}</div>
+              <p className="mt-[3px] text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
                 {t("When on, people you share a scoreboard with can open this card (name, level, titles, achievements). Never your logs.")}
-              </div>
+              </p>
             </div>
           </div>
           <Toggle checked={!!p.isPublic} onChange={(v) => updateProfile({ isPublic: v })} />
@@ -94,16 +97,16 @@ export default function ProfilePage() {
       {/* Identity */}
       <Card>
         <SectionTitle right={<User size={16} className="text-[var(--text-faint)]" />}>{t("Identity")}</SectionTitle>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-[13px]">
           <button
             onClick={() => fileRef.current?.click()}
-            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--surface-2)]"
+            className="relative h-[58px] w-[58px] shrink-0 overflow-hidden rounded-[20px] border border-[var(--border)] bg-[var(--surface-2)]"
           >
             {p.avatar ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={p.avatar} alt="" className="h-full w-full object-cover" />
             ) : (
-              <span className="flex h-full w-full items-center justify-center text-[var(--text-faint)]"><Camera size={20} /></span>
+              <span className="flex h-full w-full items-center justify-center text-[var(--text-faint)]"><Camera size={19} /></span>
             )}
           </button>
           <div className="min-w-0 flex-1 space-y-2">
@@ -129,7 +132,7 @@ export default function ProfilePage() {
       {/* Personal details */}
       <Card>
         <SectionTitle>{t("Personal details")}</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-[9px]">
           <Field label={t("Name")}>
             <input className={inputCls} value={p.name ?? ""} onChange={(e) => updateProfile({ name: e.target.value })} />
           </Field>
@@ -146,23 +149,28 @@ export default function ProfilePage() {
             />
           </Field>
           <Field label={t("Weight today (kg)")}>
-            <div className="flex gap-2">
+            <div className="flex gap-[7px]">
               <input type="number" inputMode="decimal" step="0.1" className={inputCls} value={weight} onChange={(e) => setWeight(e.target.value)} />
-              <Button variant="soft" size="sm" onClick={() => { const v = Number(weight); if (v > 0) saveWeight({ date: todayISO(), kg: Math.round(v * 10) / 10 }); }} disabled={!weight}>
+              <button
+                onClick={() => { const v = Number(weight); if (v > 0) saveWeight({ date: todayISO(), kg: Math.round(v * 10) / 10 }); }}
+                disabled={!weight}
+                aria-label={t("Save")}
+                className="grad-soft flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] text-[var(--text-muted)] disabled:opacity-40"
+              >
                 <Save size={15} />
-              </Button>
+              </button>
             </div>
           </Field>
         </div>
 
-        <div className="mt-3">
-          <div className="mb-1 text-sm font-medium text-[var(--text-muted)]">{t("Sex")}</div>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-2.5">
+          <div className="mb-[7px] text-[11px] font-medium text-[var(--text-muted)]">{t("Sex")}</div>
+          <div className="flex flex-wrap gap-1.5">
             {SEXES.map((sx) => (
               <button
                 key={sx}
                 onClick={() => updateProfile({ sex: p.sex === sx ? undefined : sx })}
-                className={clsx("rounded-full border px-3 py-1.5 text-sm", p.sex === sx ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]")}
+                className={clsx("rounded-full border px-3 py-1.5 text-[11.5px]", p.sex === sx ? "border-[var(--area-a)] grad-soft font-semibold text-[var(--text-muted)]" : "border-[var(--border)] bg-[var(--surface-2)] font-medium text-[var(--text-muted)]")}
               >
                 {t(SEX_LABEL[sx])}
               </button>
@@ -170,14 +178,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-3">
-          <div className="mb-1 text-sm font-medium text-[var(--text-muted)]">{t("Activity level")}</div>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-2.5">
+          <div className="mb-[7px] text-[11px] font-medium text-[var(--text-muted)]">{t("Activity level")}</div>
+          <div className="flex flex-wrap gap-1.5">
             {ACTIVITY.map((a) => (
               <button
                 key={a}
                 onClick={() => updateProfile({ activityLevel: p.activityLevel === a ? undefined : a })}
-                className={clsx("rounded-full border px-3 py-1.5 text-sm", p.activityLevel === a ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]")}
+                className={clsx("rounded-full border px-3 py-1.5 text-[11.5px]", p.activityLevel === a ? "border-[var(--area-a)] grad-soft font-semibold text-[var(--text-muted)]" : "border-[var(--border)] bg-[var(--surface-2)] font-medium text-[var(--text-muted)]")}
               >
                 {t(ACT_LABEL[a])}
               </button>

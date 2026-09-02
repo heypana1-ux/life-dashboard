@@ -87,6 +87,38 @@ export function HeaderAction({
   );
 }
 
+/** In-card action pill (Redeem / Buy / Update my scores …): 12px radius, 11.5px/600.
+ *  `primary` fills with the area gradient, `soft` uses the area wash, `locked` is a hairline. */
+export function ActionPill({
+  tone = "primary",
+  onClick,
+  disabled,
+  children,
+}: {
+  tone?: "primary" | "soft" | "locked";
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  const off = disabled || tone === "locked";
+  return (
+    <button
+      disabled={off}
+      onClick={onClick}
+      className={clsx(
+        "inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-[13px] py-2 text-[11.5px] font-semibold transition",
+        off
+          ? "border border-[var(--border)] text-[var(--text-dim)]"
+          : tone === "soft"
+            ? "area-soft"
+            : "area-grad hover:opacity-90",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** Labelled header pill (the design's "+ New" button): 13px radius, area gradient, 12px/600. */
 export function HeaderPill({
   onClick,
@@ -497,14 +529,14 @@ export function Toggle({
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={clsx(
-        "relative h-6 w-11 rounded-full transition",
-        checked ? "bg-[var(--accent)]" : "bg-[var(--surface-3)]",
+        "relative h-[22px] w-[38px] shrink-0 rounded-full transition",
+        checked ? "area-grad" : "border border-[var(--border)] bg-[var(--surface-2)]",
       )}
     >
       <span
         className={clsx(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition",
-          checked ? "left-[22px]" : "left-0.5",
+          "absolute top-[3px] h-4 w-4 rounded-full bg-white shadow transition",
+          checked ? "left-[19px]" : "left-[3px] bg-[var(--text-dim)]",
         )}
       />
     </button>

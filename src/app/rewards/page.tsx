@@ -16,7 +16,7 @@ import {
   dailyRate,
   daysToAfford,
 } from "@/lib/rewardShop";
-import { Card, PageHeader, SectionTitle, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, ActionPill, Field, inputCls, NumberInput, EmptyState, Badge } from "@/components/ui";
 import { HintCard } from "@/components/HintCard";
 import clsx from "clsx";
 
@@ -105,9 +105,9 @@ export default function RewardsPage() {
                   >
                     <Trash2 size={14} />
                   </button>
-                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => redeemReward(r)}>
+                  <ActionPill tone={affordable ? "primary" : "locked"} onClick={() => redeemReward(r)}>
                     {affordable ? t("Redeem") : t("Locked")}
-                  </ShopPill>
+                  </ActionPill>
                 </ShopRow>
               );
             })}
@@ -129,9 +129,9 @@ export default function RewardsPage() {
             </Field>
           </div>
           <div className="mt-2.5">
-            <ShopPill tone={!name.trim() || !cost ? "locked" : "primary"} onClick={add}>
+            <ActionPill tone={!name.trim() || !cost ? "locked" : "primary"} onClick={add}>
               <Plus size={13} strokeWidth={2.4} /> {t("Add")}
-            </ShopPill>
+            </ActionPill>
           </div>
         </div>
 
@@ -178,13 +178,13 @@ export default function RewardsPage() {
                 }
               >
                 {isOwned ? (
-                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ accent: r.accent })}>
+                  <ActionPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ accent: r.accent })}>
                     {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
-                  </ShopPill>
+                  </ActionPill>
                 ) : (
-                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
+                  <ActionPill tone={affordable ? "primary" : "locked"} onClick={() => buyCosmetic(r.accent, r.cost, r.name)}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </ShopPill>
+                  </ActionPill>
                 )}
               </ShopRow>
             );
@@ -225,13 +225,13 @@ export default function RewardsPage() {
                 }
               >
                 {isOwned ? (
-                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ ringSkin: s.id })}>
+                  <ActionPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ ringSkin: s.id })}>
                     {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
-                  </ShopPill>
+                  </ActionPill>
                 ) : (
-                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`ring:${s.id}`, s.cost, `Ring: ${s.name}`); updateSettings({ ringSkin: s.id }); }}>
+                  <ActionPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`ring:${s.id}`, s.cost, `Ring: ${s.name}`); updateSettings({ ringSkin: s.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </ShopPill>
+                  </ActionPill>
                 )}
               </ShopRow>
             );
@@ -262,13 +262,13 @@ export default function RewardsPage() {
                 }
               >
                 {isOwned ? (
-                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ title: x.id })}>
+                  <ActionPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ title: x.id })}>
                     {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
-                  </ShopPill>
+                  </ActionPill>
                 ) : (
-                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`title:${x.id}`, x.cost, `Title: ${x.name}`); updateSettings({ title: x.id }); }}>
+                  <ActionPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`title:${x.id}`, x.cost, `Title: ${x.name}`); updateSettings({ title: x.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </ShopPill>
+                  </ActionPill>
                 )}
               </ShopRow>
             );
@@ -304,13 +304,13 @@ export default function RewardsPage() {
                 }
               >
                 {isOwned ? (
-                  <ShopPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ badge: x.id })}>
+                  <ActionPill tone={active ? "soft" : "primary"} onClick={() => updateSettings({ badge: x.id })}>
                     {active ? (<><Check size={13} /> {t("Active")}</>) : t("Apply")}
-                  </ShopPill>
+                  </ActionPill>
                 ) : (
-                  <ShopPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`badge:${x.id}`, x.cost, `Badge: ${x.name}`); updateSettings({ badge: x.id }); }}>
+                  <ActionPill tone={affordable ? "primary" : "locked"} onClick={() => { purchaseCosmetic(`badge:${x.id}`, x.cost, `Badge: ${x.name}`); updateSettings({ badge: x.id }); }}>
                     {affordable ? t("Buy") : t("Locked")}
-                  </ShopPill>
+                  </ActionPill>
                 )}
               </ShopRow>
             );
@@ -346,33 +346,6 @@ export default function RewardsPage() {
         </Card>
       )}
     </div>
-  );
-}
-
-/** Pulse shop pill: 12px radius, 11.5px/600 — gradient for the primary action,
- *  soft for the active state, hairline for locked. */
-function ShopPill({
-  tone,
-  onClick,
-  children,
-}: {
-  tone: "primary" | "soft" | "locked";
-  onClick?: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      disabled={tone === "locked"}
-      onClick={onClick}
-      className={clsx(
-        "inline-flex shrink-0 items-center gap-1.5 rounded-[12px] px-[13px] py-2 text-[11.5px] font-semibold transition",
-        tone === "primary" && "area-grad hover:opacity-90",
-        tone === "soft" && "area-soft",
-        tone === "locked" && "border border-[var(--border)] text-[var(--text-dim)]",
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

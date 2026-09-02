@@ -20,7 +20,7 @@ import {
   Option,
 } from "@/lib/avatar";
 import { Avatar } from "@/components/Avatar";
-import { Card, PageHeader, SectionTitle, Button, Badge } from "@/components/ui";
+import { Card, PageHeader, HeaderPill, SectionTitle, Badge } from "@/components/ui";
 
 export default function AvatarPage() {
   const { data, updateSettings } = useStore();
@@ -30,25 +30,30 @@ export default function AvatarPage() {
   const cfg: AvatarConfig = data.settings.avatar ?? defaultAvatar();
 
   const set = (patch: Partial<AvatarConfig>) => updateSettings({ avatar: { ...cfg, ...patch } });
+  // Cosmetics the current level has opened up — the kicker's real number.
+  const unlockedCount = [...HAIR_STYLES, ...FACES, ...HATS, ...GLASSES].filter((o) => level.level >= o.unlock).length;
 
   return (
     <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("Cosmetics")}
+        kicker={`${t("Level")} ${level.level} · ${t("{n} items unlocked", { n: unlockedCount })}`}
         title={t("Character")}
         subtitle={t("Build your look and unlock cosmetics as you level up.")}
         action={
-          <Button variant="soft" onClick={() => updateSettings({ avatar: randomAvatar() })}>
-            <Shuffle size={16} /> {t("Randomize")}
-          </Button>
+          <HeaderPill soft onClick={() => updateSettings({ avatar: randomAvatar() })}>
+            <Shuffle size={14} /> {t("Random")}
+          </HeaderPill>
         }
       />
 
-      <Card className="flex flex-col items-center gap-3">
-        <div className="grad flex h-40 w-40 items-center justify-center rounded-full">
-          <Avatar config={cfg} size={150} />
+      <Card className="flex flex-col items-center gap-[11px]">
+        <div className="area-grad flex h-[150px] w-[150px] items-center justify-center rounded-full">
+          <Avatar config={cfg} size={140} />
         </div>
         <Badge tone="accent">{t("Level {n}", { n: level.level })}</Badge>
+        <p className="text-[10.5px] text-[var(--text-dim)]">
+          {t("Character preview — rendered from your avatar config.")}
+        </p>
       </Card>
 
       <ColorRow title={t("Skin")} colors={SKINS} value={cfg.skin} onPick={(c) => set({ skin: c })} />
@@ -66,12 +71,12 @@ function ColorRow({ title, colors, value, onPick }: { title: string; colors: str
   return (
     <Card>
       <SectionTitle>{title}</SectionTitle>
-      <div className="flex flex-wrap gap-2.5">
+      <div className="flex flex-wrap gap-[9px]">
         {colors.map((c) => (
           <button
             key={c}
             onClick={() => onPick(c)}
-            className={`h-9 w-9 rounded-full border-2 transition ${value === c ? "border-[var(--accent)] scale-110" : "border-[var(--border)]"}`}
+            className={`h-[34px] w-[34px] rounded-full border-2 transition ${value === c ? "border-[var(--area-a)]" : "border-[var(--border)]"}`}
             style={{ background: c }}
             aria-label={c}
           />
@@ -86,7 +91,7 @@ function OptionRow({ title, options, value, level, onPick }: { title: string; op
   return (
     <Card>
       <SectionTitle>{title}</SectionTitle>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {options.map((o) => {
           const open = level >= o.unlock;
           const active = value === o.id;
@@ -95,8 +100,10 @@ function OptionRow({ title, options, value, level, onPick }: { title: string; op
               key={o.id}
               disabled={!open}
               onClick={() => onPick(o.id)}
-              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-sm font-medium transition ${
-                active ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]" : "border-[var(--border)] bg-[var(--surface-2)]"
+              className={`flex items-center gap-[5px] rounded-full border px-3 py-[7px] text-[11.5px] font-medium transition ${
+                active
+                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]"
               } ${open ? "" : "opacity-55"}`}
             >
               {!open && <Lock size={11} />}

@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import { AppData, Experiment, ExperimentCondition, ExperimentMetric } from "@/lib/types";
 import { evaluateExperiment } from "@/lib/experiments";
 import { addDays, fmtDuration, todayISO, fmtShort } from "@/lib/date";
-import { Card, PageHeader, SectionTitle, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
+import { Card, PageHeader, HeaderPill, SectionTitle, Button, Modal, Field, inputCls, EmptyState, Badge } from "@/components/ui";
 
 const METRICS: ExperimentMetric[] = ["lifeScore", "productivity", "mood", "energy", "sleep"];
 const CONDITIONS: ExperimentCondition[] = ["manual", "bedtimeBefore", "sleepAtLeast", "trained", "habitDone"];
@@ -41,34 +41,38 @@ export default function ExperimentsPage() {
   return (
     <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("30-day window")}
+        kicker={`${t("{n} running", { n: experiments.length })} · ${t("30-day window")}`}
         title={t("Experiments")}
         subtitle={t("Test a hypothesis against your own data — correlation, not proof.")}
         action={
-          <Button onClick={() => setModal(true)}>
-            <Plus size={16} /> {t("New experiment")}
-          </Button>
+          <HeaderPill onClick={() => setModal(true)}>
+            <Plus size={14} strokeWidth={2.4} /> {t("New")}
+          </HeaderPill>
         }
       />
 
       {suggestions.length > 0 && (
         <Card>
           <SectionTitle>{t("Suggested for you")}</SectionTitle>
-          <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Based on what you already track — start one with a tap.")}</p>
-          <div className="space-y-2">
+          <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">{t("Based on what you already track — start one with a tap.")}</p>
+          <div className="flex flex-col gap-2">
             {suggestions.map((s) => (
-              <div key={s.title} className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] p-3">
+              <div
+                key={s.title}
+                className="flex items-center justify-between gap-[11px] rounded-[16px] border border-[var(--border)] px-[13px] py-3"
+              >
                 <div className="min-w-0">
-                  <div className="text-sm font-medium">{t(s.title)}</div>
-                  {s.hypothesis && <div className="truncate text-xs text-[var(--text-muted)]">{t(s.hypothesis)}</div>}
+                  <div className="text-[12.5px] font-medium">{t(s.title)}</div>
+                  {s.hypothesis && (
+                    <div className="mt-0.5 truncate text-[11.5px] text-[var(--text-muted)]">{t(s.hypothesis)}</div>
+                  )}
                 </div>
-                <Button
-                  size="sm"
-                  variant="soft"
+                <button
                   onClick={() => saveExperiment({ ...s, title: t(s.title), hypothesis: s.hypothesis ? t(s.hypothesis) : "" })}
+                  className="area-soft inline-flex shrink-0 items-center gap-[5px] rounded-[11px] px-[11px] py-1.5 text-[11px] font-semibold"
                 >
-                  <Plus size={14} /> {t("Start")}
-                </Button>
+                  <Plus size={13} strokeWidth={2.4} /> {t("Start")}
+                </button>
               </div>
             ))}
           </div>
@@ -87,7 +91,7 @@ export default function ExperimentsPage() {
           }
         />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-[14px] lg:grid-cols-2">
           {experiments.map((e) => (
             <ExperimentCard key={e.id} exp={e} onDelete={() => removeExperiment(e.id)} />
           ))}
@@ -109,53 +113,45 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
 
   return (
     <Card>
-      <div className="flex items-start justify-between gap-2">
+      <div className="flex items-start justify-between gap-2.5">
         <div className="min-w-0">
-          <div className="font-medium">{exp.title}</div>
-          {exp.hypothesis && <p className="mt-0.5 text-sm text-[var(--text-muted)]">{exp.hypothesis}</p>}
+          <div className="text-[14px] font-semibold">{exp.title}</div>
+          {exp.hypothesis && (
+            <p className="mt-[3px] text-[12.5px] leading-[1.5] text-[var(--text-muted)]">{exp.hypothesis}</p>
+          )}
         </div>
-        <button onClick={onDelete} className="shrink-0 text-[var(--text-faint)] hover:text-[var(--bad)]">
+        <button onClick={onDelete} className="shrink-0 text-[var(--text-dim)] hover:text-[var(--bad)]" aria-label={t("Delete")}>
           <Trash2 size={15} />
         </button>
       </div>
 
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="mt-[11px] flex flex-wrap gap-[5px]">
         <Badge tone="accent">{metricName}</Badge>
         <Badge>{condName}</Badge>
         <Badge>{t("last {n} days", { n: exp.days })}</Badge>
       </div>
 
-      <div className="mt-3 rounded-xl bg-[var(--surface-2)] p-3">
+      {/* The result reads as one sentence with the effect inlined, as in the design. */}
+      <div className="mt-3 rounded-[16px] bg-[var(--surface-2)] px-3.5 py-[13px]">
         {!res.enough ? (
-          <p className="text-sm text-[var(--text-muted)]">
+          <p className="text-[12.5px] leading-[1.5] text-[var(--text-muted)]">
             {t("Not enough data yet ({met} vs {not} days). Keep logging.", { met: res.nMet, not: res.nNot })}
           </p>
         ) : (
           <>
-            <div className="flex items-end gap-2">
-              <span
-                className="num text-[34px] font-bold leading-none tracking-[-0.03em]"
-                style={{ color: res.diffPct >= 0 ? "var(--good)" : "var(--bad)" }}
-              >
-                {res.diffPct >= 0 ? "+" : "−"}{Math.abs(res.diffPct)}%
+            <p className="text-[12.5px] leading-[1.5]">
+              {t("On days with the condition, {metric} was on average", { metric: metricName })}{" "}
+              <span className="font-bold" style={{ color: res.diffPct >= 0 ? "var(--good)" : "var(--bad)" }}>
+                {Math.abs(res.diffPct)}% {res.diffPct >= 0 ? t("higher") : t("lower")}
               </span>
-              <span className="mb-0.5 text-[13px] text-[var(--text-muted)]">
-                {res.diffPct >= 0 ? t("higher") : t("lower")}
-              </span>
-            </div>
-            <p className="mt-1.5 text-sm text-[var(--text-muted)]">
-              {t("On days with the condition, {metric} was on average {pct} {dir}.", {
-                metric: metricName,
-                pct: `${Math.abs(res.diffPct)}%`,
-                dir: res.diffPct >= 0 ? t("higher") : t("lower"),
-              })}
+              .
             </p>
-            <div className="mt-2 flex gap-4 text-xs text-[var(--text-faint)]">
+            <div className="mt-[9px] flex gap-4 text-[11px] text-[var(--text-faint)]">
               <span>
-                {t("With")}: {fmtMetric(exp.metric, res.metMean)} ({res.nMet})
+                {t("With")}: <span className="font-semibold text-[var(--text-muted)]">{fmtMetric(exp.metric, res.metMean)}</span> ({res.nMet})
               </span>
               <span>
-                {t("Without")}: {fmtMetric(exp.metric, res.notMean)} ({res.nNot})
+                {t("Without")}: <span className="font-semibold text-[var(--text-muted)]">{fmtMetric(exp.metric, res.notMean)}</span> ({res.nNot})
               </span>
             </div>
           </>
@@ -164,7 +160,7 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
 
       {exp.condition === "manual" && <ManualMarker exp={exp} />}
 
-      <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+      <p className="mt-[9px] text-[10.5px] text-[var(--text-dim)]">
         {t("Observation from your own data — a correlation, not causation.")}
       </p>
     </Card>
@@ -193,21 +189,22 @@ function ManualMarker({ exp }: { exp: Experiment }) {
 
   const label = exp.conditionLabel?.trim() || t("condition");
   return (
-    <div className="mt-3 rounded-xl border border-[var(--border)] p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-xs font-medium text-[var(--text-muted)]">
+    <div className="mt-[11px] rounded-[16px] border border-[var(--border)] p-[13px]">
+      <div className="mb-[9px] flex items-center justify-between gap-2">
+        <span className="text-[11px] font-medium text-[var(--text-muted)]">
           {t("Days “{label}” was true", { label })}
         </span>
         <button
           onClick={() => toggle(today)}
-          className={`rounded-full px-2.5 py-1 text-xs font-semibold transition ${
-            marked.has(today) ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+          className={`shrink-0 rounded-full px-2.5 py-[5px] text-[10.5px] font-bold transition ${
+            marked.has(today) ? "area-grad" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
           }`}
         >
           {marked.has(today) ? t("Today ✓") : t("Mark today")}
         </button>
       </div>
-      <div className="flex gap-1 overflow-x-auto pb-1">
+      {/* 30px chips that wrap, exactly as the mock lays them out. */}
+      <div className="flex flex-wrap gap-1">
         {days.map((d) => {
           const on = marked.has(d);
           return (
@@ -215,8 +212,8 @@ function ManualMarker({ exp }: { exp: Experiment }) {
               key={d}
               onClick={() => toggle(d)}
               title={fmtShort(d)}
-              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[10px] font-semibold transition ${
-                on ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-faint)] hover:bg-[var(--surface-3)]"
+              className={`num flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-[10px] text-[10px] font-bold transition ${
+                on ? "area-grad" : "bg-[var(--surface-2)] text-[var(--text-faint)] hover:bg-[var(--surface-3)]"
               }`}
             >
               {Number(d.slice(8, 10))}

@@ -17,15 +17,17 @@ export default function AboutPage() {
   return (
     <div className="space-y-[14px]">
       <PageHeader
-        kicker={`${answered}/${total} ${t("answered")}`}
-        title={t("About you")}
+        kicker={t("{a} of {b} answered", { a: answered, b: total })}
+        lead={t("About")}
+        title={t("you")}
         subtitle={t("Answer at your own pace — the more the coach knows, the better its advice.")}
         action={<Badge tone="accent">{answered}/{total}</Badge>}
       />
 
-      <div className="flex items-start gap-3 rounded-2xl bg-[var(--accent-soft)] p-4">
-        <Sparkles size={18} className="mt-0.5 shrink-0 text-[var(--accent)]" />
-        <p className="text-sm text-[var(--text-muted)]">
+      {/* Privacy note as the Pulse insight card. */}
+      <div className="area-soft flex items-start gap-3 rounded-[24px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] p-[18px]">
+        <Sparkles size={17} className="mt-px shrink-0" />
+        <p className="min-w-0 text-[12px] leading-[1.5] text-[var(--text-muted)]">
           {t("These answers stay on your device (and sync if you enabled it). They're only shared with the AI coach when it's turned on, so it can tailor its advice to you.")}
         </p>
       </div>
@@ -33,7 +35,7 @@ export default function AboutPage() {
       {ABOUT_GROUPS.map((g) => (
         <Card key={g.group}>
           <SectionTitle right={<UserCircle size={16} className="text-[var(--text-faint)]" />}>{t(g.group)}</SectionTitle>
-          <div className="space-y-5">
+          <div className="flex flex-col gap-[15px]">
             {g.questions.map((q) => (
               <AboutField key={q.id} q={q} value={about[q.id] ?? ""} />
             ))}
@@ -41,7 +43,7 @@ export default function AboutPage() {
         </Card>
       ))}
 
-      <p className="pb-4 text-center text-xs text-[var(--text-faint)]">{t("You can edit any of this any time.")}</p>
+      <p className="pb-4 text-center text-[10.5px] text-[var(--text-dim)]">{t("You can edit any of this any time.")}</p>
     </div>
   );
 }
@@ -57,7 +59,7 @@ function AboutField({ q, value }: { q: AboutQuestion; value: string }) {
 
   return (
     <div>
-      <div className="mb-1.5 text-sm font-medium">{t(q.q)}</div>
+      <div className="mb-[7px] text-[12.5px] font-medium">{t(q.q)}</div>
       {q.options && (
         <div className="mb-2 flex flex-wrap gap-1.5">
           {q.options.map((opt) => {
@@ -66,10 +68,10 @@ function AboutField({ q, value }: { q: AboutQuestion; value: string }) {
               <button
                 key={opt}
                 onClick={() => { const v = active ? "" : t(opt); setDraft(v); persist(v); }}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                className={`rounded-full border px-3 py-1.5 text-[11.5px] transition ${
                   active
-                    ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
-                    : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]"
+                    ? "grad-soft border-[var(--area-a)] font-semibold text-[var(--text-muted)]"
+                    : "border-[var(--border)] bg-[var(--surface-2)] font-medium text-[var(--text-muted)]"
                 }`}
               >
                 {t(opt)}
@@ -84,7 +86,7 @@ function AboutField({ q, value }: { q: AboutQuestion; value: string }) {
         onChange={(e) => setDraft(e.target.value)}
         onBlur={() => persist(draft)}
         placeholder={q.placeholder ? t(q.placeholder) : t("Your answer…")}
-        className="w-full resize-none rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
+        className="min-h-[44px] w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-[11px] text-[12.5px] leading-[1.5] outline-none placeholder:text-[var(--text-dim)] focus:border-[var(--area-a)]"
       />
     </div>
   );

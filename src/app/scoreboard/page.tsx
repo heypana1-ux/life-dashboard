@@ -13,7 +13,7 @@ import { computeLevel } from "@/lib/level";
 import { activityStreak } from "@/lib/streak";
 import { computeAchievements } from "@/lib/achievements";
 import { titleName, badgeEmoji } from "@/lib/cosmetics";
-import { Card, PageHeader, SectionTitle, Button, Field, inputCls, Toggle, Badge, EmptyState, Modal } from "@/components/ui";
+import { Card, PageHeader, HeaderPill, SectionTitle, ActionPill, Button, Field, inputCls, Toggle, Badge, EmptyState, Modal } from "@/components/ui";
 import { ProfileView, ProfileCardData } from "@/components/ProfileView";
 import { Lock } from "lucide-react";
 import {
@@ -239,77 +239,81 @@ export default function ScoreboardPage() {
   return (
     <div className="space-y-[14px]">
       <PageHeader
-        kicker={t("7-day average")}
+        kicker={`${t("7-day average")} · ${t("{n} players", { n: ranked.length })}`}
         title={t("Scoreboard")}
-        subtitle={t("Compare your Life Score with others.")}
         action={
-          <Button variant="soft" size="sm" onClick={() => setRefresh((n) => n + 1)}>
-            <RefreshCw size={15} /> {t("Refresh")}
-          </Button>
+          <HeaderPill soft onClick={() => setRefresh((n) => n + 1)}>
+            <RefreshCw size={14} /> {t("Refresh")}
+          </HeaderPill>
         }
       />
 
       {/* My profile */}
       <Card>
         <SectionTitle right={<Users size={16} className="text-[var(--text-faint)]" />}>{t("Your entry")}</SectionTitle>
-        <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
-          <Field label={t("Display name")}>
+        <div className="flex items-end gap-[9px]">
+          <Field label={t("Display name")} className="min-w-0 flex-1">
             <input className={inputCls} value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t("How others see you")} />
           </Field>
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[var(--border)] p-3 sm:justify-start">
-            <span className="text-sm font-medium">{t("Global ranking")}</span>
+          <div className="flex shrink-0 items-center gap-2.5 rounded-[13px] border border-[var(--border)] px-3 py-2.5">
+            <span className="text-[11.5px] font-medium">{t("Global")}</span>
             <Toggle checked={global} onChange={setGlobal} />
           </div>
         </div>
-        <div className="mt-3 flex flex-wrap items-center gap-3">
-          <Button onClick={publish} disabled={busy || !name.trim()}>
+        <div className="mt-3 flex flex-wrap items-center gap-[11px]">
+          <ActionPill onClick={publish} disabled={busy || !name.trim()}>
             {myRow ? t("Update my scores") : t("Publish my scores")}
-          </Button>
-          <span className="text-xs text-[var(--text-faint)]">
-            {t("Publishing your current 7-day average")}: {t("Overall")} <b>{mine.overall}</b>
+          </ActionPill>
+          <span className="text-[11px] text-[var(--text-faint)]">
+            {t("Publishing your current 7-day average")}: {t("Overall")}{" "}
+            <b className="text-[var(--text-muted)]">{mine.overall}</b>
           </span>
         </div>
-        {msg && <p className="mt-2 text-sm text-[var(--good)]">{msg}</p>}
-        {err && <p className="mt-2 text-sm text-[var(--bad)]">{err}</p>}
+        {msg && <p className="mt-[9px] text-[11.5px] text-[var(--good)]">{msg}</p>}
+        {err && <p className="mt-[9px] text-[11.5px] text-[var(--bad)]">{err}</p>}
       </Card>
 
       {/* Leagues management */}
       <Card>
         <SectionTitle>{t("Leagues")}</SectionTitle>
         {leagues.length > 0 ? (
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="mb-[11px] flex flex-wrap gap-[7px]">
             {leagues.map((l) => (
-              <div key={l.id} className="flex items-center gap-2 rounded-full bg-[var(--surface-2)] py-1 pl-3 pr-1.5 text-sm">
+              <div
+                key={l.id}
+                className="flex items-center gap-[7px] rounded-full bg-[var(--surface-2)] py-1.5 pl-3 pr-2 text-[11.5px]"
+              >
                 <button
                   onClick={() => setView({ type: "league", id: l.id, name: l.name })}
-                  className={view.type === "league" && view.id === l.id ? "font-semibold text-[var(--accent)]" : ""}
+                  className={view.type === "league" && view.id === l.id ? "area-text font-bold" : "font-medium"}
                 >
-                  {l.name} <span className="text-xs text-[var(--text-faint)]">· {l.code}</span>
+                  {l.name}
                 </button>
-                <button onClick={() => doLeave(l.id)} className="rounded-full px-1.5 text-xs text-[var(--text-faint)] hover:text-[var(--bad)]">
+                <span className="text-[10px] text-[var(--text-faint)]">· {l.code}</span>
+                <button onClick={() => doLeave(l.id)} className="px-1 text-[11px] text-[var(--text-dim)] hover:text-[var(--bad)]">
                   ✕
                 </button>
               </div>
             ))}
           </div>
         ) : (
-          <p className="mb-3 text-sm text-[var(--text-muted)]">{t("Create a league and share its code, or join one with a friend's code.")}</p>
+          <p className="-mt-1 mb-[11px] text-[11.5px] text-[var(--text-muted)]">{t("Create a league and share its code, or join one with a friend's code.")}</p>
         )}
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
             <input className={inputCls} placeholder={t("New league name")} value={newName} onChange={(e) => setNewName(e.target.value)} />
-            <Button variant="soft" size="sm" onClick={doCreate} disabled={busy || !newName.trim()}>{t("Create")}</Button>
+            <ActionPill tone="soft" onClick={doCreate} disabled={busy || !newName.trim()}>{t("Create")}</ActionPill>
           </div>
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             <input className={inputCls} placeholder={t("Join code")} value={joinCode} onChange={(e) => setJoinCode(e.target.value)} />
-            <Button variant="soft" size="sm" onClick={doJoin} disabled={busy || !joinCode.trim()}>{t("Join")}</Button>
+            <ActionPill tone="soft" onClick={doJoin} disabled={busy || !joinCode.trim()}>{t("Join")}</ActionPill>
           </div>
         </div>
       </Card>
 
       {/* Board */}
       <Card>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-[13px] flex flex-wrap items-center justify-between gap-2">
           <div className="flex flex-wrap gap-1.5">
             <BoardTab active={view.type === "global"} onClick={() => setView({ type: "global" })}>
               <Crown size={14} /> {t("Global")}
@@ -320,7 +324,7 @@ export default function ScoreboardPage() {
               </BoardTab>
             )}
           </div>
-          <select className={`${inputCls} w-auto`} value={metric} onChange={(e) => setMetric(e.target.value as "overall" | AreaKey)}>
+          <select className="shrink-0 rounded-[11px] border border-[var(--border)] bg-[var(--surface-2)] px-2.5 py-1.5 text-[11px] text-[var(--text-muted)] outline-none" value={metric} onChange={(e) => setMetric(e.target.value as "overall" | AreaKey)}>
             {METRICS.map((m) => (
               <option key={m} value={m}>{m === "overall" ? t("Overall") : t(AREA_LABELS[m])}</option>
             ))}
@@ -336,7 +340,7 @@ export default function ScoreboardPage() {
               : t("No scores in this league yet. Share the code so friends can join and publish.")}
           </p>
         ) : (
-          <div className="space-y-1">
+          <div className="flex flex-col gap-0.5">
             {ranked.map((r, i) => {
               const value = metric === "overall" ? r.overall : r.categories[metric] ?? 0;
               const isMe = r.user_id === myId;
@@ -346,26 +350,26 @@ export default function ScoreboardPage() {
                   key={r.user_id}
                   onClick={() => openable && setViewProfile(r)}
                   disabled={!openable}
-                  className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left ${isMe ? "bg-[var(--accent-soft)]" : "enabled:hover:bg-[var(--surface-2)]"} ${openable ? "cursor-pointer" : "cursor-default"}`}
+                  className={`flex w-full items-center gap-[11px] rounded-[14px] px-[11px] py-2.5 text-left ${isMe ? "area-soft !text-[var(--text)]" : "enabled:hover:bg-[var(--surface-2)]"} ${openable ? "cursor-pointer" : "cursor-default"}`}
                 >
-                  <span className="num w-7 text-center text-sm font-bold text-[var(--text-faint)]">
-                    {i === 0 ? <Medal size={16} className="mx-auto text-[#eab308]" /> : i + 1}
+                  <span className="num w-[22px] shrink-0 text-center text-[12px] font-bold text-[var(--text-faint)]">
+                    {i === 0 ? <Medal size={15} className="mx-auto text-[#eab308]" /> : i + 1}
                   </span>
                   {r.avatar ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={r.avatar} alt="" className="h-7 w-7 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span className="grad flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white">
+                    <span className="area-grad flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[11px] font-bold">
                       {(r.display_name || "?").trim().charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-sm font-medium">
+                  <span className="flex min-w-0 flex-1 items-center gap-1.5 truncate text-[12.5px] font-medium">
                     {r.display_name}
                     {r.badge && <span>{r.badge}</span>}
                     {isMe && <Badge tone="accent">{t("You")}</Badge>}
                     {!openable && !isMe && <Lock size={11} className="text-[var(--text-faint)]" />}
                   </span>
-                  <span className="num text-lg font-bold" style={{ color: scoreColor(value) }}>
+                  <span className="num shrink-0 text-[17px] font-bold" style={{ color: scoreColor(value) }}>
                     {value}
                   </span>
                 </button>
@@ -374,7 +378,7 @@ export default function ScoreboardPage() {
           </div>
         )}
         {myRank > 0 && (
-          <p className="mt-3 text-center text-xs text-[var(--text-faint)]">
+          <p className="mt-3 text-center text-[11px] text-[var(--text-faint)]">
             {t("Your rank")}: <b>#{myRank}</b> {t("of")} {ranked.length}
           </p>
         )}
@@ -407,8 +411,8 @@ function BoardTab({ active, onClick, children }: { active: boolean; onClick: () 
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
-        active ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+      className={`flex items-center gap-[5px] rounded-full px-3 py-1.5 text-[11.5px] transition ${
+        active ? "area-grad font-semibold" : "bg-[var(--surface-2)] font-medium text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
       }`}
     >
       {children}
