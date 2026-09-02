@@ -33,7 +33,7 @@ function dayMarks(data: AppData, date: string): (typeof DAY_MARKS)[number][] {
 import { useDerived } from "@/lib/useDerived";
 import { weekdayPatterns, weekdayFeelings, feelingHighlight } from "@/lib/weekdayStats";
 import { CoachInsightCard } from "@/components/Coach";
-import { fmtDuration, fmtLong, monthLabel, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
+import { fmtDuration, fmtLong, monthLabel, monthLabelLong, sleepDurationMinutes, todayISO, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, SectionTitle, Modal, Badge, Button } from "@/components/ui";
 import { Meter } from "@/components/ScoreRing";
 import clsx from "clsx";
@@ -78,7 +78,7 @@ export default function CalendarPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader kicker={`${t(monthLabel(ym.m))} ${ym.y}`} lead={t("Your (n)")} title={t("Calendar")} subtitle={t("Your life, day by day — tap a day to see everything you logged.")} />
+      <PageHeader kicker={`${t(monthLabelLong(ym.m))} ${ym.y}`} lead={t("Your (n)")} title={t("Calendar")} subtitle={t("Your life, day by day — tap a day to see everything you logged.")} />
 
       <Card className="mx-auto max-w-[760px]">
         <div className="mb-[18px] flex items-center justify-between">
@@ -86,7 +86,7 @@ export default function CalendarPage() {
             <ChevronLeft size={18} />
           </button>
           <span className="text-[15px] font-semibold">
-            {t(monthLabel(ym.m))} {ym.y}
+            {t(monthLabelLong(ym.m))} {ym.y}
           </span>
           <button onClick={() => shift(1)} className="flex h-[34px] w-[34px] items-center justify-center rounded-[10px] bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]" aria-label={t("Move right")}>
             <ChevronRight size={18} />
@@ -96,7 +96,7 @@ export default function CalendarPage() {
         <div className="grid grid-cols-7 gap-1.5">
           {WEEK_ORDER.map((wd) => (
             <div key={wd} className="pb-1 text-center text-[11px] font-medium uppercase text-[var(--text-faint)]">
-              {t(weekdayLabel(wd))}
+              {t(weekdayLabel(wd)).slice(0, 2)}
             </div>
           ))}
           {cells.map((d, i) => {
@@ -211,7 +211,7 @@ function WeekdayFeelingsCard() {
   const f = useMemo(() => weekdayFeelings(data.reviews), [data.reviews]);
   if (!f.enough) return null;
   const hi = feelingHighlight(f);
-  const cols = "72px repeat(7, 1fr)";
+  const cols = "58px repeat(7, 1fr)";
   return (
     <Card className="mx-auto max-w-[760px]">
       <SectionTitle>{t("How you feel by weekday")}</SectionTitle>
@@ -224,9 +224,9 @@ function WeekdayFeelingsCard() {
           })}
         </p>
       )}
-      <div className="no-swipe overflow-x-auto">
-        <div className="min-w-[440px]">
-          <div className="grid gap-1 pb-1" style={{ gridTemplateColumns: cols }}>
+      <div>
+        <div>
+          <div className="grid gap-[3px] pb-1" style={{ gridTemplateColumns: cols }}>
             <div />
             {FEEL_WD.map((wd) => (
               <div key={wd} className="text-center text-[11px] font-medium uppercase text-[var(--text-faint)]">
@@ -235,15 +235,15 @@ function WeekdayFeelingsCard() {
             ))}
           </div>
           {f.metrics.map((m) => (
-            <div key={m.key} className="grid items-center gap-1 py-0.5" style={{ gridTemplateColumns: cols }}>
-              <div className="truncate pr-2 text-xs font-medium text-[var(--text-muted)]">{t(m.label)}</div>
+            <div key={m.key} className="grid items-center gap-[3px] py-0.5" style={{ gridTemplateColumns: cols }}>
+              <div className="truncate pr-1.5 text-[10.5px] font-medium text-[var(--text-muted)]">{t(m.label)}</div>
               {m.avg.map((v, idx) => {
                 const has = f.n[idx] > 0;
                 const col = v >= 6.5 ? "var(--good)" : v >= 4.5 ? "var(--warn)" : "var(--bad)";
                 return (
                   <div
                     key={idx}
-                    className="num flex h-8 items-center justify-center rounded-md text-[11px] font-semibold"
+                    className="num flex h-7 items-center justify-center rounded-[7px] text-[10.5px] font-semibold"
                     style={{
                       background: has ? `color-mix(in srgb, ${col} 26%, var(--surface))` : "var(--surface-2)",
                       color: has ? "var(--text)" : "var(--text-faint)",

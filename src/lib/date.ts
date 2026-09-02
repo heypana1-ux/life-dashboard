@@ -63,6 +63,21 @@ const WD_LONG = [
   "Friday",
   "Saturday",
 ];
+const MON_LONG = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
 const MON = [
   "Jan",
   "Feb",
@@ -94,6 +109,11 @@ export function weekdayLabel(n: number, long = false): string {
 
 export function monthLabel(n: number): string {
   return MON[n];
+}
+
+/** Full month name, as the calendar header uses in the design ("September 2026"). */
+export function monthLabelLong(n: number): string {
+  return MON_LONG[n];
 }
 
 /** Format minutes as "7h 45min". */
