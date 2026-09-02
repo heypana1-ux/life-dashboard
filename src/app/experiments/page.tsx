@@ -132,7 +132,18 @@ function ExperimentCard({ exp, onDelete }: { exp: Experiment; onDelete: () => vo
           </p>
         ) : (
           <>
-            <p className="text-sm">
+            <div className="flex items-end gap-2">
+              <span
+                className="num text-[34px] font-bold leading-none tracking-[-0.03em]"
+                style={{ color: res.diffPct >= 0 ? "var(--good)" : "var(--bad)" }}
+              >
+                {res.diffPct >= 0 ? "+" : "−"}{Math.abs(res.diffPct)}%
+              </span>
+              <span className="mb-0.5 text-[13px] text-[var(--text-muted)]">
+                {res.diffPct >= 0 ? t("higher") : t("lower")}
+              </span>
+            </div>
+            <p className="mt-1.5 text-sm text-[var(--text-muted)]">
               {t("On days with the condition, {metric} was on average {pct} {dir}.", {
                 metric: metricName,
                 pct: `${Math.abs(res.diffPct)}%`,
