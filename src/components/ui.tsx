@@ -250,7 +250,7 @@ export function Chip({
         "rounded-full px-3.5 py-1.5 text-xs font-medium transition",
         active
           ? "area-soft shadow-sm"
-          : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
+          : "grad-soft text-[var(--text-muted)] hover:brightness-95 dark:hover:brightness-110",
         className,
       )}
     >
@@ -454,7 +454,7 @@ export function Badge({
     <span
       className={clsx(
         "inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-semibold",
-        tone === "default" && "bg-[var(--surface-2)] text-[var(--text-muted)]",
+        tone === "default" && "grad-soft text-[var(--text-muted)]",
         tone === "good" && "bg-[var(--good-soft)] text-[var(--good)]",
         tone === "bad" && "bg-[var(--bad-soft)] text-[var(--bad)]",
         tone === "warn" && "bg-[var(--good-soft)] text-[var(--warn)]",
@@ -518,7 +518,7 @@ export function IconTile({
         height: size,
         width: size,
         borderRadius: radius,
-        background: `color-mix(in srgb, ${c} 22%, transparent)`,
+        background: `linear-gradient(135deg, color-mix(in srgb, ${c} 32%, transparent), color-mix(in srgb, ${c} 8%, transparent))`,
         color: c,
       }}
     >

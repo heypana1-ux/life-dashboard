@@ -35,6 +35,7 @@
   --grad: linear-gradient(135deg, #4f46e5, #6366f1);
   --grad-a: #4f46e5;
   --grad-b: #6366f1;
+  --chip-grad: linear-gradient(135deg, #e2e8f0, #f5f7f9);
 }
 
 .dark {
@@ -63,6 +64,7 @@
   --grad: linear-gradient(135deg, #7c7bff, #a78bfa);
   --grad-a: #7c7bff;
   --grad-b: #a78bfa;
+  --chip-grad: linear-gradient(135deg, #2a313b, #1a1f26);
 }
 
 /* ---- Accent directions (overrides only the accent tokens) ---- */
@@ -417,10 +419,19 @@ body {
 /* ---- Area-accent surfaces (Pulse) ---- */
 /* Filled gradient (primary buttons, level banners, meters) */
 .area-grad { background: linear-gradient(135deg, var(--area-a), var(--area-b)); color: var(--area-ink); }
-/* Soft tint behind accent content (icon tiles, active nav, chips, insight cards) */
+/* Soft tint behind accent content (icon tiles, active nav, chips, insight cards).
+   Pulse uses a gradient wash of the area colour (≈26%→6%), not a flat fill. */
 .area-soft {
-  background: color-mix(in srgb, var(--area-a) 14%, var(--surface));
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--area-a) 26%, transparent),
+    color-mix(in srgb, var(--area-a) 6%, transparent)
+  );
   color: var(--area-text);
+}
+/* Neutral surface pill/chip gradient (inactive chips, date pills, neutral badges) */
+.grad-soft {
+  background: var(--chip-grad);
 }
 .area-text { color: var(--area-text); }
 /* One-word gradient headline */
