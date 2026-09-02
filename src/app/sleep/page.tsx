@@ -214,7 +214,7 @@ export default function SleepPage() {
             {chartData.length >= 2 ? (
               <TrendLine
                 data={chartData}
-                color="var(--info)"
+                color="var(--accent)"
                 unit="h"
                 domain={[4, 10]}
                 name={t("hours")}

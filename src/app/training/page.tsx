@@ -211,7 +211,7 @@ function WorkoutsTab({
       {data.workouts.length > 0 && (
         <Card>
           <SectionTitle>{t("Volume")} · h / {t("week")}</SectionTitle>
-          <Bars data={volume} color="var(--good)" unit="h" height={180} />
+          <Bars data={volume} color="var(--accent)" unit="h" height={180} />
         </Card>
       )}
 
@@ -561,7 +561,7 @@ function CardioProgressCard({ workouts }: { workouts: Workout[] }) {
           <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Distance (km)")}</div>
           <TrendLine data={distSeries} color="var(--accent)" unit=" km" name={t("Distance (km)")} height={180} />
           <div className="mb-1 mt-3 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Pace")} ({t("min/km")})</div>
-          <TrendLine data={paceSeries} color="var(--info)" name={t("Pace")} height={140} />
+          <TrendLine data={paceSeries} color="var(--accent)" name={t("Pace")} height={140} />
           <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Lower pace is faster.")}</p>
         </>
       ) : (
