@@ -21,19 +21,17 @@ import { useDerived, useTodayComputation } from "@/lib/useDerived";
 import { AREA_LABELS } from "@/lib/defaults";
 import { habitsForToday } from "@/lib/habitView";
 import { dayHasEntry } from "@/lib/dayActivity";
-import { areaColor } from "@/lib/areaStyle";
+import { areaColor, AREA_ICONS } from "@/lib/areaStyle";
 import { computeLevel } from "@/lib/level";
 import { weeklyChallenges } from "@/lib/challenges";
 import { detectAnomalies } from "@/lib/anomalies";
 import { earlyWarning, predictTomorrow } from "@/lib/forecast";
 import { fmtLong } from "@/lib/date";
-import { scoreLabel } from "@/lib/score";
+import { scoreLabel, scoreColor } from "@/lib/score";
 import { AreaKey } from "@/lib/types";
 import { effectiveLayout, CARD_LABELS as SHARED_CARD_LABELS, type DashboardCardId } from "@/lib/dashboardCards";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, StatTile, AnimatedNumber } from "@/components/ui";
-import { ScoreRing, Meter } from "@/components/ScoreRing";
-import { MiniSpark } from "@/components/charts";
+import { Card, PageHeader, SectionTitle, Delta, Badge, Button, EmptyState, AnimatedNumber, IconTile } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { CoachBriefing, CoachWeeklyCheckin } from "@/components/Coach";
 import { WeeklyPlanner } from "@/components/WeeklyPlanner";
@@ -316,54 +314,54 @@ export default function DashboardPage() {
         }
       />
 
-      <div className="flex flex-col gap-[18px]">
-        {/* Hero row: score card + 2x2 stat tiles (always pinned) — nothing sits above it */}
-        <div className="grid gap-[18px] lg:grid-cols-[1.15fr_1fr]">
-          <Card className="flex flex-col items-center gap-6 !p-[26px] sm:flex-row sm:gap-[26px]">
-            <ScoreRing
-              value={liveScore}
-              sublabel={liveScore > 0 ? t(scoreLabel(liveScore)) : t("No data yet")}
-            />
+      <div className="flex flex-col gap-[22px]">
+        {/* Focus zone: Life Score + Rating ring (always pinned) */}
+        <section>
+          <div className="flex items-center gap-5">
             <div className="min-w-0 flex-1">
-              <p className="slabel">{t("Life Score today")}</p>
-              <p className="mt-1 text-sm leading-[1.45] text-[var(--text-muted)]">
-                {liveScore > 0
-                  ? `${doneCount}/${buildGoals.length} ${t("goals done")}`
-                  : t("No data yet")}
-                {todayComp.slips > 0 && (
-                  <span className="text-[var(--bad)]">
-                    {" "}· {todayComp.slips} {t("Reduce")}
-                  </span>
-                )}
-              </p>
-              <div className="mt-[18px] flex gap-6">
-                <div>
-                  <p className="text-[11px] text-[var(--text-faint)]">{t("vs yesterday")}</p>
-                  <div className="mt-[3px]"><Delta value={vsYesterday} className="!text-[15px]" /></div>
-                </div>
-                <div className="w-px bg-[var(--border)]" />
-                <div>
-                  <p className="text-[11px] text-[var(--text-faint)]">{t("vs 7-day avg")}</p>
-                  <div className="mt-[3px]"><Delta value={vsAvg} className="!text-[15px]" /></div>
-                </div>
+              <div className="flex items-end gap-2.5">
+                <span className="num text-[64px] font-bold leading-[.86] tracking-[-0.05em] sm:text-[78px]">{liveScore}</span>
+                {liveScore > 0 && <span className="mb-2"><Delta value={vsAvg} /></span>}
               </div>
-              {prediction && (
-                <p className="mt-[14px] text-[11px] text-[var(--text-faint)]">
-                  {t("Tomorrow, likely around")}{" "}
-                  <span className="num font-semibold text-[var(--text-muted)]">{prediction.value}</span>{" "}
-                  {prediction.trend > 0 ? "↗" : prediction.trend < 0 ? "↘" : "→"}
-                </p>
-              )}
+              <div
+                className="mt-2.5 text-[13px] font-semibold"
+                style={{ color: liveScore > 0 ? scoreColor(liveScore) : "var(--text-faint)" }}
+              >
+                {liveScore > 0 ? t(scoreLabel(liveScore)) : t("No data yet")}
+              </div>
+              <div className="mt-1 text-[12.5px] text-[var(--text-faint)]">
+                {t("Life Score")} · {t("7-day avg")} {d.avg7}
+                {prediction ? ` · ${t("likely")} ${prediction.value} ${prediction.trend > 0 ? "↗" : prediction.trend < 0 ? "↘" : "→"}` : ""}
+              </div>
             </div>
-          </Card>
-
-          <div className="grid grid-cols-2 gap-[14px]">
-            <StatTile icon={<Trophy size={15} />} label={t("Life Rating")} value={<AnimatedNumber value={elo} />} sub={`${t("Best")} ${eloBest.toLocaleString()}`} />
-            <StatTile icon={<Flame size={15} />} label={t("Streak")} value={<><AnimatedNumber value={streak} />d</>} sub={t("days with activity")} />
-            <StatTile icon={<ArrowUpRight size={15} />} label={t("7-day avg")} value={<AnimatedNumber value={d.avg7} />} sub={t("Life Score")} />
-            <StatTile icon={<Sparkles size={15} />} label={t("Today")} value={`${doneCount}/${buildGoals.length}`} sub={t("goals done")} />
+            <RatingRing elo={elo} best={eloBest} label={t("Rating")} />
           </div>
-        </div>
+
+          {/* Goals progress */}
+          <div className="mt-5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-[var(--text-muted)]">{t("Today")} · {doneCount}/{buildGoals.length} {t("goals")}</span>
+              {todayComp.slips > 0 && <span className="font-semibold text-[var(--bad)]">{todayComp.slips} {t("Reduce")}</span>}
+            </div>
+            <div className="mt-2 flex gap-1">
+              {Array.from({ length: Math.max(buildGoals.length, 1) }).map((_, i) => (
+                <span
+                  key={i}
+                  className="h-1.5 flex-1 rounded-full"
+                  style={{ background: i < doneCount ? "linear-gradient(135deg,var(--area-a),var(--area-b))" : "var(--surface-2)" }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Hairline metric strip */}
+          <div className="mt-5 grid grid-cols-2 border-y border-[var(--border)]">
+            <MetricCell icon={<Flame size={13} />} label={t("Streak")} value={<><AnimatedNumber value={streak} /><span className="text-[15px] text-[var(--text-muted)]">d</span></>} right />
+            <MetricCell icon={<Trophy size={13} />} label={t("Best rating")} value={eloBest.toLocaleString()} />
+            <MetricCell icon={<ArrowUpRight size={13} />} label={t("7-day avg")} value={<AnimatedNumber value={d.avg7} />} right top />
+            <MetricCell icon={<Sparkles size={13} />} label={t("Goals")} value={`${doneCount}/${buildGoals.length}`} top />
+          </div>
+        </section>
 
         {/* Early warning: a dip forming right now (below the hero, only when active) */}
         {warning && (
@@ -485,6 +483,57 @@ function challengeShort(
   }
 }
 
+/** Circular ELO/rating ring for the dashboard focus zone. */
+function RatingRing({ elo, best, label }: { elo: number; best: number; label: string }) {
+  const frac = best > 0 ? Math.max(0, Math.min(1, elo / best)) : 0;
+  const r = 50;
+  const c = 2 * Math.PI * r;
+  const off = c * (1 - frac);
+  return (
+    <div className="relative flex h-[112px] w-[112px] shrink-0 items-center justify-center">
+      <svg width="112" height="112" className="-rotate-90">
+        <defs>
+          <linearGradient id="eloRing" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style={{ stopColor: "var(--area-a)" }} />
+            <stop offset="1" style={{ stopColor: "var(--area-b)" }} />
+          </linearGradient>
+        </defs>
+        <circle cx="56" cy="56" r={r} fill="none" stroke="var(--ring-track)" strokeWidth="8" />
+        <circle cx="56" cy="56" r={r} fill="none" stroke="url(#eloRing)" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} />
+      </svg>
+      <div className="absolute text-center">
+        <div className="num text-[19px] font-bold leading-none">{elo.toLocaleString()}</div>
+        <div className="mt-0.5 text-[9.5px] font-semibold uppercase tracking-[0.1em] text-[var(--text-faint)]">{label}</div>
+      </div>
+    </div>
+  );
+}
+
+/** One cell of the dashboard's hairline 2×2 metric strip. */
+function MetricCell({
+  icon,
+  label,
+  value,
+  right,
+  top,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: React.ReactNode;
+  right?: boolean;
+  top?: boolean;
+}) {
+  return (
+    <div className={`py-3.5 ${right ? "border-r border-[var(--border)] pr-4" : "pl-4"} ${top ? "border-t border-[var(--border)]" : ""}`}>
+      <div className="flex items-center gap-1.5 text-[var(--text-faint)]">
+        {icon}
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em]">{label}</span>
+      </div>
+      <div className="num mt-1.5 text-[24px] font-bold tracking-[-0.03em]">{value}</div>
+    </div>
+  );
+}
+
 function CategoryRow({
   area,
   derived,
@@ -496,26 +545,26 @@ function CategoryRow({
 }) {
   const t = useT();
   const color = areaColor(area);
-  const spark = derived.history
-    .slice(-14)
-    .map((h) => ({ date: h.date, value: h.categories[area] ?? 0 }));
+  const Icon = AREA_ICONS[area];
   const yest = derived.yesterdayScore?.categories[area];
   const cur = live ?? derived.todayScore?.categories[area] ?? 0;
 
   return (
-    <div className="flex items-center gap-4 border-b border-[var(--border)] py-[11px] last:border-0">
+    <div className="flex items-center gap-3 py-[7px]">
+      <IconTile color={color} size={32}>
+        <Icon size={16} strokeWidth={2} />
+      </IconTile>
       <div className="min-w-0 flex-1">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="flex items-baseline justify-between gap-2">
           <span className="text-[13.5px] font-medium">{t(AREA_LABELS[area])}</span>
-          <div className="flex items-center gap-2">
-            <span className="num text-[13.5px] font-semibold">{cur}</span>
+          <span className="flex items-baseline gap-[7px]">
+            <span className="num text-[15px] font-bold">{cur}</span>
             {yest !== undefined && <Delta value={cur - yest} />}
-          </div>
+          </span>
         </div>
-        <Meter value={cur} color={color} />
-      </div>
-      <div className="hidden w-20 shrink-0 sm:block">
-        <MiniSpark data={spark} color={color} />
+        <div className="mt-1.5 h-1 overflow-hidden rounded-full bg-[var(--surface-2)]">
+          <div className="h-full rounded-full" style={{ width: `${cur}%`, background: color }} />
+        </div>
       </div>
     </div>
   );
