@@ -429,6 +429,16 @@ body {
   );
   color: var(--area-text);
 }
+/* Deep area wash — the saturated tint the design uses for a selected list row or a
+   highlighted panel. Mixes against the page background, so it reads darker and richer
+   than .area-soft (which is a light veil over a card). */
+.area-deep {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--area-a) 26%, var(--bg)),
+    color-mix(in srgb, var(--area-a) 10%, var(--bg))
+  );
+}
 /* Neutral surface pill/chip gradient (inactive chips, date pills, neutral badges) */
 .grad-soft {
   background: var(--chip-grad);

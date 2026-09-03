@@ -319,11 +319,11 @@ export default function DashboardPage() {
       <div className="flex flex-col gap-[22px]">
         {/* Focus zone: Life Score + Rating ring (always pinned) */}
         <section>
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-[22px]">
             <div className="min-w-0 flex-1">
               <div className="flex items-end gap-2.5">
-                <span className="num text-[64px] font-bold leading-[.86] tracking-[-0.05em] sm:text-[78px]">{liveScore}</span>
-                {liveScore > 0 && <span className="mb-2"><Delta value={vsAvg} /></span>}
+                <span className="num text-[78px] font-bold leading-[.86] tracking-[-0.05em]">{liveScore}</span>
+                {liveScore > 0 && <span className="mb-2"><Delta value={vsAvg} pill /></span>}
               </div>
               <div
                 className="mt-2.5 text-[13px] font-semibold"
@@ -357,7 +357,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Hairline metric strip */}
-          <div className="mt-5 grid grid-cols-2 border-y border-[var(--border)]">
+          <div className="mt-5 grid grid-cols-2 border-y border-[var(--surface-2)]">
             <MetricCell icon={<Flame size={13} />} label={t("Streak")} value={<><AnimatedNumber value={streak} /><span className="text-[15px] text-[var(--text-muted)]">d</span></>} right />
             <MetricCell icon={<Trophy size={13} />} label={t("Best rating")} value={eloBest.toLocaleString()} />
             <MetricCell icon={<ArrowUpRight size={13} />} label={t("7-day avg")} value={<AnimatedNumber value={d.avg7} />} right top />
@@ -488,20 +488,20 @@ function challengeShort(
 /** Circular ELO/rating ring for the dashboard focus zone. */
 function RatingRing({ elo, best, label }: { elo: number; best: number; label: string }) {
   const frac = best > 0 ? Math.max(0, Math.min(1, elo / best)) : 0;
-  const r = 50;
+  const r = 54;
   const c = 2 * Math.PI * r;
   const off = c * (1 - frac);
   return (
-    <div className="relative flex h-[112px] w-[112px] shrink-0 items-center justify-center">
-      <svg width="112" height="112" className="-rotate-90">
+    <div className="relative flex h-[116px] w-[116px] shrink-0 items-center justify-center">
+      <svg width="116" height="116" className="-rotate-90">
         <defs>
           <linearGradient id="eloRing" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" style={{ stopColor: "var(--area-a)" }} />
             <stop offset="1" style={{ stopColor: "var(--area-b)" }} />
           </linearGradient>
         </defs>
-        <circle cx="56" cy="56" r={r} fill="none" stroke="var(--ring-track)" strokeWidth="8" />
-        <circle cx="56" cy="56" r={r} fill="none" stroke="url(#eloRing)" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} />
+        <circle cx="58" cy="58" r={r} fill="none" stroke="var(--surface-2)" strokeWidth="8" />
+        <circle cx="58" cy="58" r={r} fill="none" stroke="url(#eloRing)" strokeWidth="8" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={off} />
       </svg>
       <div className="absolute text-center">
         <div className="num text-[19px] font-bold leading-none">{elo.toLocaleString()}</div>
@@ -526,7 +526,7 @@ function MetricCell({
   top?: boolean;
 }) {
   return (
-    <div className={`py-3.5 ${right ? "border-r border-[var(--border)] pr-4" : "pl-4"} ${top ? "border-t border-[var(--border)]" : ""}`}>
+    <div className={`py-3.5 ${right ? "border-r border-[var(--surface-2)] pr-4" : "pl-4"} ${top ? "border-t border-[var(--surface-2)]" : ""}`}>
       <div className="flex items-center gap-1.5 text-[var(--text-faint)]">
         {icon}
         <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em]">{label}</span>

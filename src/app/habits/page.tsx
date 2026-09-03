@@ -219,24 +219,32 @@ function MomentumCard() {
   const fading = habitMomentum(data);
   if (fading.length === 0) return null;
   return (
-    <Card className="border-[var(--warn)]/40">
+    /* The design paints this panel in an amber wash with an amber hairline, and sits the
+       rows on a dark scrim inside it. */
+    <div
+      className="rounded-[20px] border border-[color-mix(in_srgb,var(--warn)_30%,transparent)] px-4 py-[15px]"
+      style={{
+        background:
+          "linear-gradient(135deg, color-mix(in srgb, var(--warn) 28%, transparent), color-mix(in srgb, var(--warn) 6%, transparent))",
+      }}
+    >
       <SectionTitle right={<TrendingDown size={16} className="text-[var(--warn)]" />}>{t("Losing momentum")}</SectionTitle>
-      <p className="mb-2.5 text-xs text-[var(--text-muted)]">
+      <p className="-mt-1.5 mb-2.5 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
         {t("These were going well but have cooled off this week — a good moment to recommit before the streak breaks.")}
       </p>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-2">
         {fading.slice(0, 4).map((f) => (
-          <div key={f.id} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] p-3">
+          <div key={f.id} className="flex items-center gap-2.5 rounded-[14px] bg-black/[0.28] px-[13px] py-[11px]">
             <TrendingDown size={16} className="shrink-0 text-[var(--warn)]" />
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-medium">{f.name}</div>
-              <div className="text-xs text-[var(--text-faint)]">{t("{recent}% this week vs {prior}% before", { recent: f.recent, prior: f.prior })}</div>
+              <div className="truncate text-[13px] font-medium">{f.name}</div>
+              <div className="text-[11px] text-[var(--text-faint)]">{t("{recent}% this week vs {prior}% before", { recent: f.recent, prior: f.prior })}</div>
             </div>
             <Badge tone="bad">−{f.drop}%</Badge>
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -273,25 +281,25 @@ function RoutinesCard() {
   return (
     <Card>
       <SectionTitle right={<Layers size={16} className="text-[var(--text-faint)]" />}>{t("Routines")}</SectionTitle>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="flex flex-col gap-2.5 sm:grid sm:grid-cols-2">
         {[...groups.entries()].map(([name, habits]) => {
           const due = habits.filter((h) => h.kind === "build" && dueToday.has(h.id));
           const doneCount = due.filter((h) => doneToday.has(h.id)).length;
           const allDone = due.length > 0 && doneCount === due.length;
           return (
-            <div key={name} className="tile p-4">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <span className="font-semibold">{name}</span>
+            <div key={name} className="rounded-[20px] border border-[var(--border)] bg-[var(--surface)] px-[15px] py-3.5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[13.5px] font-semibold">{name}</span>
                 {due.length > 0 && (
-                  <span className="text-xs text-[var(--text-faint)]">{doneCount}/{due.length} {t("today")}</span>
+                  <span className="num text-[11px] text-[var(--text-dim)]">{doneCount}/{due.length} {t("today")}</span>
                 )}
               </div>
-              <div className="space-y-1.5">
+              <div className="mt-[9px] flex flex-col gap-1.5">
                 {habits.map((h) => {
                   const isDue = dueToday.has(h.id);
                   const done = doneToday.has(h.id);
                   return (
-                    <div key={h.id} className="flex items-center gap-2 text-sm">
+                    <div key={h.id} className="flex items-center gap-2 text-[12.5px]">
                       {h.kind === "build" && isDue ? (
                         done ? (
                           <CheckCircle2 size={15} className="shrink-0 text-[var(--good)]" />
@@ -301,7 +309,7 @@ function RoutinesCard() {
                       ) : (
                         <span className="h-[15px] w-[15px] shrink-0 rounded-full" style={{ background: h.color ?? "var(--surface-3)" }} />
                       )}
-                      <span className={done ? "text-[var(--text-faint)] line-through" : ""}>{h.name}</span>
+                      <span className={done ? "text-[var(--text-dim)] line-through" : ""}>{h.name}</span>
                       {h.kind === "build" && !isDue && (
                         <span className="text-[10px] text-[var(--text-faint)]">· {t("not today")}</span>
                       )}
@@ -310,15 +318,15 @@ function RoutinesCard() {
                 })}
               </div>
               {due.length > 0 && (
-                <Button
-                  variant={allDone ? "soft" : "primary"}
-                  size="sm"
-                  className="mt-3 w-full"
+                <button
                   disabled={allDone}
                   onClick={() => completeAll(habits)}
+                  className={`mt-3 w-full rounded-[14px] py-[9px] text-center text-[12.5px] font-semibold transition ${
+                    allDone ? "area-soft" : "area-grad hover:opacity-90"
+                  }`}
                 >
                   {allDone ? t("All done today 🎉") : t("Complete all today")}
-                </Button>
+                </button>
               )}
             </div>
           );

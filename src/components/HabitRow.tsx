@@ -71,7 +71,7 @@ export function HabitRow({
   const struck = isReduce ? !marked : marked;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--border)] py-[11px] last:border-0">
+    <div className="flex items-center gap-3 border-b border-[var(--surface-2)] py-[11px] last:border-0">
       <IconTile color={color}>
         <Icon size={15} strokeWidth={2} />
       </IconTile>

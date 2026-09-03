@@ -79,7 +79,7 @@ export function HeaderAction({
         "flex h-[34px] w-[34px] shrink-0 items-center justify-center rounded-[12px] transition",
         primary
           ? "area-grad shadow-[0_8px_20px_color-mix(in_srgb,var(--area-a)_35%,transparent)]"
-          : "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)] hover:border-[var(--accent)]",
+          : "area-text border border-[var(--border)] bg-[var(--surface)] hover:border-[var(--area-a)]",
       )}
     >
       {children}
@@ -300,29 +300,33 @@ export function Delta({
   suffix = "",
   className,
   invert = false,
+  pill = false,
 }: {
   value: number;
   suffix?: string;
   className?: string;
   /** invert=true means "down is good" (e.g. negative habits). */
   invert?: boolean;
+  /** Renders the design's tinted capsule instead of bare coloured text. */
+  pill?: boolean;
 }) {
   const rounded = Math.round(value * 10) / 10;
   const positive = rounded > 0;
   const neutral = rounded === 0;
   const good = neutral ? false : invert ? !positive : positive;
   const Icon = neutral ? Minus : positive ? ArrowUpRight : ArrowDownRight;
+  const tone = neutral ? "var(--text-faint)" : good ? "var(--good)" : "var(--bad)";
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-0.5 text-xs font-semibold",
-        neutral
-          ? "text-[var(--text-faint)]"
-          : good
-            ? "text-[var(--good)]"
-            : "text-[var(--bad)]",
+        "inline-flex items-center gap-0.5 font-semibold",
+        pill ? "rounded-full px-2 py-[3px] text-[12px]" : "text-xs",
         className,
       )}
+      style={{
+        color: tone,
+        background: pill ? `color-mix(in srgb, ${tone} 16%, transparent)` : undefined,
+      }}
     >
       <Icon size={13} strokeWidth={2.5} />
       {rounded > 0 ? "+" : ""}
@@ -645,7 +649,7 @@ export function FocusZone({
     <div>
       <div className="slabel">{label}</div>
       <div className="mt-2 flex items-end gap-3">
-        <span className="num text-[56px] font-bold leading-[.86] tracking-[-0.045em] sm:text-[62px]">{value}</span>
+        <span className="num text-[62px] font-bold leading-[.86] tracking-[-0.05em]">{value}</span>
         {sub && (
           <span className="mb-2 text-[13px] font-semibold" style={subColor ? { color: subColor } : undefined}>
             {sub}
@@ -672,13 +676,13 @@ export function HairlineStats({
 }) {
   return (
     <div
-      className="mt-3.5 grid border-y border-[var(--border)]"
+      className="mt-3.5 grid border-y border-[var(--surface-2)]"
       style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}
     >
       {items.map((it, i) => (
         <div
           key={i}
-          className={clsx("py-3", i > 0 && "pl-3", i < items.length - 1 && "border-r border-[var(--border)] pr-3")}
+          className={clsx("py-3", i > 0 && "pl-3", i < items.length - 1 && "border-r border-[var(--surface-2)] pr-3")}
         >
           <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{it.label}</div>
           <div className="num mt-1 text-[20px] font-bold tracking-[-0.03em]" style={it.color ? { color: it.color } : undefined}>

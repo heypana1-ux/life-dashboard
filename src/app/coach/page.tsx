@@ -62,7 +62,8 @@ export default function CoachPage() {
   );
 
   return (
-    <div className="flex min-h-[calc(100dvh-104px)] gap-4">
+    /* The design leaves 16px above the coach panel — without a PageHeader we add it here. */
+    <div className="flex min-h-[calc(100dvh-104px)] gap-4 pt-4">
       <aside className="hidden w-60 shrink-0 lg:block">
         <div className="card !p-3">{list}</div>
       </aside>

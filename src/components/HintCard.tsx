@@ -21,8 +21,8 @@ export function HintCard({ id, title, children }: { id: string; title: string; c
 
   return (
     /* Pulse insight card: area-tinted wash, hairline area border, bare lightbulb. */
-    <div className="area-soft relative flex gap-3 rounded-[24px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] p-[18px]">
-      <Lightbulb size={16} className="mt-px shrink-0" />
+    <div className="area-deep relative flex gap-3 rounded-[18px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] px-4 py-3.5">
+      <Lightbulb size={16} className="area-text mt-px shrink-0" />
       <div className="min-w-0 flex-1 pr-4">
         <div className="text-[12.5px] font-bold">{title}</div>
         <p className="mt-1 text-[12px] leading-[1.5] text-[var(--text-muted)]">{children}</p>

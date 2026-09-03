@@ -11,7 +11,6 @@ import { useT } from "@/lib/i18n";
 import { computeDay, scoreColor, scoreLabel } from "@/lib/score";
 import {
   PageHeader,
-  Button,
   Badge,
   Toggle,
   FocusZone,
@@ -69,7 +68,7 @@ function RatingBar({ value, onChange }: { value: number; onChange: (n: number) =
 }
 
 const textAreaCls =
-  "mt-1.5 w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-[13px] leading-[1.45] outline-none focus:border-[var(--accent)]";
+  "mt-[5px] w-full resize-none rounded-[14px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-[12.5px] leading-[1.45] outline-none placeholder:text-[var(--text-dim)] focus:border-[var(--area-a)]";
 
 export default function TodayPage() {
   const { data, saveReview, setHabitLog, updateSettings } = useStore();
@@ -99,7 +98,7 @@ export default function TodayPage() {
   }, [date]);
   const [savedFlash, setSavedFlash] = useState(false);
   const checkinCounts = data.settings.checkinCounts ?? false;
-  const [checkinOpen, setCheckinOpen] = useState(!!existing || checkinCounts);
+  const [checkinOpen, setCheckinOpen] = useState(true);
 
   function save() {
     saveReview({ ...review, date });
@@ -158,7 +157,7 @@ export default function TodayPage() {
         }
       />
 
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-[22px]">
         <BackfillNudge />
 
         {/* Focus zone: projected score */}
@@ -285,23 +284,24 @@ export default function TodayPage() {
               <div className="flex flex-col gap-2.5">
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Went well")}</div>
-                  <textarea rows={2} className={textAreaCls} value={review.wentWell ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentWell: e.target.value }))} />
+                  <textarea rows={1} className={textAreaCls} value={review.wentWell ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentWell: e.target.value }))} />
                 </div>
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Went badly")}</div>
-                  <textarea rows={2} className={textAreaCls} value={review.wentBad ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentBad: e.target.value }))} />
+                  <textarea rows={1} className={textAreaCls} value={review.wentBad ?? ""} onChange={(e) => setReview((r) => ({ ...r, wentBad: e.target.value }))} />
                 </div>
                 <div>
                   <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">{t("Better tomorrow")}</div>
-                  <textarea rows={2} className={textAreaCls} value={review.improveTomorrow ?? ""} onChange={(e) => setReview((r) => ({ ...r, improveTomorrow: e.target.value }))} />
+                  <textarea rows={1} className={textAreaCls} value={review.improveTomorrow ?? ""} onChange={(e) => setReview((r) => ({ ...r, improveTomorrow: e.target.value }))} />
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
-                <Button className="w-full !py-3" onClick={save}>
-                  <Save size={16} /> {t("Save check-in")}
-                </Button>
-              </div>
+              <button
+                onClick={save}
+                className="area-grad flex w-full items-center justify-center gap-2 rounded-[16px] py-[13px] text-[13.5px] font-semibold shadow-[0_10px_24px_color-mix(in_srgb,var(--area-a)_30%,transparent)]"
+              >
+                <Save size={16} /> {t("Save check-in")}
+              </button>
               {savedFlash && <p className="text-center text-sm text-[var(--good)]">{t("Saved ✓")}</p>}
             </div>
           )}
@@ -310,7 +310,7 @@ export default function TodayPage() {
         {/* Sleep nudge */}
         {!sleepLogged && (
           <Link href="/sleep" className="block">
-            <div className="flex items-center gap-3 rounded-[18px] border p-4" style={{ background: "color-mix(in srgb, #38bdf8 14%, var(--surface))", borderColor: "color-mix(in srgb, #38bdf8 30%, transparent)" }}>
+            <div className="flex items-center gap-3 rounded-[16px] border px-3.5 py-3" style={{ background: "color-mix(in srgb, #38bdf8 14%, var(--surface))", borderColor: "color-mix(in srgb, #38bdf8 30%, transparent)" }}>
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-black/10 text-[#0ea5e9] dark:text-[#38bdf8]">
                 <Moon size={17} />
               </span>

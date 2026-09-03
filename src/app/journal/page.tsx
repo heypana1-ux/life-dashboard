@@ -11,7 +11,7 @@ import { promptForDate, JOURNAL_PROMPTS } from "@/lib/journalPrompts";
 import { buildCoachContext } from "@/lib/coachContext";
 import { coachAsk, checkCoachConfigured } from "@/lib/ai";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, Button, Field, inputCls, EmptyState, Badge, HeaderAction } from "@/components/ui";
+import { Card, PageHeader, Button, EmptyState, HeaderAction } from "@/components/ui";
 
 export default function JournalPage() {
   const { data, saveJournal, removeJournal } = useStore();
@@ -103,36 +103,39 @@ export default function JournalPage() {
       <div className="grid gap-4 lg:grid-cols-3">
         {/* Entry list */}
         <Card className="lg:col-span-1">
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-faint)]" size={16} />
+          <div className="relative flex items-center gap-[9px] rounded-[12px] border border-[var(--border)] px-3 py-2.5">
+            <Search className="shrink-0 text-[var(--text-faint)]" size={15} />
             <input
-              className={inputCls + " pl-9"}
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[12.5px] outline-none placeholder:text-[var(--text-dim)]"
               placeholder={t("Search entries…")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
           </div>
-          <div className="max-h-[60vh] space-y-1 overflow-y-auto">
+          {/* Rows are flush with the card; the open one gets the deep area wash from the design. */}
+          <div className="mt-2.5 flex max-h-[60vh] flex-col gap-[3px] overflow-y-auto">
             {filtered.length === 0 ? (
-              <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("No entries found.")}</p>
+              <p className="py-8 text-center text-[12.5px] text-[var(--text-muted)]">{t("No entries found.")}</p>
             ) : (
               filtered.map((e) => (
                 <button
                   key={e.id}
                   onClick={() => openEntry(e)}
-                  className={`w-full rounded-xl px-3 py-2.5 text-left transition ${
-                    e.id === activeId
-                      ? "bg-[var(--accent-soft)]"
-                      : "hover:bg-[var(--surface-2)]"
+                  className={`w-full rounded-[14px] px-3 py-2.5 text-left transition ${
+                    e.id === activeId ? "area-deep" : "hover:bg-[var(--surface-2)]"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className="truncate text-sm font-medium">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate text-[13px] font-medium">
                       {e.title || t("Untitled")}
                     </span>
-                    {e.mood && <Badge>{e.mood}/10</Badge>}
+                    {e.mood && (
+                      <span className="num shrink-0 rounded-full bg-[var(--surface-2)] px-2 py-0.5 text-[10px] font-semibold text-[var(--text-muted)]">
+                        {e.mood}/10
+                      </span>
+                    )}
                   </div>
-                  <div className="mt-0.5 truncate text-xs text-[var(--text-faint)]">
+                  <div className="mt-0.5 truncate text-[11px] text-[var(--text-dim)]">
                     {fmtLong(e.date)}
                   </div>
                 </button>
@@ -155,65 +158,66 @@ export default function JournalPage() {
               }
             />
           ) : (
-            <Card className="!p-0">
-              <div className="border-b border-[var(--border)] px-6 py-4">
+            <Card className="overflow-hidden !p-0">
+              <div className="border-b border-[var(--border)] px-4 py-3.5">
                 <div className="flex items-center justify-between">
                   <input
                     type="date"
-                    className="bg-transparent text-sm text-[var(--text-muted)] outline-none"
+                    className="bg-transparent text-[12px] text-[var(--text-faint)] outline-none"
                     value={active.date}
                     onChange={(e) => setDraft({ ...active, date: e.target.value })}
                   />
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => navigate(-1)}
-                      className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)]"
+                      className="rounded-lg p-1 text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                       aria-label="Older"
                     >
-                      <ChevronLeft size={18} />
+                      <ChevronLeft size={16} />
                     </button>
                     <button
                       onClick={() => navigate(1)}
-                      className="rounded-lg p-1.5 text-[var(--text-faint)] hover:bg-[var(--surface-2)]"
+                      className="rounded-lg p-1 text-[var(--text-dim)] hover:bg-[var(--surface-2)] hover:text-[var(--text)]"
                       aria-label="Newer"
                     >
-                      <ChevronRight size={18} />
+                      <ChevronRight size={16} />
                     </button>
                   </div>
                 </div>
                 <input
-                  className="mt-2 w-full bg-transparent text-2xl font-semibold outline-none placeholder:text-[var(--text-faint)]"
+                  className="mt-1.5 w-full bg-transparent text-[21px] font-semibold tracking-[-0.02em] outline-none placeholder:text-[var(--text-dim)]"
                   placeholder="Title your day…"
                   value={active.title}
                   onChange={(e) => setDraft({ ...active, title: e.target.value })}
                 />
               </div>
-              <div className="px-6 py-5">
+              <div className="px-4 py-3.5">
                 <PromptBar
                   onUse={(p) => setDraft({ ...active, body: active.body ? `${active.body}\n\n${p}\n` : `${p}\n` })}
                 />
                 <textarea
-                  className="min-h-[45vh] w-full resize-none bg-transparent text-[15px] leading-7 outline-none placeholder:text-[var(--text-faint)]"
+                  className="min-h-[224px] w-full resize-none bg-transparent text-[14px] leading-7 outline-none placeholder:text-[var(--text-dim)]"
                   placeholder={t("Write freely…")}
                   value={active.body}
                   onChange={(e) => setDraft({ ...active, body: e.target.value })}
                   style={{
                     backgroundImage:
-                      "linear-gradient(transparent 27px, var(--border) 27px, transparent 28px)",
+                      "linear-gradient(transparent 27px, var(--surface-2) 27px, transparent 28px)",
                     backgroundSize: "100% 28px",
                     lineHeight: "28px",
                   }}
                 />
-                <div className="mt-2 flex items-center gap-2">
+                <div className="mt-2.5 flex items-center gap-2">
                   <DictateButton onText={(txt) => setDraft({ ...active, body: (active.body ? active.body + " " : "") + txt })} />
                 </div>
-                {/* Photos */}
+
+                {/* Photos sit above the fields as 78px tiles, exactly as in the design. */}
                 {(active.photos?.length ?? 0) > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {active.photos!.map((src, i) => (
                       <div key={i} className="relative">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" className="h-24 w-24 rounded-lg object-cover" />
+                        <img src={src} alt="" className="h-[78px] w-[78px] rounded-[12px] border border-[var(--border)] object-cover" />
                         <button
                           onClick={() =>
                             setDraft({ ...active, photos: active.photos!.filter((_, j) => j !== i) })
@@ -228,61 +232,64 @@ export default function JournalPage() {
                   </div>
                 )}
 
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <Field label={t("Highlight of the day")}>
+                {/* Highlight | Mood, then Location | Weather — two columns on every width. */}
+                <div className="mt-3.5 grid grid-cols-2 gap-[9px]">
+                  <JField label={t("Highlight")}>
                     <input
-                      className={inputCls}
+                      className={jInput}
                       value={active.highlight ?? ""}
                       onChange={(e) => setDraft({ ...active, highlight: e.target.value })}
                     />
-                  </Field>
-                  <Field label={t("Mood (1–10)")}>
+                  </JField>
+                  <JField label={t("Mood (1–10)")}>
                     <input
                       type="number"
                       min={1}
                       max={10}
-                      className={inputCls}
+                      className={jInput}
                       value={active.mood ?? ""}
                       onChange={(e) =>
                         setDraft({ ...active, mood: e.target.value ? Number(e.target.value) : undefined })
                       }
                     />
-                  </Field>
-                  <Field label={t("Location")}>
+                  </JField>
+                  <JField label={t("Location")}>
                     <input
-                      className={inputCls}
+                      className={jInput}
                       value={active.location ?? ""}
                       onChange={(e) => setDraft({ ...active, location: e.target.value })}
                     />
-                  </Field>
-                  <Field label={t("Weather")}>
+                  </JField>
+                  <JField label={t("Weather")}>
                     <input
-                      className={inputCls}
+                      className={jInput}
                       placeholder="☀️ / 🌧️ / …"
                       value={active.weather ?? ""}
                       onChange={(e) => setDraft({ ...active, weather: e.target.value })}
                     />
-                  </Field>
+                  </JField>
                 </div>
 
-                <Field label={t("Tags (comma separated)")}>
-                  <input
-                    className={inputCls}
-                    value={(active.tags ?? []).join(", ")}
-                    onChange={(e) =>
-                      setDraft({
-                        ...active,
-                        tags: e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                  />
-                </Field>
+                <div className="mt-[9px]">
+                  <JField label={t("Tags (comma separated)")}>
+                    <input
+                      className={jInput}
+                      value={(active.tags ?? []).join(", ")}
+                      onChange={(e) =>
+                        setDraft({
+                          ...active,
+                          tags: e.target.value
+                            .split(",")
+                            .map((s) => s.trim())
+                            .filter(Boolean),
+                        })
+                      }
+                    />
+                  </JField>
+                </div>
 
-                <label className="mt-3 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--border)] px-3 py-2 text-sm font-medium hover:bg-[var(--surface-2)]">
-                  <ImagePlus size={16} /> {t("Add photo")}
+                <label className="mt-[11px] inline-flex cursor-pointer items-center gap-[7px] rounded-[12px] border border-[var(--border)] px-3 py-[9px] text-[12.5px] font-medium hover:bg-[var(--surface-2)]">
+                  <ImagePlus size={15} /> {t("Add photo")}
                   <input
                     type="file"
                     accept="image/*"
@@ -303,17 +310,21 @@ export default function JournalPage() {
               </div>
               {active.id && <ReflectCard entry={active} />}
 
-              <div className="flex items-center justify-between border-t border-[var(--border)] px-6 py-3">
+              <div className="flex items-center justify-between border-t border-[var(--border)] px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <Button onClick={save} disabled={!active.title && !active.body}>
-                    <Save size={16} /> {t("Save")}
-                  </Button>
-                  {flash && <span className="text-sm text-[var(--good)]">{t("Saved ✓")}</span>}
+                  <button
+                    onClick={save}
+                    disabled={!active.title && !active.body}
+                    className="area-grad inline-flex items-center gap-2 rounded-[14px] px-4 py-2.5 text-[12.5px] font-semibold disabled:opacity-40"
+                  >
+                    <Save size={15} /> {t("Save")}
+                  </button>
+                  {flash && <span className="text-[12.5px] text-[var(--good)]">{t("Saved ✓")}</span>}
                 </div>
                 {active.id && (
                   <button
                     onClick={del}
-                    className="rounded-lg p-2 text-[var(--text-faint)] hover:bg-[var(--bad-soft)] hover:text-[var(--bad)]"
+                    className="rounded-lg p-1.5 text-[var(--text-dim)] hover:text-[var(--bad)]"
                     aria-label="Delete entry"
                   >
                     <Trash2 size={16} />
@@ -324,6 +335,21 @@ export default function JournalPage() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Journal field: 10.5px uppercase label over a 12px-radius input, as in the design. */
+const jInput =
+  "w-full rounded-[12px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2.5 text-[12.5px] outline-none transition placeholder:text-[var(--text-dim)] focus:border-[var(--area-a)]";
+
+function JField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="min-w-0">
+      <div className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
+        {label}
+      </div>
+      <div className="mt-[5px]">{children}</div>
     </div>
   );
 }
@@ -340,6 +366,7 @@ function moodColor(m: number): string {
 function MoodHeatmap() {
   const { data } = useStore();
   const t = useT();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { cells, count } = useMemo(() => {
     // Mood per day: journal mood wins, else the daily check-in mood.
@@ -360,29 +387,40 @@ function MoodHeatmap() {
     return { cells: out, count: byDate.size };
   }, [data.journal, data.reviews]);
 
+  // Start at the right edge — the recent weeks are the interesting ones.
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollLeft = el.scrollWidth;
+  }, [cells]);
+
   if (count === 0) return null;
 
   return (
     <Card>
-      <div className="mb-2 flex items-center gap-2 text-sm font-medium">
-        <Sparkles size={15} className="text-[var(--accent)]" /> {t("Mood over the year")}
+      <div className="mb-2.5 flex items-center gap-[7px] text-[13px] font-medium">
+        <Sparkles size={15} className="area-text" /> {t("Mood over the year")}
       </div>
-      {/* The whole year fits the card, as in the design — no horizontal scroll, so the
-          most recent (coloured) weeks are always visible. */}
-      <div className="grid grid-flow-col grid-rows-7 gap-[2px]" style={{ gridAutoColumns: "minmax(0, 1fr)" }}>
-        {cells.map((c) => (
-          <span
-            key={c.date}
-            title={c.mood != null ? `${fmtShort(c.date)}: ${c.mood}/10` : ""}
-            className="aspect-square w-full rounded-[2px]"
-            style={{ background: c.future ? "transparent" : c.mood != null ? moodColor(c.mood) : "var(--surface-3)" }}
-          />
-        ))}
+      {/* 11px cells on a horizontal scroller, exactly as the design lays it out. Opens
+          scrolled to the right so the most recent weeks are what you see first. */}
+      <div ref={scrollRef} className="hide-scrollbar no-swipe -mx-1 overflow-x-auto px-1">
+        <div
+          className="grid w-max grid-flow-col gap-[3px]"
+          style={{ gridTemplateRows: "repeat(7, 11px)" }}
+        >
+          {cells.map((c) => (
+            <span
+              key={c.date}
+              title={c.mood != null ? `${fmtShort(c.date)}: ${c.mood}/10` : ""}
+              className="h-[11px] w-[11px] rounded-[3px]"
+              style={{ background: c.future ? "transparent" : c.mood != null ? moodColor(c.mood) : "var(--surface-2)" }}
+            />
+          ))}
+        </div>
       </div>
-      <div className="mt-2 flex items-center gap-1.5 text-[10px] text-[var(--text-faint)]">
+      <div className="mt-2.5 flex items-center gap-1.5 text-[10px] text-[var(--text-dim)]">
         {t("Low")}
         {["var(--bad)", "var(--warn)", "var(--info)", "var(--good)"].map((c) => (
-          <span key={c} className="h-2.5 w-2.5 rounded-[2px]" style={{ background: c }} />
+          <span key={c} className="h-2.5 w-2.5 rounded-[3px]" style={{ background: c }} />
         ))}
         {t("High")}
       </div>
@@ -397,13 +435,13 @@ function PromptBar({ onUse }: { onUse: (prompt: string) => void }) {
   const [idx, setIdx] = useState<number | null>(null);
   const prompt = idx == null ? promptForDate(todayISO()) : JOURNAL_PROMPTS[idx];
   return (
-    <div className="mb-3 flex items-center gap-2 rounded-xl bg-[var(--surface-2)] px-3 py-2">
-      <Lightbulb size={15} className="shrink-0 text-[var(--accent)]" />
-      <span className="min-w-0 flex-1 truncate text-sm text-[var(--text-muted)]">{t(prompt)}</span>
-      <button onClick={() => setIdx(Math.floor(Math.random() * JOURNAL_PROMPTS.length))} className="shrink-0 text-[var(--text-faint)] hover:text-[var(--text)]" aria-label={t("Shuffle")}>
+    <div className="flex items-center gap-[9px] rounded-[12px] bg-[var(--surface-2)] px-[11px] py-2.5">
+      <Lightbulb size={15} className="area-text shrink-0" />
+      <span className="min-w-0 flex-1 truncate text-[12.5px] text-[var(--text-muted)]">{t(prompt)}</span>
+      <button onClick={() => setIdx(Math.floor(Math.random() * JOURNAL_PROMPTS.length))} className="shrink-0 text-[var(--text-dim)] hover:text-[var(--text)]" aria-label={t("Shuffle")}>
         <Shuffle size={14} />
       </button>
-      <button onClick={() => onUse(t(prompt))} className="shrink-0 rounded-lg bg-[var(--surface)] px-2 py-1 text-xs font-medium hover:text-[var(--accent)]">
+      <button onClick={() => onUse(t(prompt))} className="shrink-0 rounded-[9px] bg-[var(--surface)] px-2 py-1 text-[11px] font-semibold hover:text-[var(--accent)]">
         {t("Use")}
       </button>
     </div>
@@ -455,7 +493,7 @@ function DictateButton({ onText }: { onText: (text: string) => void }) {
   return (
     <button
       onClick={toggle}
-      className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium transition ${
+      className={`inline-flex items-center gap-1.5 rounded-[10px] border px-2.5 py-[7px] text-[11.5px] font-medium transition ${
         listening ? "border-[var(--bad)] bg-[var(--bad)]/10 text-[var(--bad)]" : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--accent)]"
       }`}
     >
@@ -490,28 +528,28 @@ function ReflectCard({ entry }: { entry: JournalEntry }) {
 
   if (!enabled) {
     return (
-      <div className="mx-6 mb-3 flex items-center justify-between gap-3 rounded-xl bg-[var(--accent-soft)]/40 px-3 py-2.5">
-        <span className="text-xs text-[var(--text-muted)]">{t("Let the AI coach reflect on your entries (needs journal access).")}</span>
+      <div className="area-soft mx-4 mb-3 flex items-center justify-between gap-3 rounded-[14px] border border-[color-mix(in_srgb,var(--area-a)_25%,transparent)] px-[13px] py-3">
+        <span className="text-[11.5px] leading-[1.45] text-[var(--text-muted)]">{t("Let the AI coach reflect on your entries (needs journal access).")}</span>
         <Button size="sm" variant="soft" onClick={() => updateSettings({ aiCoachEnabled: true, aiJournalAccess: true })}>{t("Enable")}</Button>
       </div>
     );
   }
 
   return (
-    <div className="mx-6 mb-3 rounded-xl border border-[var(--accent)]/25 bg-[var(--accent-soft)]/40 p-3">
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="flex items-center gap-1.5 text-sm font-semibold"><Sparkles size={14} className="text-[var(--accent)]" /> {t("Coach reflection")}</span>
-        {(text || err) && <button onClick={reflect} disabled={loading} className="text-xs text-[var(--text-faint)] hover:text-[var(--text)]">{t("Regenerate")}</button>}
+    <div className="area-soft mx-4 mb-3 rounded-[14px] border border-[color-mix(in_srgb,var(--area-a)_25%,transparent)] px-[13px] py-3">
+      <div className="flex items-center justify-between gap-2">
+        <span className="flex items-center gap-1.5 text-[12.5px] font-semibold"><Sparkles size={14} /> {t("Coach reflection")}</span>
+        {(text || err) && <button onClick={reflect} disabled={loading} className="text-[11px] text-[var(--text-dim)] hover:text-[var(--text)]">{t("Regenerate")}</button>}
       </div>
       {loading ? (
         <div className="space-y-2 py-1"><div className="h-3 w-full animate-pulse rounded bg-[var(--surface-2)]" /><div className="h-3 w-4/5 animate-pulse rounded bg-[var(--surface-2)]" /></div>
       ) : text ? (
-        <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--text)]">{text}</p>
+        <p className="mt-[7px] whitespace-pre-wrap text-[12.5px] leading-[1.5] text-[var(--text-muted)]">{text}</p>
       ) : err ? (
         <div className="flex items-center justify-between gap-2"><span className="text-xs text-[var(--bad)]">{t("Couldn't reach the AI service. Check your connection and try again.")}</span><Button size="sm" variant="soft" onClick={reflect}>{t("Try again")}</Button></div>
       ) : (
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-sm text-[var(--text-muted)]">{t("Save the entry, then get a short, kind reflection.")}</span>
+        <div className="mt-[7px] flex items-center justify-between gap-3">
+          <span className="text-[12.5px] text-[var(--text-muted)]">{t("Save the entry, then get a short, kind reflection.")}</span>
           <Button size="sm" onClick={reflect}><Sparkles size={14} /> {t("Reflect")}</Button>
         </div>
       )}

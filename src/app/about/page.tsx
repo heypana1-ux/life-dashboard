@@ -25,8 +25,8 @@ export default function AboutPage() {
       />
 
       {/* Privacy note as the Pulse insight card. */}
-      <div className="area-soft flex items-start gap-3 rounded-[24px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] p-[18px]">
-        <Sparkles size={17} className="mt-px shrink-0" />
+      <div className="area-deep flex items-start gap-3 rounded-[18px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] px-4 py-3.5">
+        <Sparkles size={17} className="area-text mt-px shrink-0" />
         <p className="min-w-0 text-[12px] leading-[1.5] text-[var(--text-muted)]">
           {t("These answers stay on your device (and sync if you enabled it). They're only shared with the AI coach when it's turned on, so it can tailor its advice to you.")}
         </p>

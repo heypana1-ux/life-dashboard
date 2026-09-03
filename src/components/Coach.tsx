@@ -474,7 +474,16 @@ export function CoachWeeklyCheckin() {
 
 /* ---------------- Reusable inline AI insight (Reports, Analysis, …) ---------------- */
 
-export function CoachInsightCard({ title, prompt }: { title: string; prompt: string }) {
+export function CoachInsightCard({
+  title,
+  prompt,
+  deep,
+}: {
+  title: string;
+  prompt: string;
+  /** Deep area-washed panel with a hairline glow (the calendar's "what your week says"). */
+  deep?: boolean;
+}) {
   const { data, updateSettings } = useStore();
   const d = useDerived();
   const t = useT();
@@ -501,10 +510,17 @@ export function CoachInsightCard({ title, prompt }: { title: string; prompt: str
 
   return (
     /* Pulse: a normal card whose section head carries a "Coach" badge, with the
-       action as a full-width soft button underneath. */
-    <div className="card p-[18px]">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="slabel">{title}</h2>
+       action as a full-width soft button underneath. The `deep` variant is the
+       design's glowing panel — a saturated area wash behind an area hairline. */
+    <div
+      className={
+        deep
+          ? "area-deep rounded-[16px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] px-3.5 py-[13px]"
+          : "card p-[18px]"
+      }
+    >
+      <div className={deep ? "mb-1.5 flex items-center justify-between gap-2" : "mb-3 flex items-center justify-between gap-2"}>
+        <h2 className={deep ? "slabel !text-[var(--area-text)]" : "slabel"}>{title}</h2>
         {enabled && (text || err) ? (
           <button
             onClick={generate}

@@ -170,35 +170,38 @@ function WeekdayCard() {
     <Card className="mx-auto max-w-[760px]">
       <SectionTitle>{t("Your week at a glance")}</SectionTitle>
       {p.best && p.worst && p.best.wd !== p.worst.wd && (
-        <p className="mb-3 text-sm text-[var(--text-muted)]">
+        <p className="-mt-1.5 mb-3 text-[12px] text-[var(--text-faint)]">
           {t("On average, {best} is your strongest day and {worst} your toughest.", {
             best: t(weekdayLabel(p.best.wd)),
             worst: t(weekdayLabel(p.worst.wd)),
           })}
         </p>
       )}
-      <div className="flex items-end justify-between gap-2" style={{ height: 130 }}>
+      {/* Bars carry a vertical gradient — saturated at the top, fading toward the base —
+          exactly like the design; best/worst days keep their own solid colour. */}
+      <div className="flex items-end justify-between gap-[7px]" style={{ height: 130 }}>
         {p.stats.map((s) => {
           const h = s.n > 0 ? Math.max(6, Math.round((s.avg / maxAvg) * 104)) : 4;
           const isBest = p.best?.wd === s.wd;
           const isWorst = p.worst?.wd === s.wd;
+          const bg = isBest
+            ? "linear-gradient(180deg, var(--good), color-mix(in srgb, var(--good) 40%, transparent))"
+            : isWorst
+              ? "linear-gradient(180deg, var(--warn), color-mix(in srgb, var(--warn) 40%, transparent))"
+              : "linear-gradient(180deg, var(--area-a), color-mix(in srgb, var(--area-a) 40%, transparent))";
           return (
-            <div key={s.wd} className="flex flex-1 flex-col items-center gap-1.5">
-              <span className="num text-[11px] font-semibold text-[var(--text-muted)]">{s.n > 0 ? s.avg : "—"}</span>
+            <div key={s.wd} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
+              <span className="num text-[11px] font-semibold text-[var(--text-faint)]">{s.n > 0 ? s.avg : "—"}</span>
               <div
-                className="w-full rounded-t-md"
-                style={{
-                  height: h,
-                  background: isBest ? "var(--good)" : isWorst ? "var(--warn)" : "var(--accent)",
-                  opacity: s.n > 0 ? 1 : 0.3,
-                }}
+                className="w-full rounded-t-[7px] rounded-b-[3px]"
+                style={{ height: h, background: bg, opacity: s.n > 0 ? 1 : 0.3 }}
               />
-              <span className="text-[11px] text-[var(--text-faint)]">{t(weekdayLabel(s.wd)).slice(0, 2)}</span>
+              <span className="text-[10.5px] text-[var(--text-dim)]">{t(weekdayLabel(s.wd)).slice(0, 2)}</span>
             </div>
           );
         })}
       </div>
-      <p className="mt-2 text-[11px] text-[var(--text-faint)]">{t("Average Life Score per weekday, from all your logged days.")}</p>
+      <p className="mt-2 text-[10.5px] text-[var(--text-dim)]">{t("Average Life Score per weekday, from all your logged days.")}</p>
     </Card>
   );
 }
@@ -216,7 +219,7 @@ function WeekdayFeelingsCard() {
     <Card className="mx-auto max-w-[760px]">
       <SectionTitle>{t("How you feel by weekday")}</SectionTitle>
       {hi && (
-        <p className="mb-3 text-sm text-[var(--text-muted)]">
+        <p className="-mt-1.5 mb-3 text-[12px] text-[var(--text-faint)]">
           {t("Your {metric} varies most across the week — highest on {best}, lowest on {worst}.", {
             metric: t(hi.metricLabel),
             best: t(weekdayLabel(hi.bestWd)),
@@ -257,12 +260,13 @@ function WeekdayFeelingsCard() {
           ))}
         </div>
       </div>
-      <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+      <p className="mt-2 text-[10.5px] text-[var(--text-dim)]">
         {t("Average of each check-in metric per weekday (1-10).")}
         {f.total < 14 && " " + t("More daily check-ins will sharpen this.")}
       </p>
-      <div className="mt-4">
+      <div className="mt-3">
         <CoachInsightCard
+          deep
           title={t("What your week says")}
           prompt={t("Looking at how my mood and energy vary by weekday in my check-in data, tell me which days I tend to feel best and worst, and give one practical suggestion for planning my week. Keep it to 2-3 sentences.")}
         />
