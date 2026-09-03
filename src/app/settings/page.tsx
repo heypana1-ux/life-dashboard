@@ -1,7 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Activity, BellRing, Download, HeartPulse, Monitor, Moon, RefreshCw, RotateCcw, Send, Sparkles, Sun, Trash2, Upload, User } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  Activity,
+  BellRing,
+  ChevronRight,
+  Download,
+  HeartPulse,
+  Monitor,
+  Moon,
+  RefreshCw,
+  RotateCcw,
+  Scale,
+  Send,
+  Sparkles,
+  Sun,
+  Trash2,
+  Upload,
+  User,
+} from "lucide-react";
 import { useStore } from "@/lib/store";
 import { AreaKey, Language, Profile } from "@/lib/types";
 import {
@@ -21,7 +38,7 @@ import { useDerived } from "@/lib/useDerived";
 import { computeLevel } from "@/lib/level";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
-import { Card, PageHeader, SectionTitle, Button, Toggle, Badge, Field, inputCls } from "@/components/ui";
+import { PageHeader, Toggle, Badge, IconTile } from "@/components/ui";
 import { InstallAppCard } from "@/components/PWA";
 import { pushConfigured, enablePush, disablePush, syncPush, PushError } from "@/lib/push";
 import { weeklyRecapText } from "@/lib/weeklyRecap";
@@ -29,11 +46,173 @@ import { typicalLogHour } from "@/lib/habitTimes";
 import { TrendLine } from "@/components/charts";
 import clsx from "clsx";
 
+/* ============================ Pulse settings primitives ============================
+   Settings cards in the design are a touch tighter than the app-wide card (22px radius,
+   16/17px padding) and everything inside them is a hairline row instead of a nested box.
+   These four helpers carry that language so each section below stays declarative.       */
+
+/** Settings card: uppercase section label, optional icon on the right. */
+function SCard({
+  title,
+  icon,
+  right,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  right?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="card rounded-[22px] px-[17px] py-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="slabel">{title}</h2>
+        {right ?? (icon && <span className="text-[var(--text-faint)]">{icon}</span>)}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** Hairline setting row: title, optional description, control on the right. */
+function SRow({
+  title,
+  desc,
+  children,
+}: {
+  title: React.ReactNode;
+  desc?: React.ReactNode;
+  children?: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--surface-2)] py-3 last:border-0">
+      <div className="min-w-0">
+        <div className="text-[13px] font-medium">{title}</div>
+        {desc && <p className="mt-0.5 text-[11.5px] leading-[1.4] text-[var(--text-muted)]">{desc}</p>}
+      </div>
+      {children && <div className="shrink-0">{children}</div>}
+    </div>
+  );
+}
+
+/** Compact labelled field: 10.5px uppercase label over an 11px-radius input. */
+function SField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    // Full-height column with the control pushed to the bottom, so a label that wraps to two
+    // lines (German loves those) doesn't push its input out of line with its neighbour's.
+    <label className="flex h-full min-w-0 flex-col">
+      <span className="block text-[10.5px] font-semibold uppercase leading-[1.3] tracking-[0.08em] text-[var(--text-faint)]">
+        {label}
+      </span>
+      <div className="mt-auto pt-[5px]">{children}</div>
+    </label>
+  );
+}
+
+const sInput =
+  "w-full rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-[11px] py-[9px] text-[12.5px] outline-none transition focus:border-[var(--area-a)]";
+
+/** The design's in-card action pill (Log weight, Sync now, Export JSON …). */
+const sBtn = {
+  soft: "grad-soft area-text",
+  outline: "border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--area-a)]",
+  surface: "border border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)] hover:border-[var(--area-a)]",
+  danger: "border border-[color-mix(in_srgb,var(--bad)_45%,transparent)] bg-[var(--surface-2)] text-[var(--bad)]",
+  primary: "area-grad hover:opacity-90",
+} as const;
+
+function SBtn({
+  tone = "soft",
+  onClick,
+  disabled,
+  children,
+}: {
+  tone?: keyof typeof sBtn;
+  onClick?: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className={clsx(
+        "inline-flex items-center justify-center gap-1.5 rounded-[12px] px-[13px] py-[9px] text-[12px] font-semibold transition active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50",
+        sBtn[tone],
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** Same pill, but wrapping a hidden <input type="file"> (buttons can't open a file picker). */
+function SFileBtn({
+  accept,
+  disabled,
+  onFile,
+  children,
+}: {
+  accept: string;
+  disabled?: boolean;
+  onFile: (f: File) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label
+      className={clsx(
+        "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-[12px] px-[13px] py-[9px] text-[12px] font-semibold transition",
+        sBtn.surface,
+        disabled && "pointer-events-none opacity-50",
+      )}
+    >
+      {children}
+      <input
+        type="file"
+        accept={accept}
+        className="hidden"
+        disabled={disabled}
+        onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
+      />
+    </label>
+  );
+}
+
+/** 6px gradient track with a white knob, as in the design's sleep-target / grace-day sliders. */
+function PulseRange({
+  value,
+  min,
+  max,
+  step = 1,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  onChange: (n: number) => void;
+}) {
+  const pct = max > min ? ((value - min) / (max - min)) * 100 : 0;
+  return (
+    <input
+      type="range"
+      min={min}
+      max={max}
+      step={step}
+      value={value}
+      onChange={(e) => onChange(Number(e.target.value))}
+      className="pulse-range mt-2.5"
+      style={{ "--fill": `${pct}%` } as React.CSSProperties}
+    />
+  );
+}
+
+/* ================================== The page ================================== */
+
 export default function SettingsPage() {
-  const { data, updateSettings, setAreas, replaceAll, resetAll } = useStore();
+  const { data, updateSettings, setAreas } = useStore();
   const t = useT();
   const s = data.settings;
-  const [confirmReset, setConfirmReset] = useState(false);
 
   const enabledWeightSum = s.areas.filter((a) => a.enabled).reduce((acc, a) => acc + a.weight, 0);
 
@@ -47,46 +226,20 @@ export default function SettingsPage() {
     return enabledWeightSum > 0 ? Math.round((w / enabledWeightSum) * 100) : 0;
   }
 
-  function exportData() {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `life-dashboard-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    updateSettings({ lastBackupAt: new Date().toISOString() });
-  }
-  function importData(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result));
-        if (parsed && parsed.settings && Array.isArray(parsed.habits)) replaceAll(parsed);
-        else alert("That file doesn't look like a Life Dashboard export.");
-      } catch {
-        alert("Could not read that file.");
-      }
-    };
-    reader.readAsText(file);
-  }
-
   return (
-    <div className="space-y-[14px]">
-      <PageHeader kicker={t("Tracking & scoring")} lead={t("Your")} title={t("Settings")} subtitle={t("Tune what you track and how your score is computed.")} />
+    <div className="space-y-3">
+      <PageHeader
+        kicker={t("Tracking & scoring")}
+        lead={t("Your")}
+        title={t("Settings")}
+        subtitle={t("Tune what you track and how your score is computed.")}
+      />
 
       {/* Install as an app (PWA) */}
       <InstallAppCard />
 
-      {/* Account & cloud sync (only when Supabase is configured) */}
-      <AccountCard />
-
-      {/* Profile */}
-      <ProfileCard />
-
       {/* Appearance — theme tiles, density and accent live in one card, as in the design. */}
-      <Card>
-        <SectionTitle>{t("Appearance")}</SectionTitle>
+      <SCard title={t("Appearance")}>
         <div className="flex gap-[7px]">
           {[
             { k: "light", label: t("Light"), icon: Sun },
@@ -99,7 +252,7 @@ export default function SettingsPage() {
               className={clsx(
                 "flex flex-1 flex-col items-center gap-[5px] rounded-[14px] border py-[11px] text-[11.5px] font-semibold transition",
                 s.theme === k
-                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  ? "grad-soft border-[color-mix(in_srgb,var(--area-a)_35%,transparent)] area-text"
                   : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]",
               )}
             >
@@ -120,7 +273,7 @@ export default function SettingsPage() {
               className={clsx(
                 "whitespace-nowrap rounded-full border px-[13px] py-1.5 text-[12.5px] font-semibold transition",
                 (s.density ?? "cozy") === k
-                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  ? "grad-soft border-[color-mix(in_srgb,var(--area-a)_35%,transparent)] area-text"
                   : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]",
               )}
             >
@@ -130,11 +283,10 @@ export default function SettingsPage() {
         </div>
 
         <AccentRow />
-      </Card>
+      </SCard>
 
       {/* Language */}
-      <Card>
-        <SectionTitle>{t("Language")}</SectionTitle>
+      <SCard title={t("Language")}>
         <div className="flex gap-[7px]">
           {[
             { k: "en", label: t("English"), flag: "🇬🇧" },
@@ -146,7 +298,7 @@ export default function SettingsPage() {
               className={clsx(
                 "flex items-center gap-1.5 whitespace-nowrap rounded-full border px-[13px] py-1.5 text-[12.5px] font-semibold transition",
                 s.language === k
-                  ? "grad-soft border-[var(--area-a)] text-[var(--text)]"
+                  ? "grad-soft border-[color-mix(in_srgb,var(--area-a)_35%,transparent)] area-text"
                   : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]",
               )}
             >
@@ -154,13 +306,13 @@ export default function SettingsPage() {
             </button>
           ))}
         </div>
-      </Card>
+      </SCard>
 
-      {/* Areas & weights */}
-      <Card>
-        <SectionTitle right={<span className="text-xs text-[var(--text-faint)]">{t("normalized to 100%")}</span>}>
-          {t("Life areas & score weights")}
-        </SectionTitle>
+      {/* Life areas & weights */}
+      <SCard
+        title={t("Life areas")}
+        right={<span className="text-[11px] text-[var(--text-faint)]">{t("normalized to 100%")}</span>}
+      >
         <div className="flex flex-col">
           {s.areas.map((a) => (
             <div key={a.key} className="border-b border-[var(--surface-2)] py-[11px] last:border-0">
@@ -173,44 +325,29 @@ export default function SettingsPage() {
                 <Toggle checked={a.enabled} onChange={(v) => setAreaEnabled(a.key, v)} />
               </div>
               {a.enabled && a.key !== "finances" && (
-                <input
-                  type="range"
-                  min={0}
-                  max={30}
-                  value={a.weight}
-                  onChange={(e) => setAreaWeight(a.key, Number(e.target.value))}
-                  className="mt-2 w-full accent-[var(--accent)]"
-                />
+                <PulseRange value={a.weight} min={0} max={30} onChange={(v) => setAreaWeight(a.key, v)} />
               )}
             </div>
           ))}
         </div>
-      </Card>
+      </SCard>
 
       {/* Sleep target */}
-      <Card>
-        <SectionTitle>{t("Sleep target")}</SectionTitle>
+      <SCard title={t("Sleep target")}>
         <div className="flex items-center justify-between gap-3 text-[13px]">
           <span className="font-medium">
             {Math.round((s.sleepTargetMinutes / 60) * 10) / 10} {t("hours")}
           </span>
           <span className="num text-[var(--text-faint)]">{s.sleepTargetMinutes} min</span>
         </div>
-        <input
-          type="range"
+        <PulseRange
+          value={s.sleepTargetMinutes}
           min={300}
           max={600}
           step={15}
-          value={s.sleepTargetMinutes}
-          onChange={(e) => updateSettings({ sleepTargetMinutes: Number(e.target.value) })}
-          className="mt-2.5 w-full accent-[var(--accent)]"
+          onChange={(v) => updateSettings({ sleepTargetMinutes: v })}
         />
-      </Card>
-
-      {/* Reminders */}
-      <div id="reminders" className="scroll-mt-20">
-        <RemindersCard />
-      </div>
+      </SCard>
 
       {/* AI coach */}
       <CoachCard />
@@ -221,75 +358,43 @@ export default function SettingsPage() {
       {/* Streak protection & rest days */}
       <StreakCard />
 
-      {/* Apple Health import */}
-      <HealthImportCard />
+      {/* ── Second half of the design: profile, sync and data ── */}
+      <div className="kicker pt-4">{t("Profile, sync & data")}</div>
 
-      {/* Strava (only when configured) */}
-      <StravaCard />
+      {/* Profile */}
+      <ProfileCard />
 
-      {/* Data */}
-      <Card>
-        <SectionTitle
-          right={
-            <span className="text-xs text-[var(--text-faint)]">
-              {s.lastBackupAt
-                ? `${t("Last backup")}: ${backupAgeLabel(s.lastBackupAt, t)}`
-                : t("No backup yet")}
-            </span>
-          }
-        >
-          {t("Data")}
-        </SectionTitle>
-        <p className="mb-3 text-sm text-[var(--text-muted)]">
-          {t("Your data lives only in this browser. Export a backup regularly so you never lose it.")}
-        </p>
-        <div className="flex flex-wrap gap-2">
-          {s.demoDataLoaded ? (
-            <Button variant="outline" onClick={() => replaceAll(clearDemo(data))}>
-              <Trash2 size={16} /> {t("Clear demo data")}
-            </Button>
-          ) : (
-            <Button variant="outline" onClick={() => replaceAll(generateDemo(data))}>
-              {t("Load demo data")}
-            </Button>
-          )}
-          <Button variant="outline" onClick={exportData}>
-            <Download size={16} /> {t("Export JSON")}
-          </Button>
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--surface-2)]">
-            <Upload size={16} /> {t("Import JSON")}
-            <input type="file" accept="application/json" className="hidden" onChange={(e) => e.target.files?.[0] && importData(e.target.files[0])} />
-          </label>
-        </div>
-        <div className="mt-4 border-t border-[var(--border)] pt-4">
-          {!confirmReset ? (
-            <Button variant="ghost" onClick={() => setConfirmReset(true)} className="text-[var(--bad)]">
-              <RotateCcw size={16} /> {t("Reset everything")}
-            </Button>
-          ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm text-[var(--text-muted)]">{t("This deletes all data and restarts onboarding.")}</span>
-              <Button variant="danger" size="sm" onClick={resetAll}>{t("Confirm reset")}</Button>
-              <Button variant="ghost" size="sm" onClick={() => setConfirmReset(false)}>{t("Cancel")}</Button>
-            </div>
-          )}
-        </div>
-      </Card>
+      {/* Reminders */}
+      <div id="reminders" className="scroll-mt-20">
+        <RemindersCard />
+      </div>
+
+      {/* Integrations: Strava (when configured) + Apple Health import */}
+      <IntegrationsCard />
+
+      {/* Account & cloud sync (only when Supabase is configured) */}
+      <AccountCard />
+
+      {/* Data & backup */}
+      <DataCard />
 
       {/* Bugs & feedback */}
       <FeedbackCard />
 
-      <div className="text-center">
-        <Button variant="ghost" size="sm" onClick={() => updateSettings({ tourDone: false })}>
+      <div className="pt-1 text-center">
+        <button
+          onClick={() => updateSettings({ tourDone: false })}
+          className="text-[12px] font-medium text-[var(--text-muted)] hover:text-[var(--text)]"
+        >
           {t("Show the tour again")}
-        </Button>
+        </button>
       </div>
 
-      <p className="pb-1 text-center text-xs text-[var(--text-faint)]">
+      <p className="text-center text-[11px] text-[var(--text-faint)]">
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 33
+        Pulse Build 34
       </p>
     </div>
   );
@@ -300,32 +405,25 @@ function CoachCard() {
   const t = useT();
   const on = !!data.settings.aiCoachEnabled;
   return (
-    <Card>
-      <SectionTitle right={<Sparkles size={16} className="text-[var(--text-faint)]" />}>{t("AI coach")}</SectionTitle>
-      <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <div className="text-sm font-medium">{t("Enable AI coach")}</div>
-          <div className="text-xs text-[var(--text-muted)]">
-            {t("A chat that interprets your data. Only derived summaries are sent — never your journal, health notes or finance amounts.")}
-          </div>
-        </div>
+    <SCard title={t("AI coach")} icon={<Sparkles size={16} />}>
+      <SRow
+        title={t("Enable AI coach")}
+        desc={t("A chat that interprets your data. Only derived summaries are sent — never your journal, health notes or finance amounts.")}
+      >
         <Toggle checked={on} onChange={(v) => updateSettings({ aiCoachEnabled: v })} />
-      </div>
+      </SRow>
       {on && (
-        <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
-          <div className="min-w-0">
-            <div className="text-sm font-medium">{t("Let the coach read my journal")}</div>
-            <div className="text-xs text-[var(--text-muted)]">
-              {t("Shares recent entries (text, mood, tags) so the coach can reflect on them. Off = only mood/tag summaries.")}
-            </div>
-          </div>
+        <SRow
+          title={t("Let the coach read my journal")}
+          desc={t("Shares recent entries (text, mood, tags) so the coach can reflect on them. Off = only mood/tag summaries.")}
+        >
           <Toggle checked={!!data.settings.aiJournalAccess} onChange={(v) => updateSettings({ aiJournalAccess: v })} />
-        </div>
+        </SRow>
       )}
-      <p className="mt-3 rounded-lg bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-muted)]">
+      <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
         {t("Needs a free Groq API key set as GROQ_API_KEY in your Vercel project. The key stays on the server and is never exposed in the app.")}
       </p>
-    </Card>
+    </SCard>
   );
 }
 
@@ -343,65 +441,43 @@ function DayFlowCard() {
   const set = (patch: Partial<typeof df>) => updateSettings({ dayFlow: { ...df, ...patch } });
 
   return (
-    <Card>
-      <SectionTitle>{t("Daily routines")}</SectionTitle>
-      <p className="mb-4 text-sm text-[var(--text-muted)]">
+    <SCard title={t("Daily routines")}>
+      <SRow title={t("End-of-day wrap-up")} desc={t("Goals, check-in, day recap & journal.")}>
+        <Toggle checked={df.eveningEnabled} onChange={(v) => set({ eveningEnabled: v })} />
+      </SRow>
+      {df.eveningEnabled && (
+        <div className="grid grid-cols-2 gap-[9px] border-b border-[var(--surface-2)] pb-3 pt-2.5">
+          <SField label={t("From")}>
+            <input type="time" className={`${sInput} num`} value={df.eveningFrom} onChange={(e) => set({ eveningFrom: e.target.value })} />
+          </SField>
+          <SField label={t("Until")}>
+            <input type="time" className={`${sInput} num`} value={df.eveningTo} onChange={(e) => set({ eveningTo: e.target.value })} />
+          </SField>
+        </div>
+      )}
+
+      <SRow title={t("Good-morning sleep prompt")} desc={t("Just logs last night's sleep.")}>
+        <Toggle checked={df.morningEnabled} onChange={(v) => set({ morningEnabled: v })} />
+      </SRow>
+      {df.morningEnabled && (
+        <div className="grid grid-cols-2 gap-[9px] border-b border-[var(--surface-2)] pb-3 pt-2.5">
+          <SField label={t("From")}>
+            <input type="time" className={`${sInput} num`} value={df.morningFrom} onChange={(e) => set({ morningFrom: e.target.value })} />
+          </SField>
+          <SField label={t("Until")}>
+            <input type="time" className={`${sInput} num`} value={df.morningTo} onChange={(e) => set({ morningTo: e.target.value })} />
+          </SField>
+        </div>
+      )}
+
+      <SRow title={t("Weekly & monthly recap")} desc={t("An animated summary on Sundays and the 1st.")}>
+        <Toggle checked={df.recapsEnabled ?? true} onChange={(v) => set({ recapsEnabled: v })} />
+      </SRow>
+
+      <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
         {t("Short guided screens that pop up once a day to help you log quickly. They never remove anything you already entered.")}
       </p>
-
-      <div className="space-y-4">
-        {/* Evening */}
-        <div className="rounded-xl border border-[var(--border)] p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium">{t("End-of-day wrap-up")}</div>
-              <div className="text-xs text-[var(--text-muted)]">{t("Goals, check-in, day recap & journal.")}</div>
-            </div>
-            <Toggle checked={df.eveningEnabled} onChange={(v) => set({ eveningEnabled: v })} />
-          </div>
-          {df.eveningEnabled && (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label={t("From")}>
-                <input type="time" className={inputCls} value={df.eveningFrom} onChange={(e) => set({ eveningFrom: e.target.value })} />
-              </Field>
-              <Field label={t("Until")}>
-                <input type="time" className={inputCls} value={df.eveningTo} onChange={(e) => set({ eveningTo: e.target.value })} />
-              </Field>
-            </div>
-          )}
-        </div>
-
-        {/* Morning */}
-        <div className="rounded-xl border border-[var(--border)] p-3">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-sm font-medium">{t("Good-morning sleep prompt")}</div>
-              <div className="text-xs text-[var(--text-muted)]">{t("Just logs last night's sleep.")}</div>
-            </div>
-            <Toggle checked={df.morningEnabled} onChange={(v) => set({ morningEnabled: v })} />
-          </div>
-          {df.morningEnabled && (
-            <div className="mt-3 grid grid-cols-2 gap-3">
-              <Field label={t("From")}>
-                <input type="time" className={inputCls} value={df.morningFrom} onChange={(e) => set({ morningFrom: e.target.value })} />
-              </Field>
-              <Field label={t("Until")}>
-                <input type="time" className={inputCls} value={df.morningTo} onChange={(e) => set({ morningTo: e.target.value })} />
-              </Field>
-            </div>
-          )}
-        </div>
-
-        {/* Weekly / monthly recap */}
-        <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
-          <div>
-            <div className="text-sm font-medium">{t("Weekly & monthly recap")}</div>
-            <div className="text-xs text-[var(--text-muted)]">{t("An animated summary on Sundays and the 1st.")}</div>
-          </div>
-          <Toggle checked={df.recapsEnabled ?? true} onChange={(v) => set({ recapsEnabled: v })} />
-        </div>
-      </div>
-    </Card>
+    </SCard>
   );
 }
 
@@ -441,86 +517,92 @@ function StreakCard() {
   }
 
   return (
-    <Card>
-      <SectionTitle>{t("Streak protection")}</SectionTitle>
-      <p className="mb-3 text-sm text-[var(--text-muted)]">
-        {t("Rest days and a grace window keep a good streak alive when you take a break or forget to log.")}
-      </p>
-
-      <Field label={`${t("Grace days")}: ${grace}`} hint={t("Missed days a streak tolerates before it breaks.")}>
-        <input
-          type="range"
-          min={0}
-          max={5}
-          value={grace}
-          onChange={(e) => updateSettings({ streakGrace: Number(e.target.value) })}
-          className="w-full accent-[var(--accent)]"
-        />
-      </Field>
-
-      <div className="mt-4">
-        <div className="mb-1.5 text-sm font-medium">{t("Rest days (e.g. vacation)")}</div>
-        <div className="flex flex-wrap items-end gap-2">
-          <Field label={t("From")}>
-            <input type="date" className={inputCls} value={from} onChange={(e) => setFrom(e.target.value)} />
-          </Field>
-          <Field label={t("Until (optional)")}>
-            <input type="date" className={inputCls} value={to} onChange={(e) => setTo(e.target.value)} />
-          </Field>
-          <Button variant="soft" size="sm" onClick={addRange} disabled={!from}>
-            {t("Add")}
-          </Button>
-        </div>
-        {rest.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {rest.map((d) => (
-              <button
-                key={d}
-                onClick={() => removeDay(d)}
-                className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-xs text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
-              >
-                {fmtShort(d)} <span className="text-[var(--text-faint)]">✕</span>
-              </button>
-            ))}
-          </div>
-        )}
+    <SCard title={t("Streak protection")}>
+      <div className="text-[13px] font-medium">
+        {t("Grace days")}: {grace}
       </div>
+      <p className="mt-0.5 text-[11.5px] leading-[1.4] text-[var(--text-muted)]">
+        {t("Missed days a streak tolerates before it breaks.")}
+      </p>
+      <PulseRange value={grace} min={0} max={5} onChange={(v) => updateSettings({ streakGrace: v })} />
 
-      <div className="mt-5 border-t border-[var(--border)] pt-4">
-        <div className="mb-1 text-sm font-medium">{t("Vacation")}</div>
-        <p className="mb-2 text-xs text-[var(--text-muted)]">
+      <div className="mt-3.5 text-[13px] font-medium">{t("Rest days (e.g. vacation)")}</div>
+      <div className="mt-[7px] grid grid-cols-2 gap-[9px]">
+        <SField label={t("From")}>
+          <input type="date" className={sInput} value={from} onChange={(e) => setFrom(e.target.value)} />
+        </SField>
+        <SField label={t("Until (optional)")}>
+          <input type="date" className={sInput} value={to} onChange={(e) => setTo(e.target.value)} />
+        </SField>
+      </div>
+      <div className="mt-2.5">
+        <SBtn onClick={addRange} disabled={!from}>
+          {t("Add")}
+        </SBtn>
+      </div>
+      {rest.length > 0 && (
+        <div className="mt-2.5 flex flex-wrap gap-1.5">
+          {rest.map((d) => (
+            <button
+              key={d}
+              onClick={() => removeDay(d)}
+              className="flex items-center gap-1 rounded-full bg-[var(--surface-2)] px-2.5 py-1 text-[11px] text-[var(--text-muted)] hover:bg-[var(--surface-3)]"
+            >
+              {fmtShort(d)} <span className="text-[var(--text-faint)]">✕</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-4 border-t border-[var(--surface-2)] pt-3.5">
+        <div className="text-[13px] font-medium">{t("Vacation")}</div>
+        <p className="mt-0.5 text-[11.5px] leading-[1.4] text-[var(--text-muted)]">
           {t("On vacation days scoring is lenient — missed habits and slips don't count, and your Life Rating can't drop. Streaks stay safe too.")}
         </p>
-        <div className="flex flex-wrap items-end gap-2">
-          <Field label={t("From")}>
-            <input type="date" className={inputCls} value={vfrom} onChange={(e) => setVfrom(e.target.value)} />
-          </Field>
-          <Field label={t("Until (optional)")}>
-            <input type="date" className={inputCls} value={vto} onChange={(e) => setVto(e.target.value)} />
-          </Field>
-          <Button variant="soft" size="sm" onClick={addVacation} disabled={!vfrom}>
+        <div className="mt-[7px] grid grid-cols-2 gap-[9px]">
+          <SField label={t("From")}>
+            <input type="date" className={sInput} value={vfrom} onChange={(e) => setVfrom(e.target.value)} />
+          </SField>
+          <SField label={t("Until (optional)")}>
+            <input type="date" className={sInput} value={vto} onChange={(e) => setVto(e.target.value)} />
+          </SField>
+        </div>
+        <div className="mt-2.5">
+          <SBtn onClick={addVacation} disabled={!vfrom}>
             {t("Add")}
-          </Button>
+          </SBtn>
         </div>
         {vacations.length > 0 && (
-          <div className="mt-3 flex flex-wrap gap-1.5">
+          <div className="mt-2.5 flex flex-wrap gap-1.5">
             {vacations.map((v, i) => (
               <button
                 key={`${v.from}-${v.to}-${i}`}
                 onClick={() => removeVacation(i)}
-                className="flex items-center gap-1 rounded-full bg-[var(--accent-soft)] px-2.5 py-1 text-xs text-[var(--accent)] hover:brightness-105"
+                className="area-soft flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] hover:brightness-105"
               >
-                {fmtShort(v.from)}{v.to !== v.from ? ` – ${fmtShort(v.to)}` : ""} <span className="opacity-70">✕</span>
+                {fmtShort(v.from)}
+                {v.to !== v.from ? ` – ${fmtShort(v.to)}` : ""} <span className="opacity-70">✕</span>
               </button>
             ))}
           </div>
         )}
       </div>
-    </Card>
+    </SCard>
   );
 }
 
-function HealthImportCard() {
+/** Strava + Apple Health in one card, as the design groups them. */
+function IntegrationsCard() {
+  const t = useT();
+  return (
+    <SCard title={t("Integrations")}>
+      <StravaTile />
+      <AppleHealthTile />
+    </SCard>
+  );
+}
+
+function AppleHealthTile() {
   const { data, replaceAll } = useStore();
   const t = useT();
   const [busy, setBusy] = useState(false);
@@ -560,18 +642,18 @@ function HealthImportCard() {
   }
 
   return (
-    <Card>
-      <SectionTitle right={<HeartPulse size={16} className="text-[var(--text-faint)]" />}>
-        {t("Apple Health import")}
-      </SectionTitle>
-      <p className="mb-2 text-sm text-[var(--text-muted)]">
-        {t("Bring in sleep, weight and workouts from Apple Health. On your iPhone: Health app → your photo → “Export All Health Data”, unzip it, then upload the export.xml here.")}
-      </p>
-      <p className="mb-3 text-xs text-[var(--text-faint)]">
-        {t("Everything is parsed on your device. Existing days are never overwritten. (Apple has no live web sync — this is a manual import.)")}
-      </p>
-      <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--surface-2)]">
-        <Upload size={16} /> {busy ? t("Importing…") : t("Choose export.xml")}
+    <div className="mt-2.5">
+      <label className="flex cursor-pointer items-center gap-[11px] rounded-[14px] bg-[var(--surface-2)] px-[13px] py-3">
+        <IconTile color="#f87171" size={34} radius={12}>
+          <HeartPulse size={17} />
+        </IconTile>
+        <div className="min-w-0 flex-1">
+          <div className="text-[13px] font-medium">{t("Apple Health import")}</div>
+          <div className="truncate text-[11px] text-[var(--text-faint)]">
+            {busy ? t("Importing…") : t("Import an export.xml from the Health app")}
+          </div>
+        </div>
+        <ChevronRight size={16} className="shrink-0 text-[var(--text-faint)]" />
         <input
           type="file"
           accept=".xml,text/xml,application/xml"
@@ -580,13 +662,17 @@ function HealthImportCard() {
           onChange={(e) => e.target.files?.[0] && onFile(e.target.files[0])}
         />
       </label>
-      {result && <p className="mt-3 text-sm text-[var(--good)]">{result}</p>}
-      {err && <p className="mt-3 text-sm text-[var(--bad)]">{err}</p>}
-    </Card>
+      <p className="mt-2 text-[11px] leading-[1.45] text-[var(--text-faint)]">
+        {t("Bring in sleep, weight and workouts from Apple Health. On your iPhone: Health app → your photo → “Export All Health Data”, unzip it, then upload the export.xml here.")}{" "}
+        {t("Everything is parsed on your device. Existing days are never overwritten. (Apple has no live web sync — this is a manual import.)")}
+      </p>
+      {result && <p className="mt-2 text-[11.5px] text-[var(--good)]">{result}</p>}
+      {err && <p className="mt-2 text-[11.5px] text-[var(--bad)]">{err}</p>}
+    </div>
   );
 }
 
-function StravaCard() {
+function StravaTile() {
   const { data, replaceAll } = useStore();
   const t = useT();
   const [state, setState] = useState<StravaState | null>(null);
@@ -658,51 +744,124 @@ function StravaCard() {
     setErr(null);
   }
 
-  const name = state?.athlete
-    ? [state.athlete.firstname, state.athlete.lastname].filter(Boolean).join(" ")
-    : null;
+  const name = state?.athlete ? [state.athlete.firstname, state.athlete.lastname].filter(Boolean).join(" ") : null;
 
   return (
-    <Card>
-      <SectionTitle right={<Activity size={16} className="text-[var(--text-faint)]" />}>Strava</SectionTitle>
-      {state ? (
-        <div className="space-y-3">
-          <p className="text-sm">
-            {t("Connected")}
-            {name ? (
-              <>
-                {" · "}
-                <span className="font-semibold">{name}</span>
-              </>
-            ) : null}
-          </p>
-          <p className="text-xs text-[var(--text-muted)]">
-            {state.lastSync
-              ? `${t("Last activity synced")}: ${new Date(state.lastSync * 1000).toLocaleDateString()}`
-              : t("Your Strava activities show up as workouts.")}
-          </p>
-          <div className="flex gap-2">
-            <Button variant="soft" size="sm" onClick={sync} disabled={busy}>
-              <RefreshCw size={15} /> {busy ? t("Syncing…") : t("Sync now")}
-            </Button>
-            <Button variant="outline" size="sm" onClick={disconnect} disabled={busy}>
-              {t("Disconnect")}
-            </Button>
+    <div>
+      <div className="flex items-center gap-[11px] rounded-[14px] bg-[var(--surface-2)] px-[13px] py-3">
+        <IconTile color="#fc4c02" size={34} radius={12}>
+          <Activity size={17} />
+        </IconTile>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-[7px] text-[13px] font-medium">
+            <span className="truncate">Strava</span>
+            {state && <Badge tone="good">{t("Connected")}</Badge>}
+          </div>
+          <div className="truncate text-[11px] text-[var(--text-faint)]">
+            {state
+              ? state.lastSync
+                ? `${t("Last activity synced")}: ${new Date(state.lastSync * 1000).toLocaleDateString()}`
+                : name ?? t("Your Strava activities show up as workouts.")
+              : t("Connect Strava to import your runs, rides and workouts automatically.")}
           </div>
         </div>
-      ) : (
-        <div className="space-y-3">
-          <p className="text-sm text-[var(--text-muted)]">
-            {t("Connect Strava to import your runs, rides and workouts automatically.")}
-          </p>
-          <Button size="sm" onClick={() => (window.location.href = authorizeUrl())} disabled={busy}>
-            <Activity size={15} /> {t("Connect Strava")}
-          </Button>
+      </div>
+      <div className="mt-[9px] flex gap-2">
+        {state ? (
+          <>
+            <SBtn onClick={sync} disabled={busy}>
+              <RefreshCw size={14} /> {busy ? t("Syncing…") : t("Sync now")}
+            </SBtn>
+            <SBtn tone="outline" onClick={disconnect} disabled={busy}>
+              {t("Disconnect")}
+            </SBtn>
+          </>
+        ) : (
+          <SBtn onClick={() => (window.location.href = authorizeUrl())} disabled={busy}>
+            <Activity size={14} /> {t("Connect Strava")}
+          </SBtn>
+        )}
+      </div>
+      {msg && <p className="mt-2 text-[11.5px] text-[var(--good)]">{msg}</p>}
+      {err && <p className="mt-2 text-[11.5px] text-[var(--bad)]">{err}</p>}
+    </div>
+  );
+}
+
+function DataCard() {
+  const { data, replaceAll, resetAll, updateSettings } = useStore();
+  const t = useT();
+  const s = data.settings;
+  const [confirmReset, setConfirmReset] = useState(false);
+
+  function exportData() {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `life-dashboard-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    updateSettings({ lastBackupAt: new Date().toISOString() });
+  }
+  function importData(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result));
+        if (parsed && parsed.settings && Array.isArray(parsed.habits)) replaceAll(parsed);
+        else alert("That file doesn't look like a Life Dashboard export.");
+      } catch {
+        alert("Could not read that file.");
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  return (
+    <SCard title={t("Data & backup")}>
+      <p className="-mt-1 mb-2.5 text-[11.5px] text-[var(--text-muted)]">
+        {s.lastBackupAt ? `${t("Last backup")}: ${backupAgeLabel(s.lastBackupAt, t)}` : t("No backup yet")}
+      </p>
+      <div className="flex flex-wrap gap-2">
+        <SBtn tone="surface" onClick={exportData}>
+          <Download size={14} /> {t("Export JSON")}
+        </SBtn>
+        <SFileBtn accept="application/json" onFile={importData}>
+          <Upload size={14} /> {t("Import JSON")}
+        </SFileBtn>
+        {s.demoDataLoaded ? (
+          <SBtn tone="surface" onClick={() => replaceAll(clearDemo(data))}>
+            <Trash2 size={14} /> {t("Clear demo data")}
+          </SBtn>
+        ) : (
+          <SBtn tone="surface" onClick={() => replaceAll(generateDemo(data))}>
+            {t("Load demo data")}
+          </SBtn>
+        )}
+        {!confirmReset && (
+          <SBtn tone="danger" onClick={() => setConfirmReset(true)}>
+            <RotateCcw size={14} /> {t("Reset everything")}
+          </SBtn>
+        )}
+      </div>
+      {confirmReset && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-2">
+          <span className="text-[11.5px] text-[var(--text-muted)]">
+            {t("This deletes all data and restarts onboarding.")}
+          </span>
+          <SBtn tone="danger" onClick={resetAll}>
+            {t("Confirm reset")}
+          </SBtn>
+          <SBtn tone="outline" onClick={() => setConfirmReset(false)}>
+            {t("Cancel")}
+          </SBtn>
         </div>
       )}
-      {msg && <p className="mt-3 text-sm text-[var(--good)]">{msg}</p>}
-      {err && <p className="mt-3 text-sm text-[var(--bad)]">{err}</p>}
-    </Card>
+      <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
+        {t("Your data lives only in this browser. Export a backup regularly so you never lose it.")}
+      </p>
+    </SCard>
   );
 }
 
@@ -721,19 +880,17 @@ function FeedbackCard() {
   }
 
   return (
-    <Card>
-      <SectionTitle>{t("Bugs & feedback")}</SectionTitle>
-      <p className="mb-3 text-sm text-[var(--text-muted)]">
-        {t("Hit a bug or have an idea? Send it straight to the developer — this opens your email app.")}
-      </p>
-      <div className="mb-3 flex gap-2">
+    <SCard title={t("Feedback")}>
+      <div className="flex gap-[7px]">
         {(["idea", "bug"] as const).map((k) => (
           <button
             key={k}
             onClick={() => setKind(k)}
             className={clsx(
-              "rounded-full px-3.5 py-1.5 text-sm font-medium transition",
-              kind === k ? "grad text-white" : "bg-[var(--surface-2)] text-[var(--text-muted)] hover:bg-[var(--surface-3)]",
+              "whitespace-nowrap rounded-full border px-[13px] py-1.5 text-[12.5px] font-semibold transition",
+              kind === k
+                ? "grad-soft border-[color-mix(in_srgb,var(--area-a)_35%,transparent)] area-text"
+                : "border-[var(--border)] bg-[var(--surface)] text-[var(--text-muted)]",
             )}
           >
             {k === "idea" ? t("Idea / feedback") : t("Bug report")}
@@ -741,19 +898,19 @@ function FeedbackCard() {
         ))}
       </div>
       <textarea
-        className={inputCls}
-        rows={4}
-        placeholder={kind === "bug" ? t("What happened? What did you expect?") : t("What would make this better?")}
+        className="mt-[9px] w-full rounded-[13px] border border-[var(--border)] bg-[var(--surface)] px-3 py-[11px] text-[12.5px] leading-[1.5] outline-none transition focus:border-[var(--area-a)]"
+        rows={3}
+        placeholder={kind === "bug" ? t("What happened? What did you expect?") : t("What could be better?")}
         value={text}
         onChange={(e) => setText(e.target.value)}
       />
-      <div className="mt-3 flex items-center gap-3">
-        <Button onClick={send} disabled={!text.trim()}>
-          <Send size={16} /> {t("Send email")}
-        </Button>
-        <span className="text-xs text-[var(--text-faint)]">{FEEDBACK_EMAIL}</span>
+      <div className="mt-2.5 flex items-center gap-2.5">
+        <SBtn tone="primary" onClick={send} disabled={!text.trim()}>
+          <Send size={14} /> {t("Send email")}
+        </SBtn>
+        <span className="truncate text-[11px] text-[var(--text-faint)]">{FEEDBACK_EMAIL}</span>
       </div>
-    </Card>
+    </SCard>
   );
 }
 
@@ -791,17 +948,13 @@ function AccountCard() {
   }
 
   return (
-    <Card>
-      <SectionTitle right={<RefreshCw size={16} className="text-[var(--text-faint)]" />}>
-        {t("Account & sync")}
-      </SectionTitle>
-
+    <SCard title={t("Account & sync")}>
       {sync.email ? (
-        <div className="space-y-3">
-          <p className="text-sm">
-            {t("Signed in as")} <span className="font-semibold">{sync.email}</span>
+        <>
+          <p className="-mt-1 text-[12.5px] text-[var(--text-muted)]">
+            {t("Signed in as")} <span className="font-semibold text-[var(--text)]">{sync.email}</span>
           </p>
-          <p className="text-xs text-[var(--text-muted)]">
+          <p className="mt-1 text-[11.5px] text-[var(--text-faint)]">
             {sync.status === "syncing"
               ? t("Syncing…")
               : sync.status === "error"
@@ -810,51 +963,46 @@ function AccountCard() {
                   ? `${t("Synced")} · ${new Date(sync.lastSyncedAt).toLocaleTimeString()}`
                   : t("Same data on all your devices.")}
           </p>
-          <div className="flex gap-2">
-            <Button variant="soft" size="sm" onClick={() => sync.syncNow()}>
-              <RefreshCw size={15} /> {t("Sync now")}
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => sync.signOut()}>
+          <div className="mt-2.5 flex gap-2">
+            <SBtn onClick={() => sync.syncNow()}>
+              <RefreshCw size={14} /> {t("Sync now")}
+            </SBtn>
+            <SBtn tone="outline" onClick={() => sync.signOut()}>
               {t("Sign out")}
-            </Button>
+            </SBtn>
           </div>
-        </div>
+        </>
       ) : (
-        <div className="space-y-3">
-          <p className="text-sm text-[var(--text-muted)]">
+        <>
+          <p className="-mt-1 text-[12.5px] text-[var(--text-muted)]">
             {t("Sign in to keep the same data on your phone and PC.")}
           </p>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <input
-              className={inputCls}
-              type="email"
-              placeholder={t("Email")}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-              className={inputCls}
-              type="password"
-              placeholder={t("Password")}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+          <div className="mt-2.5 grid grid-cols-2 gap-[9px]">
+            <SField label={t("Email")}>
+              <input className={sInput} type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            </SField>
+            <SField label={t("Password")}>
+              <input className={sInput} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </SField>
           </div>
-          {err && <p className="text-xs text-[var(--bad)]">{err}</p>}
-          <div className="flex items-center gap-2">
-            <Button size="sm" onClick={submit} disabled={busy || !email || !password}>
+          {err && <p className="mt-2 text-[11.5px] text-[var(--bad)]">{err}</p>}
+          <div className="mt-2.5 flex items-center gap-2.5">
+            <SBtn onClick={submit} disabled={busy || !email || !password}>
               {mode === "in" ? t("Sign in") : t("Create account")}
-            </Button>
+            </SBtn>
             <button
-              onClick={() => { setMode(mode === "in" ? "up" : "in"); setErr(null); }}
-              className="text-xs font-medium text-[var(--accent)]"
+              onClick={() => {
+                setMode(mode === "in" ? "up" : "in");
+                setErr(null);
+              }}
+              className="area-text text-[11.5px] font-medium"
             >
               {mode === "in" ? t("Create account") : t("Have an account? Sign in")}
             </button>
           </div>
-        </div>
+        </>
       )}
-    </Card>
+    </SCard>
   );
 }
 
@@ -864,25 +1012,29 @@ function RemindersCard() {
   const r = data.settings.reminders;
   const lang = data.settings.language;
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
-    typeof window !== "undefined" && "Notification" in window
-      ? Notification.permission
-      : "unsupported",
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "unsupported",
   );
   const [pushBusy, setPushBusy] = useState(false);
   const [pushErr, setPushErr] = useState<PushError | null>(null);
 
-  async function enable() {
-    if (perm === "unsupported") return;
-    const res = await Notification.requestPermission();
-    setPerm(res);
-    if (res === "granted") {
-      updateSettings({ reminders: { ...r, enabled: true } });
-    }
-  }
-
   const checkinTime = r.checkinTime ?? "21:00";
   // Freshly computed weekly-recap text stored server-side for the Sunday-evening push.
   const recap = () => weeklyRecapText(data, lang);
+
+  /** One switch for the whole feature: asks for the browser permission on the way in. */
+  async function toggleEnabled(v: boolean) {
+    if (!v) {
+      updateSettings({ reminders: { ...r, enabled: false } });
+      return;
+    }
+    if (perm === "unsupported") return;
+    if (perm !== "granted") {
+      const res = await Notification.requestPermission();
+      setPerm(res);
+      if (res !== "granted") return;
+    }
+    updateSettings({ reminders: { ...r, enabled: true } });
+  }
 
   async function togglePush(on: boolean) {
     setPushErr(null);
@@ -917,88 +1069,69 @@ function RemindersCard() {
     server: t("Couldn't reach the server. Try again."),
   };
 
+  const suggestedHour = typicalLogHour(data.habitLogs);
+  const suggested = suggestedHour == null ? null : `${String(suggestedHour).padStart(2, "0")}:00`;
+
   return (
-    <Card>
-      <SectionTitle>{t("Reminders")}</SectionTitle>
-      <p className="mb-3 text-sm text-[var(--text-muted)]">
-        {t("A daily nudge to log your day.")}
-      </p>
+    <SCard title={t("Reminders")} icon={<BellRing size={16} />}>
+      <SRow
+        title={t("Enable notifications")}
+        desc={
+          perm === "unsupported"
+            ? t("Notifications aren't supported here.")
+            : perm === "denied"
+              ? t("Notifications are blocked — allow them in your browser settings.")
+              : t("Browser permission required.")
+        }
+      >
+        <Toggle checked={r.enabled && perm === "granted"} onChange={toggleEnabled} />
+      </SRow>
 
-      {perm === "unsupported" ? (
-        <p className="text-sm text-[var(--text-faint)]">{t("Notifications aren't supported here.")}</p>
-      ) : perm !== "granted" ? (
-        <Button variant="soft" onClick={enable}>
-          <BellRing size={16} /> {t("Enable notifications")}
-        </Button>
-      ) : (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
-            <span className="text-sm font-medium">{t("Daily check-in reminder")}</span>
-            <Toggle
-              checked={r.enabled}
-              onChange={(v) => updateSettings({ reminders: { ...r, enabled: v } })}
+      {r.enabled && perm === "granted" && (
+        <>
+          <SRow title={t("Reminder time")}>
+            <input
+              type="time"
+              className="num rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-[12.5px] outline-none transition focus:border-[var(--area-a)]"
+              value={checkinTime}
+              onChange={(e) => updateTime(e.target.value)}
             />
-          </div>
-          {r.enabled && (
-            <>
-              <Field label={t("Reminder time")}>
-                <input
-                  type="time"
-                  className={inputCls}
-                  value={checkinTime}
-                  onChange={(e) => updateTime(e.target.value)}
-                />
-                {(() => {
-                  const hour = typicalLogHour(data.habitLogs);
-                  const suggested = hour == null ? null : `${String(hour).padStart(2, "0")}:00`;
-                  if (!suggested || suggested === checkinTime) return null;
-                  return (
-                    <button
-                      onClick={() => updateTime(suggested)}
-                      className="mt-1.5 text-xs text-[var(--accent)] hover:underline"
-                    >
-                      {t("You usually log around {time} — use that?", { time: suggested })}
-                    </button>
-                  );
-                })()}
-              </Field>
-              <div className="flex items-center justify-between rounded-xl border border-[var(--border)] p-3">
-                <span className="text-sm font-medium">{t("Include still-open habits")}</span>
-                <Toggle
-                  checked={r.habitReminders}
-                  onChange={(v) => {
-                    updateSettings({ reminders: { ...r, habitReminders: v } });
-                    if (r.push) void syncPush(checkinTime, v, lang, !!r.weeklyRecap, recap());
-                  }}
-                />
-              </div>
+          </SRow>
+          {suggested && suggested !== checkinTime && (
+            <button onClick={() => updateTime(suggested)} className="area-text mt-1.5 text-[11.5px] hover:underline">
+              {t("You usually log around {time} — use that?", { time: suggested })}
+            </button>
+          )}
 
-              {pushConfigured && (
-                <div className="rounded-xl border border-[var(--accent)]/30 bg-[var(--accent-soft)]/40 p-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-medium">{t("Also when the app is closed (push)")}</div>
-                      <div className="text-xs text-[var(--text-muted)]">{t("Get the reminder as a real notification even when the app isn't open.")}</div>
-                    </div>
-                    <Toggle checked={!!r.push && !pushBusy} onChange={togglePush} />
-                  </div>
-                  {pushErr && <p className="mt-2 text-xs text-[var(--bad)]">{PUSH_ERR[pushErr]}</p>}
-                  {r.push && (
-                    <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--border)] pt-3">
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium">{t("Weekly recap (Sun evening)")}</div>
-                        <div className="text-xs text-[var(--text-muted)]">{t("Your Life-Score trend + the week's key insight.")}</div>
-                      </div>
-                      <Toggle checked={!!r.weeklyRecap} onChange={toggleWeekly} />
-                    </div>
-                  )}
-                </div>
+          <SRow title={t("Include still-open habits")} desc={t("Adds the habits you haven't ticked off yet.")}>
+            <Toggle
+              checked={r.habitReminders}
+              onChange={(v) => {
+                updateSettings({ reminders: { ...r, habitReminders: v } });
+                if (r.push) void syncPush(checkinTime, v, lang, !!r.weeklyRecap, recap());
+              }}
+            />
+          </SRow>
+
+          {pushConfigured && (
+            <>
+              <SRow
+                title={t("Push notifications")}
+                desc={t("Get the reminder as a real notification even when the app isn't open.")}
+              >
+                <Toggle checked={!!r.push && !pushBusy} onChange={togglePush} />
+              </SRow>
+              {pushErr && <p className="mt-1 text-[11.5px] text-[var(--bad)]">{PUSH_ERR[pushErr]}</p>}
+              {r.push && (
+                <SRow title={t("Weekly recap")} desc={t("Your Life-Score trend + the week's key insight.")}>
+                  <Toggle checked={!!r.weeklyRecap} onChange={toggleWeekly} />
+                </SRow>
               )}
             </>
           )}
-        </div>
+        </>
       )}
-    </Card>
+    </SCard>
   );
 }
 
@@ -1030,9 +1163,7 @@ function AccentRow() {
             style={{
               background: ACCENT_SWATCH[r.accent],
               boxShadow:
-                current === r.accent
-                  ? `0 0 0 2px var(--surface), 0 0 0 4px ${ACCENT_SWATCH[r.accent]}`
-                  : undefined,
+                current === r.accent ? `0 0 0 2px var(--surface), 0 0 0 4px ${ACCENT_SWATCH[r.accent]}` : undefined,
             }}
           />
         ))}
@@ -1045,17 +1176,13 @@ function AccentRow() {
 
       {/* The accent normally paints every gradient in the app. Turn this on to give each
           page its own Pulse hue back (rosé Health, orange Training, teal Finances …). */}
-      <div className="mt-3.5 flex items-start justify-between gap-3 border-t border-[var(--surface-2)] pt-3.5">
-        <div className="min-w-0">
-          <div className="text-[13px] font-medium">{t("Per-page colours")}</div>
-          <p className="mt-0.5 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
-            {t("Off, your accent colours the whole app. On, each page keeps its own hue.")}
-          </p>
-        </div>
-        <Toggle
-          checked={data.settings.areaColors ?? false}
-          onChange={(v) => updateSettings({ areaColors: v })}
-        />
+      <div className="mt-2.5 border-t border-[var(--surface-2)]">
+        <SRow
+          title={t("Per-page colours")}
+          desc={t("Off, your accent colours the whole app. On, each page keeps its own hue.")}
+        >
+          <Toggle checked={data.settings.areaColors ?? false} onChange={(v) => updateSettings({ areaColors: v })} />
+        </SRow>
       </div>
     </>
   );
@@ -1074,90 +1201,112 @@ function ProfileCard() {
   const weightChart = data.weight.map((w) => ({ date: w.date, value: w.kg }));
 
   return (
-    <Card>
-      <SectionTitle right={<User size={16} className="text-[var(--text-faint)]" />}>{t("Profile")}</SectionTitle>
-      <p className="mb-4 text-sm text-[var(--text-muted)]">
-        {t("Used to personalize the app and enrich your stats. Optional and private.")}
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        <Field label={t("Name")}>
-          <input className={inputCls} value={p.name ?? ""} onChange={(e) => updateProfile({ name: e.target.value })} />
-        </Field>
-        <Field label={t("Age")}>
+    <SCard title={t("Profile")} icon={<User size={16} />}>
+      <div className="grid grid-cols-2 gap-[9px]">
+        <SField label={t("Name")}>
+          <input className={sInput} value={p.name ?? ""} onChange={(e) => updateProfile({ name: e.target.value })} />
+        </SField>
+        <SField label={t("Age")}>
           <input
             type="number"
             inputMode="numeric"
             min={5}
             max={120}
             placeholder={t("years")}
-            className={inputCls}
+            className={sInput}
             value={age ?? ""}
             onChange={(e) => {
               const v = e.target.value;
               updateProfile({ birthDate: v ? `${new Date().getFullYear() - Number(v)}-01-01` : undefined });
             }}
           />
-        </Field>
-        <Field label={t("Sex")}>
-          <select className={inputCls} value={p.sex ?? "prefer_not"} onChange={(e) => updateProfile({ sex: e.target.value as Profile["sex"] })}>
+        </SField>
+        <SField label={t("Sex")}>
+          <select
+            className={sInput}
+            value={p.sex ?? "prefer_not"}
+            onChange={(e) => updateProfile({ sex: e.target.value as Profile["sex"] })}
+          >
             {SEXES.map((x) => (
-              <option key={x} value={x}>{t(x)}</option>
+              <option key={x} value={x}>
+                {t(x)}
+              </option>
             ))}
           </select>
-        </Field>
-        <Field label={t("Height (cm)")}>
+        </SField>
+        <SField label={t("Height (cm)")}>
           <input
             type="number"
-            className={inputCls}
+            className={sInput}
             value={p.heightCm ?? ""}
             onChange={(e) => updateProfile({ heightCm: e.target.value ? Number(e.target.value) : undefined })}
           />
-        </Field>
-        <Field label={t("Activity level")}>
-          <select className={inputCls} value={p.activityLevel ?? "moderate"} onChange={(e) => updateProfile({ activityLevel: e.target.value as Profile["activityLevel"] })}>
+        </SField>
+        <SField label={t("Activity level")}>
+          <select
+            className={sInput}
+            value={p.activityLevel ?? "moderate"}
+            onChange={(e) => updateProfile({ activityLevel: e.target.value as Profile["activityLevel"] })}
+          >
             {ACTIVITY.map((x) => (
-              <option key={x} value={x}>{t(x)}</option>
+              <option key={x} value={x}>
+                {t(x)}
+              </option>
             ))}
           </select>
-        </Field>
-        <Field label={t("Current weight (kg)")}>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              className={inputCls}
-              placeholder={latestWeight ? String(latestWeight) : ""}
-              value={weightInput}
-              onChange={(e) => setWeightInput(e.target.value)}
-            />
-            <Button
-              variant="soft"
-              onClick={() => {
-                if (weightInput) {
-                  saveWeight({ date: todayISO(), kg: Number(weightInput) });
-                  setWeightInput("");
-                }
-              }}
-            >
-              {t("Log weight")}
-            </Button>
-          </div>
-        </Field>
+        </SField>
+        <SField label={t("Current weight (kg)")}>
+          <input
+            type="number"
+            className={sInput}
+            placeholder={latestWeight ? String(latestWeight) : ""}
+            value={weightInput}
+            onChange={(e) => setWeightInput(e.target.value)}
+          />
+        </SField>
       </div>
 
-      {(age !== undefined || bmi !== undefined) && (
-        <div className="mt-4 flex flex-wrap gap-2">
-          {age !== undefined && <Badge tone="accent">{age} {t("years")}</Badge>}
-          {bmi !== undefined && <Badge tone="accent">{t("BMI")} {bmi.toFixed(1)}</Badge>}
-          {latestWeight !== undefined && <Badge>{latestWeight} kg · {fmtShort(data.weight[data.weight.length - 1].date)}</Badge>}
+      <div className="mt-[11px] flex flex-wrap items-center gap-[9px]">
+        <SBtn
+          onClick={() => {
+            if (weightInput) {
+              saveWeight({ date: todayISO(), kg: Number(weightInput) });
+              setWeightInput("");
+            }
+          }}
+          disabled={!weightInput}
+        >
+          <Scale size={14} /> {t("Log weight")}
+        </SBtn>
+        {age !== undefined && (
+          <Badge tone="accent">
+            {age} {t("years")}
+          </Badge>
+        )}
+        {bmi !== undefined && (
+          <Badge tone="accent">
+            {t("BMI")} {bmi.toFixed(1)}
+          </Badge>
+        )}
+        {latestWeight !== undefined && (
+          <Badge>
+            {latestWeight} kg · {fmtShort(data.weight[data.weight.length - 1].date)}
+          </Badge>
+        )}
+      </div>
+
+      {weightChart.length >= 2 && (
+        <div className="mt-3.5">
+          <div className="mb-1 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
+            {t("Weight trend")}
+          </div>
+          <TrendLine data={weightChart} color="var(--area-a)" name={t("Current weight (kg)")} height={140} unit=" kg" />
         </div>
       )}
 
-      {weightChart.length >= 2 && (
-        <div className="mt-4">
-          <div className="mb-1 text-xs font-medium uppercase tracking-wide text-[var(--text-faint)]">{t("Weight trend")}</div>
-          <TrendLine data={weightChart} color="var(--accent)" name={t("Current weight (kg)")} height={160} unit=" kg" />
-        </div>
-      )}
-    </Card>
+      <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
+        {t("Used to personalize the app and enrich your stats. Optional and private.")}
+      </p>
+    </SCard>
   );
 }

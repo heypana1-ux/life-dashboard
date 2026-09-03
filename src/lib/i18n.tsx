@@ -472,7 +472,17 @@ const DE: Record<string, string> = {
   "Weight trend": "Gewichtsverlauf",
   "Log weight": "Gewicht eintragen",
   "Life areas & score weights": "Lebensbereiche & Score-Gewichte",
+  "Life areas": "Lebensbereiche",
   "normalized to 100%": "auf 100% normalisiert",
+  // --- Settings, Pulse layout (3p/3q) ---
+  "Profile, sync & data": "Profil, Sync & Daten",
+  Integrations: "Integrationen",
+  "Data & backup": "Daten & Backup",
+  "Import an export.xml from the Health app": "export.xml aus der Health-App importieren",
+  "Browser permission required.": "Browser-Berechtigung erforderlich.",
+  "Push notifications": "Push-Benachrichtigungen",
+  "Adds the habits you haven't ticked off yet.": "Nimmt die Gewohnheiten mit, die du noch nicht abgehakt hast.",
+  "What could be better?": "Was könnte besser sein?",
   "manual only": "nur manuell",
   "Sleep target": "Schlafziel",
   hours: "Stunden",
@@ -2286,7 +2296,16 @@ const DE: Record<string, string> = {
 };
 
 const DICTS: Record<Language, Record<string, string>> = {
-  en: { "Your (n)": "Your", "Life (wheel)": "Life", "Reward (lead)": "Reward", "shop (title)": "shop" },
+  en: {
+    "Your (n)": "Your",
+    "Life (wheel)": "Life",
+    "Reward (lead)": "Reward",
+    "shop (title)": "shop",
+    // "prefer_not" is a snake_case enum value, not a word — spell it out in English too.
+    // (The other profile enums are already readable English and are shared with sentence
+    //  copy elsewhere, so they stay lowercase.)
+    prefer_not: "Prefer not to say",
+  },
   de: DE,
 };
 

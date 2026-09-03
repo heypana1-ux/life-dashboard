@@ -6,7 +6,6 @@ import { BellRing, Check, Download, Share, SquarePlus, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { pushConfigured } from "@/lib/push";
-import { Card, SectionTitle, Button } from "@/components/ui";
 
 const PROMO_ID = "app-push-promo";
 
@@ -120,35 +119,46 @@ export function InstallAppCard() {
     setCanInstall(false);
   }
 
+  // Styled as a Settings card (22px radius, 16/17px padding), since that's where it lives.
   return (
-    <Card>
-      <SectionTitle right={<Download size={16} className="text-[var(--text-faint)]" />}>{t("Install the app")}</SectionTitle>
+    <section className="card rounded-[22px] px-[17px] py-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <h2 className="slabel">{t("Install the app")}</h2>
+        <Download size={16} className="text-[var(--text-faint)]" />
+      </div>
       {installed ? (
-        <p className="flex items-center gap-2 text-sm text-[var(--good)]">
-          <Check size={16} /> {t("Installed — you're running the app.")}
+        <p className="flex items-center gap-2 text-[12.5px] text-[var(--good)]">
+          <Check size={15} /> {t("Installed — you're running the app.")}
         </p>
       ) : (
         <>
-          <p className="mb-3 text-sm text-[var(--text-muted)]">
+          <p className="text-[12.5px] leading-[1.45] text-[var(--text-muted)]">
             {t("Add Life Dashboard to your home screen to open it full-screen like a normal app, and to use it offline.")}
           </p>
           {canInstall ? (
-            <Button onClick={install}>
-              <Download size={16} /> {t("Install app")}
-            </Button>
-          ) : isIOS ? (
-            <div className="flex items-start gap-2.5 rounded-xl bg-[var(--surface-2)] p-3 text-sm text-[var(--text-muted)]">
-              <Share size={16} className="mt-0.5 shrink-0 text-[var(--accent)]" />
-              <span>{t("In Safari, tap the Share button, then “Add to Home Screen”.")}</span>
-            </div>
+            <button
+              onClick={install}
+              className="area-grad mt-2.5 inline-flex items-center gap-1.5 rounded-[12px] px-[13px] py-[9px] text-[12px] font-semibold transition hover:opacity-90 active:scale-[.98]"
+            >
+              <Download size={14} /> {t("Install app")}
+            </button>
           ) : (
-            <div className="flex items-start gap-2.5 rounded-xl bg-[var(--surface-2)] p-3 text-sm text-[var(--text-muted)]">
-              <SquarePlus size={16} className="mt-0.5 shrink-0 text-[var(--accent)]" />
-              <span>{t("Open your browser menu and choose “Install app” or “Add to Home screen”.")}</span>
+            <div className="mt-2.5 flex items-start gap-2.5 rounded-[14px] bg-[var(--surface-2)] px-[13px] py-3 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
+              {isIOS ? (
+                <>
+                  <Share size={15} className="area-text mt-px shrink-0" />
+                  <span>{t("In Safari, tap the Share button, then “Add to Home Screen”.")}</span>
+                </>
+              ) : (
+                <>
+                  <SquarePlus size={15} className="area-text mt-px shrink-0" />
+                  <span>{t("Open your browser menu and choose “Install app” or “Add to Home screen”.")}</span>
+                </>
+              )}
             </div>
           )}
         </>
       )}
-    </Card>
+    </section>
   );
 }
