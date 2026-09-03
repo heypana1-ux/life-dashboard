@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import {
   Activity,
   BellRing,
+  ChevronDown,
   ChevronRight,
   Download,
   HeartPulse,
@@ -51,25 +52,54 @@ import clsx from "clsx";
    16/17px padding) and everything inside them is a hairline row instead of a nested box.
    These four helpers carry that language so each section below stays declarative.       */
 
-/** Settings card: uppercase section label, optional icon on the right. */
+/** Settings card: uppercase section label, optional icon on the right.
+ *  `collapsible` turns the whole header into a disclosure button — used for sections whose
+ *  controls you'd rather not brush past by accident (the life-area weight sliders). */
 function SCard({
   title,
   icon,
   right,
+  collapsible,
+  summary,
   children,
 }: {
   title: string;
   icon?: React.ReactNode;
   right?: React.ReactNode;
+  collapsible?: boolean;
+  /** Shown next to the chevron while collapsed, so the card still says something. */
+  summary?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+  const head = (
+    <>
+      <h2 className="slabel">{title}</h2>
+      {collapsible ? (
+        <span className="flex shrink-0 items-center gap-2 text-[var(--text-faint)]">
+          {!open && summary && <span className="text-[11px]">{summary}</span>}
+          <ChevronDown size={16} className={clsx("transition-transform", open && "rotate-180")} />
+        </span>
+      ) : (
+        (right ?? (icon && <span className="text-[var(--text-faint)]">{icon}</span>))
+      )}
+    </>
+  );
+
   return (
     <section className="card rounded-[22px] px-[17px] py-4">
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <h2 className="slabel">{title}</h2>
-        {right ?? (icon && <span className="text-[var(--text-faint)]">{icon}</span>)}
-      </div>
-      {children}
+      {collapsible ? (
+        <button
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className={clsx("flex w-full items-center justify-between gap-2 text-left", open && "mb-3")}
+        >
+          {head}
+        </button>
+      ) : (
+        <div className="mb-3 flex items-center justify-between gap-2">{head}</div>
+      )}
+      {(!collapsible || open) && children}
     </section>
   );
 }
@@ -308,11 +338,14 @@ export default function SettingsPage() {
         </div>
       </SCard>
 
-      {/* Life areas & weights */}
+      {/* Life areas & weights — collapsed by default: the weight sliders sit right where you
+          scroll, and a stray swipe used to reshuffle the percentages. */}
       <SCard
         title={t("Life areas")}
-        right={<span className="text-[11px] text-[var(--text-faint)]">{t("normalized to 100%")}</span>}
+        collapsible
+        summary={`${s.areas.filter((a) => a.enabled).length}/${s.areas.length} ${t("active")}`}
       >
+        <p className="-mt-1 mb-2.5 text-[11.5px] text-[var(--text-muted)]">{t("normalized to 100%")}</p>
         <div className="flex flex-col">
           {s.areas.map((a) => (
             <div key={a.key} className="border-b border-[var(--surface-2)] py-[11px] last:border-0">
@@ -394,7 +427,7 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 34
+        Pulse Build 35
       </p>
     </div>
   );

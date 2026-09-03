@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { StoreProvider } from "@/lib/store";
+import { LiveActivityProvider } from "@/lib/liveActivity";
 import { AppShell } from "@/components/AppShell";
 import { ThemeApplier } from "@/components/ThemeApplier";
 
@@ -30,7 +31,9 @@ export default function RootLayout({
       <body className={`${geist.variable} antialiased`}>
         <StoreProvider>
           <ThemeApplier />
-          <AppShell>{children}</AppShell>
+          <LiveActivityProvider>
+            <AppShell>{children}</AppShell>
+          </LiveActivityProvider>
         </StoreProvider>
       </body>
     </html>

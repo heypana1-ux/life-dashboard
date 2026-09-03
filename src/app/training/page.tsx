@@ -29,7 +29,8 @@ import {
 } from "@/components/ui";
 import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
-import { WorkoutRunner } from "@/components/WorkoutRunner";
+import { useStartWorkout } from "@/components/WorkoutRunner";
+import { elapsedSec as liveElapsed, useLive } from "@/lib/liveActivity";
 
 type Tab = "workouts" | "plans" | "progress";
 
@@ -41,7 +42,28 @@ export default function TrainingPage() {
   const [editing, setEditing] = useState<Workout | undefined>();
   const [fromPlan, setFromPlan] = useState<WorkoutPlan | undefined>();
   const [quickSport, setQuickSport] = useState<string | undefined>();
-  const [runner, setRunner] = useState<{ plan?: WorkoutPlan } | null>(null);
+  // The guided session is a live activity owned by the app shell, so it keeps running when
+  // you leave this page. Starting it is all this screen does.
+  const startWorkout = useStartWorkout();
+
+  // A cardio session timed from the log form is a live activity too, but the form belongs to
+  // this page — so this page is what reopens it when you tap the floating bar.
+  const live = useLive();
+  const timedForm =
+    live.live?.kind === "workout" && (live.live.payload as { mode?: string } | undefined)?.mode === "form"
+      ? live.live
+      : null;
+  const resumeSport = timedForm && !timedForm.minimized ? timedForm.label : undefined;
+  useEffect(() => {
+    if (!resumeSport || modal) return;
+    /* eslint-disable react-hooks/set-state-in-effect */
+    setEditing(undefined);
+    setFromPlan(undefined);
+    setQuickSport(resumeSport);
+    setModal(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeSport]);
 
   const workouts = useMemo(
     () => [...data.workouts].sort((a, b) => (a.date < b.date ? 1 : -1)),
@@ -59,7 +81,7 @@ export default function TrainingPage() {
   // time-based sports open the form with the timer already running (form = recap).
   function quickStart(sport: string) {
     if (sportKind(sport) === "strength") {
-      setRunner({});
+      startWorkout();
       return;
     }
     setEditing(undefined);
@@ -101,14 +123,23 @@ export default function TrainingPage() {
           onDelete={removeWorkout}
           onNew={() => newWorkout()}
           onQuickStart={quickStart}
-          onStartPlan={(p) => setRunner({ plan: p })}
+          onStartPlan={startWorkout}
         />
       )}
-      {tab === "plans" && <PlansTab onStart={(p) => setRunner({ plan: p })} />}
+      {tab === "plans" && <PlansTab onStart={startWorkout} />}
       {tab === "progress" && <ProgressTab workouts={data.workouts} />}
 
-      <WorkoutModal open={modal} onClose={() => setModal(false)} editing={editing} fromPlan={fromPlan} quickSport={quickSport} />
-      {runner && <WorkoutRunner plan={runner.plan} onClose={() => setRunner(null)} />}
+      <WorkoutModal
+        open={modal}
+        // Closing the form never kills a running clock — it hands it to the floating bar.
+        onClose={() => {
+          setModal(false);
+          if (timedForm) live.patch({ minimized: true });
+        }}
+        editing={editing}
+        fromPlan={fromPlan}
+        quickSport={quickSport}
+      />
     </div>
   );
 }
@@ -734,38 +765,45 @@ function WorkoutModal({
   const [draft, setDraft] = useState<Workout>(editing ?? makeBlank());
   const key = editing?.id ?? `new-${fromPlan?.id ?? ""}-${quickSport ?? ""}`;
   const [lk, setLk] = useState<string | null>(null);
-  // Live session timer → fills duration on stop.
-  const [timerOn, setTimerOn] = useState(false);
-  const [elapsedSec, setElapsedSec] = useState(0);
+
+  /*
+    The session clock is a live activity (lib/liveActivity), so timing a run survives closing
+    this form, leaving the page or shutting the app: the elapsed time is derived from the
+    start timestamp and the floating bar brings the form back. Only the clock is persisted —
+    what you've typed into the form is not, so stop the timer before you navigate off if you
+    already filled in distance or pulse.
+  */
+  const live = useLive();
+  const timed = live.live?.kind === "workout" && (live.live.payload as { mode?: string } | undefined)?.mode === "form"
+    ? live.live
+    : null;
+  const timerOn = !!timed?.runningSince;
+  const elapsedSec = timed ? liveElapsed(timed, live.now) : 0;
+
   if (open && key !== lk) {
     setLk(key);
     setDraft(editing ?? makeBlank());
-    // Quick-start of a time-based sport: begin timing immediately (form doubles as recap).
-    const autoStart = !!quickSport && sportKind(quickSport) !== "strength";
-    setTimerOn(autoStart);
-    setElapsedSec(0);
   }
-  if (!open && lk !== null) {
-    setLk(null);
-    if (timerOn) setTimerOn(false);
-    if (elapsedSec) setElapsedSec(0);
-  }
+  if (!open && lk !== null) setLk(null);
+
+  // Quick-start of a time-based sport: begin timing immediately (form doubles as recap).
+  // In an effect, not during render — starting a session updates the provider, and a render
+  // may not write to another component's state.
+  const autoStart = open && !!quickSport && sportKind(quickSport) !== "strength";
+  useEffect(() => {
+    if (autoStart && !timed) live.start({ kind: "workout", label: quickSport, payload: { mode: "form" } });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart, quickSport]);
 
   const set = (patch: Partial<Workout>) => setDraft((d) => ({ ...d, ...patch }));
   const kind = sportKind(draft.sport);
 
-  useEffect(() => {
-    if (!timerOn) return;
-    const id = setInterval(() => setElapsedSec((s) => s + 1), 1000);
-    return () => clearInterval(id);
-  }, [timerOn]);
   function toggleTimer() {
     if (timerOn) {
-      setTimerOn(false);
       set({ durationMin: Math.max(1, Math.round(elapsedSec / 60)) });
+      live.stop();
     } else {
-      setElapsedSec(0);
-      setTimerOn(true);
+      live.start({ kind: "workout", label: draft.sport, payload: { mode: "form" } });
     }
   }
 
@@ -875,7 +913,7 @@ function WorkoutModal({
 
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={onClose}>{t("Cancel")}</Button>
-          <Button onClick={() => { saveWorkout(draft); onClose(); }}>
+          <Button onClick={() => { saveWorkout(draft); live.stop(); onClose(); }}>
             <Save size={16} /> {t("Save")}
           </Button>
         </div>

@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Brain, Check, Pause, Play, RotateCcw, Target, Timer, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { elapsedSec, remainingSec, useLive } from "@/lib/liveActivity";
 import { addDays, fmtDuration, todayISO, weekdayLabel, weekdayOf } from "@/lib/date";
 import {
   Button,
   Card,
   Chip,
   EmptyState,
-  Field,
   NumberInput,
   PageHeader,
   SectionTitle,
@@ -29,71 +29,45 @@ function fmtClock(totalSec: number): string {
 
 export default function FocusPage() {
   const { data, addFocusSession, removeFocusSession, updateSettings } = useStore();
+  const live = useLive();
   const t = useT();
   const lang = data.settings.language;
   const target = data.settings.focusTargetMinutes || 120;
 
-  const [sessionMin, setSessionMin] = useState(25);
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
-  const [running, setRunning] = useState(false);
-  const [label, setLabel] = useState("");
-  const finishedRef = useRef(false);
+  /*
+    The timer is a live activity (see lib/liveActivity): its length, label and start time are
+    persisted and the remaining seconds are derived from the clock. That's what lets a block
+    survive leaving this page, closing the app, or a locked phone — and it's why the timer is
+    logged correctly even if you come back long after it rang. The completion itself happens
+    in the shell, so it fires whether or not this page is open.
+  */
+  const session = live.live?.kind === "focus" ? live.live : null;
+  const running = !!session?.runningSince;
 
-  // When the length changes while idle, reset the clock to match.
-  useEffect(() => {
-    if (!running) setSecondsLeft(sessionMin * 60);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionMin]);
-
-  // Tick once per second while running.
-  useEffect(() => {
-    if (!running) return;
-    const id = setInterval(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
-    return () => clearInterval(id);
-  }, [running]);
-
-  // Auto-complete when the countdown reaches zero.
-  useEffect(() => {
-    if (running && secondsLeft === 0 && !finishedRef.current) {
-      finishedRef.current = true;
-      addFocusSession(sessionMin, label);
-      notifyDone(sessionMin);
-      setRunning(false);
-      setSecondsLeft(sessionMin * 60);
-      setLabel("");
-    }
-    if (secondsLeft > 0) finishedRef.current = false;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [secondsLeft, running]);
-
-  function notifyDone(min: number) {
-    try {
-      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-        new Notification(t("Focus session done"), {
-          body: t("Logged {min} min of focus. Nice work.", { min }),
-          icon: "/icons/icon-192.png",
-        });
-      }
-    } catch {
-      /* ignore */
-    }
-  }
+  // Length + label are only editable while idle, so plain local state is enough for them;
+  // once a session starts they're carried by the live session itself.
+  const [draftMin, setDraftMin] = useState(25);
+  const [draftLabel, setDraftLabel] = useState("");
+  const sessionMin = session?.totalSec ? Math.round(session.totalSec / 60) : draftMin;
+  const label = session ? (session.label ?? "") : draftLabel;
+  const secondsLeft = session ? remainingSec(session, live.now) : draftMin * 60;
 
   function start() {
-    if (secondsLeft === 0) setSecondsLeft(sessionMin * 60);
-    setRunning(true);
+    if (session) {
+      live.resume();
+      return;
+    }
+    live.start({ kind: "focus", totalSec: draftMin * 60, label: draftLabel.trim() || undefined });
   }
   function reset() {
-    setRunning(false);
-    setSecondsLeft(sessionMin * 60);
+    live.stop();
   }
   function stopAndLog() {
-    const elapsed = Math.round((sessionMin * 60 - secondsLeft) / 60);
-    if (elapsed >= 1) {
-      addFocusSession(elapsed, label);
-      setLabel("");
-    }
-    reset();
+    if (!session) return;
+    const elapsed = Math.round(elapsedSec(session, live.now) / 60);
+    if (elapsed >= 1) addFocusSession(elapsed, session.label);
+    live.stop();
+    setDraftLabel("");
   }
 
   const today = todayISO();
@@ -142,16 +116,16 @@ export default function FocusPage() {
 
         <div className="mb-4 flex flex-wrap items-center gap-2">
           {PRESETS.map((m) => (
-            <Chip key={m} active={sessionMin === m && !running} onClick={() => !running && setSessionMin(m)}>
+            <Chip key={m} active={sessionMin === m && !session} onClick={() => !session && setDraftMin(m)}>
               {m} {t("min")}
             </Chip>
           ))}
           <div className="flex items-center gap-1.5">
             <NumberInput
               value={isCustom ? sessionMin : undefined}
-              onChange={(n) => !running && n != null && n > 0 && setSessionMin(Math.min(600, Math.round(n)))}
+              onChange={(n) => !session && n != null && n > 0 && setDraftMin(Math.min(600, Math.round(n)))}
               placeholder={t("Custom")}
-              disabled={running}
+              disabled={!!session}
               className={`${inputCls} w-24`}
               min={1}
             />
@@ -165,29 +139,32 @@ export default function FocusPage() {
           </div>
           <input
             value={label}
-            onChange={(e) => setLabel(e.target.value)}
+            onChange={(e) => (session ? live.patch({ label: e.target.value }) : setDraftLabel(e.target.value))}
             placeholder={t("What are you working on?")}
             className={`${inputCls} max-w-sm text-center`}
           />
           <div className="flex flex-wrap items-center justify-center gap-2">
             {!running ? (
               <Button onClick={start}>
-                <Play size={16} /> {secondsLeft < sessionMin * 60 ? t("Resume") : t("Start")}
+                <Play size={16} /> {session ? t("Resume") : t("Start")}
               </Button>
             ) : (
-              <Button variant="soft" onClick={() => setRunning(false)}>
+              <Button variant="soft" onClick={live.pause}>
                 <Pause size={16} /> {t("Pause")}
               </Button>
             )}
-            <Button variant="outline" onClick={stopAndLog} disabled={secondsLeft === sessionMin * 60}>
+            <Button variant="outline" onClick={stopAndLog} disabled={!session}>
               <Check size={16} /> {t("Stop & log")}
             </Button>
-            <Button variant="ghost" onClick={reset} aria-label={t("Reset")}>
+            <Button variant="ghost" onClick={reset} disabled={!session} aria-label={t("Reset")}>
               <RotateCcw size={16} />
             </Button>
           </div>
           <p className="text-xs text-[var(--text-faint)]">
             {t("Finishing the timer logs the full session; “Stop & log” saves the time you did.")}
+          </p>
+          <p className="text-xs text-[var(--text-faint)]">
+            {t("The timer keeps running if you leave this page or close the app — a bar at the top brings you back.")}
           </p>
         </div>
       </Card>

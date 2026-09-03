@@ -1516,6 +1516,15 @@ const DE: Record<string, string> = {
     "Starte oben den Timer, um deinen ersten Deep-Work-Block zu speichern.",
   "Deep work": "Deep Work",
   "Focus session done": "Fokus-Session fertig",
+  // --- Live activities (a workout / focus block that keeps running) ---
+  Workout: "Workout",
+  "Back to your session": "Zurück zur laufenden Session",
+  "Keep running in the background": "Läuft im Hintergrund weiter",
+  "The timer keeps running if you leave this page or close the app — a bar at the top brings you back.":
+    "Der Timer läuft weiter, wenn du die Seite verlässt oder die App schließt — die Leiste oben bringt dich zurück.",
+  Discard: "Verwerfen",
+  "Discard workout": "Workout verwerfen",
+  "Discard this workout without saving?": "Dieses Workout ohne Speichern verwerfen?",
   "Logged {min} min of focus. Nice work.": "{min} Min Fokus gespeichert. Stark.",
   "Focus ↔ Life Score": "Fokus ↔ Life-Score",
   "On days you hit your focus target, your Life Score is about {diff} points higher.":

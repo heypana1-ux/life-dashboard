@@ -19,9 +19,13 @@ import { CommandPalette, CommandPaletteButton, openCommandPalette } from "@/comp
 import { QuickCaptureButton } from "@/components/QuickCapture";
 import { Tour } from "@/components/Tour";
 import { PWARegister, AppPromoBanner } from "@/components/PWA";
+import { LiveActivityHost, useLiveBarVisible } from "@/components/LiveActivity";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
+  // A running workout / focus block shows a floating bar at the top; give it its own room
+  // rather than letting it sit on top of the page header.
+  const liveBar = useLiveBarVisible();
   const pathname = usePathname();
   const router = useRouter();
   const t = useT();
@@ -200,9 +204,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Main */}
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-        <div className="mx-auto w-full max-w-[1160px] px-[22px] pb-28 sm:px-8 md:pb-12">
+        <div className={clsx("mx-auto w-full max-w-[1160px] px-[22px] pb-28 sm:px-8 md:pb-12", liveBar && "pt-[46px]")}>
           <PWARegister />
           <Reminders />
+          <LiveActivityHost />
           <Tour />
           <DayFlow />
           <RecapGate />

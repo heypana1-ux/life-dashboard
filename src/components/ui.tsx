@@ -418,7 +418,9 @@ export function Modal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
+      // Above every full-screen overlay (workout runner, Wrapped, command palette all sit at
+      // 80): a dialog opened from inside one of those has to land on top of it, not behind.
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-black/40 p-3 backdrop-blur-sm sm:p-4"
       onMouseDown={(e) => {
         downOnBackdrop.current = e.target === e.currentTarget;
       }}
