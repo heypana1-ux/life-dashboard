@@ -10,6 +10,7 @@ export function ThemeApplier() {
   const accent = data.settings.accent ?? "calm";
   const density = data.settings.density ?? "cozy";
   const ringSkin = data.settings.ringSkin ?? "default";
+  const areaColors = data.settings.areaColors ?? false;
 
   useEffect(() => {
     if (!ready) return;
@@ -25,6 +26,12 @@ export function ThemeApplier() {
     if (!ready) return;
     document.documentElement.setAttribute("data-density", density);
   }, [density, ready]);
+
+  // "on" keeps each page's own area hue; anything else lets the accent paint everything.
+  useEffect(() => {
+    if (!ready) return;
+    document.documentElement.setAttribute("data-areacolors", areaColors ? "on" : "off");
+  }, [areaColors, ready]);
 
   useEffect(() => {
     if (!ready) return;

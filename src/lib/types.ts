@@ -583,6 +583,9 @@ export interface Settings {
   theme: "light" | "dark" | "system";
   /** UI density: cozy (default) or compact (tighter cards/spacing). */
   density?: "cozy" | "compact";
+  /** Keep each page's own Pulse area colour. Off (default) = the chosen accent paints
+      every gradient in the app. */
+  areaColors?: boolean;
   accent: Accent;
   language: Language;
   areas: AreaConfig[];

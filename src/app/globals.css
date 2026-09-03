@@ -35,6 +35,11 @@
   --grad: linear-gradient(135deg, #4f46e5, #6366f1);
   --grad-a: #4f46e5;
   --grad-b: #6366f1;
+  /* Accent-owned gradient. Unlike --grad-*, a page's data-area never overwrites these, so
+     they stay available as "what the user actually picked" and can paint the area tokens. */
+  --acc-a: #4f46e5;
+  --acc-b: #6366f1;
+  --acc-ink: #ffffff;
   --chip-grad: linear-gradient(135deg, #e2e8f0, #f5f7f9);
 }
 
@@ -64,6 +69,9 @@
   --grad: linear-gradient(135deg, #7c7bff, #a78bfa);
   --grad-a: #7c7bff;
   --grad-b: #a78bfa;
+  --acc-a: #7c7bff;
+  --acc-b: #a78bfa;
+  --acc-ink: #0a0b0e;
   --chip-grad: linear-gradient(135deg, #2a313b, #1a1f26);
 }
 
@@ -72,9 +80,12 @@
 :root[data-accent="aurora"] {
   --accent: #0891b2;
   --accent-soft: #dff5fa;
-  --grad: linear-gradient(135deg, #06b6d4, #4f46e5);
-  --grad-a: #06b6d4;
+  --grad: linear-gradient(135deg, #0e7490, #4f46e5);
+  --grad-a: #0e7490;
   --grad-b: #4f46e5;
+  --acc-a: #0e7490;
+  --acc-b: #4f46e5;
+  --acc-ink: #ffffff;
 }
 .dark[data-accent="aurora"] {
   --accent: #22d3ee;
@@ -82,6 +93,9 @@
   --grad: linear-gradient(135deg, #22d3ee, #818cf8);
   --grad-a: #22d3ee;
   --grad-b: #818cf8;
+  --acc-a: #22d3ee;
+  --acc-b: #818cf8;
+  --acc-ink: #0a0b0e;
 }
 /* Mono: neutral graphite */
 :root[data-accent="mono"] {
@@ -90,6 +104,9 @@
   --grad: linear-gradient(135deg, #52525b, #27272a);
   --grad-a: #52525b;
   --grad-b: #27272a;
+  --acc-a: #52525b;
+  --acc-b: #27272a;
+  --acc-ink: #ffffff;
 }
 .dark[data-accent="mono"] {
   --accent: #d4d4d8;
@@ -97,34 +114,37 @@
   --grad: linear-gradient(135deg, #e4e4e7, #a1a1aa);
   --grad-a: #e4e4e7;
   --grad-b: #a1a1aa;
+  --acc-a: #e4e4e7;
+  --acc-b: #a1a1aa;
+  --acc-ink: #0a0b0e;
 }
 /* Sunset: orange → pink (unlockable) */
-:root[data-accent="sunset"] { --accent:#ea580c; --accent-soft:#ffedd5; --grad:linear-gradient(135deg,#f97316,#db2777); --grad-a:#f97316; --grad-b:#db2777; }
-.dark[data-accent="sunset"] { --accent:#fb923c; --accent-soft:#3a1e0e; --grad:linear-gradient(135deg,#fb923c,#f472b6); --grad-a:#fb923c; --grad-b:#f472b6; }
+:root[data-accent="sunset"] { --accent:#ea580c; --accent-soft:#ffedd5; --grad:linear-gradient(135deg,#f97316,#db2777); --grad-a:#f97316; --grad-b:#db2777; --acc-a:#f97316; --acc-b:#db2777; --acc-ink:#0a0b0e; }
+.dark[data-accent="sunset"] { --accent:#fb923c; --accent-soft:#3a1e0e; --grad:linear-gradient(135deg,#fb923c,#f472b6); --grad-a:#fb923c; --grad-b:#f472b6; --acc-a:#fb923c; --acc-b:#f472b6; --acc-ink:#0a0b0e; }
 /* Forest: green → teal (unlockable) */
-:root[data-accent="forest"] { --accent:#16a34a; --accent-soft:#dcfce7; --grad:linear-gradient(135deg,#22c55e,#0d9488); --grad-a:#22c55e; --grad-b:#0d9488; }
-.dark[data-accent="forest"] { --accent:#4ade80; --accent-soft:#0f2a1a; --grad:linear-gradient(135deg,#4ade80,#2dd4bf); --grad-a:#4ade80; --grad-b:#2dd4bf; }
+:root[data-accent="forest"] { --accent:#16a34a; --accent-soft:#dcfce7; --grad:linear-gradient(135deg,#22c55e,#0d9488); --grad-a:#22c55e; --grad-b:#0d9488; --acc-a:#22c55e; --acc-b:#0d9488; --acc-ink:#0a0b0e; }
+.dark[data-accent="forest"] { --accent:#4ade80; --accent-soft:#0f2a1a; --grad:linear-gradient(135deg,#4ade80,#2dd4bf); --grad-a:#4ade80; --grad-b:#2dd4bf; --acc-a:#4ade80; --acc-b:#2dd4bf; --acc-ink:#0a0b0e; }
 /* Rose: rose → violet (unlockable) */
-:root[data-accent="rose"] { --accent:#e11d48; --accent-soft:#ffe4e6; --grad:linear-gradient(135deg,#f43f5e,#a855f7); --grad-a:#f43f5e; --grad-b:#a855f7; }
-.dark[data-accent="rose"] { --accent:#fb7185; --accent-soft:#3a1620; --grad:linear-gradient(135deg,#fb7185,#c084fc); --grad-a:#fb7185; --grad-b:#c084fc; }
+:root[data-accent="rose"] { --accent:#e11d48; --accent-soft:#ffe4e6; --grad:linear-gradient(135deg,#f43f5e,#a855f7); --grad-a:#f43f5e; --grad-b:#a855f7; --acc-a:#f43f5e; --acc-b:#a855f7; --acc-ink:#0a0b0e; }
+.dark[data-accent="rose"] { --accent:#fb7185; --accent-soft:#3a1620; --grad:linear-gradient(135deg,#fb7185,#c084fc); --grad-a:#fb7185; --grad-b:#c084fc; --acc-a:#fb7185; --acc-b:#c084fc; --acc-ink:#0a0b0e; }
 /* Ocean: sky → blue (shop) */
-:root[data-accent="ocean"] { --accent:#0284c7; --accent-soft:#e0f2fe; --grad:linear-gradient(135deg,#0ea5e9,#2563eb); --grad-a:#0ea5e9; --grad-b:#2563eb; }
-.dark[data-accent="ocean"] { --accent:#38bdf8; --accent-soft:#0c2733; --grad:linear-gradient(135deg,#38bdf8,#3b82f6); --grad-a:#38bdf8; --grad-b:#3b82f6; }
+:root[data-accent="ocean"] { --accent:#0284c7; --accent-soft:#e0f2fe; --grad:linear-gradient(135deg,#0369a1,#2563eb); --grad-a:#0369a1; --grad-b:#2563eb; --acc-a:#0369a1; --acc-b:#2563eb; --acc-ink:#ffffff; }
+.dark[data-accent="ocean"] { --accent:#38bdf8; --accent-soft:#0c2733; --grad:linear-gradient(135deg,#38bdf8,#3b82f6); --grad-a:#38bdf8; --grad-b:#3b82f6; --acc-a:#38bdf8; --acc-b:#3b82f6; --acc-ink:#0a0b0e; }
 /* Mint: emerald → cyan (shop) */
-:root[data-accent="mint"] { --accent:#059669; --accent-soft:#d1fae5; --grad:linear-gradient(135deg,#10b981,#06b6d4); --grad-a:#10b981; --grad-b:#06b6d4; }
-.dark[data-accent="mint"] { --accent:#34d399; --accent-soft:#0c2a22; --grad:linear-gradient(135deg,#34d399,#22d3ee); --grad-a:#34d399; --grad-b:#22d3ee; }
+:root[data-accent="mint"] { --accent:#059669; --accent-soft:#d1fae5; --grad:linear-gradient(135deg,#10b981,#06b6d4); --grad-a:#10b981; --grad-b:#06b6d4; --acc-a:#10b981; --acc-b:#06b6d4; --acc-ink:#0a0b0e; }
+.dark[data-accent="mint"] { --accent:#34d399; --accent-soft:#0c2a22; --grad:linear-gradient(135deg,#34d399,#22d3ee); --grad-a:#34d399; --grad-b:#22d3ee; --acc-a:#34d399; --acc-b:#22d3ee; --acc-ink:#0a0b0e; }
 /* Gold: amber → orange (shop) */
-:root[data-accent="gold"] { --accent:#d97706; --accent-soft:#fef3c7; --grad:linear-gradient(135deg,#f59e0b,#d97706); --grad-a:#f59e0b; --grad-b:#d97706; }
-.dark[data-accent="gold"] { --accent:#fbbf24; --accent-soft:#33240a; --grad:linear-gradient(135deg,#fbbf24,#f59e0b); --grad-a:#fbbf24; --grad-b:#f59e0b; }
+:root[data-accent="gold"] { --accent:#d97706; --accent-soft:#fef3c7; --grad:linear-gradient(135deg,#f59e0b,#d97706); --grad-a:#f59e0b; --grad-b:#d97706; --acc-a:#f59e0b; --acc-b:#d97706; --acc-ink:#0a0b0e; }
+.dark[data-accent="gold"] { --accent:#fbbf24; --accent-soft:#33240a; --grad:linear-gradient(135deg,#fbbf24,#f59e0b); --grad-a:#fbbf24; --grad-b:#f59e0b; --acc-a:#fbbf24; --acc-b:#f59e0b; --acc-ink:#0a0b0e; }
 /* Grape: violet → indigo (shop) */
-:root[data-accent="grape"] { --accent:#7c3aed; --accent-soft:#ede9fe; --grad:linear-gradient(135deg,#8b5cf6,#6366f1); --grad-a:#8b5cf6; --grad-b:#6366f1; }
-.dark[data-accent="grape"] { --accent:#a78bfa; --accent-soft:#241a3a; --grad:linear-gradient(135deg,#a78bfa,#818cf8); --grad-a:#a78bfa; --grad-b:#818cf8; }
+:root[data-accent="grape"] { --accent:#7c3aed; --accent-soft:#ede9fe; --grad:linear-gradient(135deg,#8b5cf6,#6366f1); --grad-a:#8b5cf6; --grad-b:#6366f1; --acc-a:#8b5cf6; --acc-b:#6366f1; --acc-ink:#0a0b0e; }
+.dark[data-accent="grape"] { --accent:#a78bfa; --accent-soft:#241a3a; --grad:linear-gradient(135deg,#a78bfa,#818cf8); --grad-a:#a78bfa; --grad-b:#818cf8; --acc-a:#a78bfa; --acc-b:#818cf8; --acc-ink:#0a0b0e; }
 /* Crimson: red → dark red (shop) */
-:root[data-accent="crimson"] { --accent:#dc2626; --accent-soft:#fee2e2; --grad:linear-gradient(135deg,#ef4444,#b91c1c); --grad-a:#ef4444; --grad-b:#b91c1c; }
-.dark[data-accent="crimson"] { --accent:#f87171; --accent-soft:#2a1414; --grad:linear-gradient(135deg,#f87171,#ef4444); --grad-a:#f87171; --grad-b:#ef4444; }
+:root[data-accent="crimson"] { --accent:#dc2626; --accent-soft:#fee2e2; --grad:linear-gradient(135deg,#dc2626,#b91c1c); --grad-a:#dc2626; --grad-b:#b91c1c; --acc-a:#dc2626; --acc-b:#b91c1c; --acc-ink:#ffffff; }
+.dark[data-accent="crimson"] { --accent:#f87171; --accent-soft:#2a1414; --grad:linear-gradient(135deg,#f87171,#ef4444); --grad-a:#f87171; --grad-b:#ef4444; --acc-a:#f87171; --acc-b:#ef4444; --acc-ink:#0a0b0e; }
 /* Midnight: indigo → slate (shop) */
-:root[data-accent="midnight"] { --accent:#4338ca; --accent-soft:#e0e7ff; --grad:linear-gradient(135deg,#4f46e5,#1e293b); --grad-a:#4f46e5; --grad-b:#1e293b; }
-.dark[data-accent="midnight"] { --accent:#818cf8; --accent-soft:#1a1f33; --grad:linear-gradient(135deg,#818cf8,#334155); --grad-a:#818cf8; --grad-b:#334155; }
+:root[data-accent="midnight"] { --accent:#4338ca; --accent-soft:#e0e7ff; --grad:linear-gradient(135deg,#4f46e5,#1e293b); --grad-a:#4f46e5; --grad-b:#1e293b; --acc-a:#4f46e5; --acc-b:#1e293b; --acc-ink:#ffffff; }
+.dark[data-accent="midnight"] { --accent:#818cf8; --accent-soft:#1a1f33; --grad:linear-gradient(135deg,#6366f1,#334155); --grad-a:#6366f1; --grad-b:#334155; --acc-a:#6366f1; --acc-b:#334155; --acc-ink:#ffffff; }
 
 /* ---- Score-ring skins (independent of the accent; see cosmetics.ts) ---- */
 :root[data-ring="ember"]   { --ring-grad-a:#f59e0b; --ring-grad-b:#ef4444; --ring-glow:rgba(239,68,68,0.45); }
@@ -192,6 +212,17 @@
 .dark [data-area="achievements"]{ --area-a:#f59e0b; --area-b:#fcd34d; --area-ink:#1a1204; }
 [data-area="profile"]   { --area-a:#475569; --area-b:#64748b; --area-ink:#ffffff; }
 .dark [data-area="profile"]   { --area-a:#475569; --area-b:#64748b; --area-ink:#ffffff; }
+
+/* ---- Accent wins ----
+   By default the chosen accent paints every gradient in the app, so a page's own area hue
+   gives way to it. Turning on "per-area colours" in Settings sets data-areacolors="on" and
+   this rule stops applying, restoring the Pulse palette (rosé Health, orange Training …).
+   These read --acc-*, which data-area never touches, so there is no circular reference. */
+:root:not([data-areacolors="on"]) [data-area] {
+  --area-a: var(--acc-a);
+  --area-b: var(--acc-b);
+  --area-ink: var(--acc-ink);
+}
 
 @theme inline {
   --color-bg: var(--bg);

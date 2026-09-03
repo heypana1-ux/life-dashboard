@@ -289,7 +289,7 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 32
+        Pulse Build 33
       </p>
     </div>
   );
@@ -1041,6 +1041,21 @@ function AccentRow() {
             +{lockedCount} {t("in the shop")}
           </Link>
         )}
+      </div>
+
+      {/* The accent normally paints every gradient in the app. Turn this on to give each
+          page its own Pulse hue back (rosé Health, orange Training, teal Finances …). */}
+      <div className="mt-3.5 flex items-start justify-between gap-3 border-t border-[var(--surface-2)] pt-3.5">
+        <div className="min-w-0">
+          <div className="text-[13px] font-medium">{t("Per-page colours")}</div>
+          <p className="mt-0.5 text-[11.5px] leading-[1.45] text-[var(--text-muted)]">
+            {t("Off, your accent colours the whole app. On, each page keeps its own hue.")}
+          </p>
+        </div>
+        <Toggle
+          checked={data.settings.areaColors ?? false}
+          onChange={(v) => updateSettings({ areaColors: v })}
+        />
       </div>
     </>
   );

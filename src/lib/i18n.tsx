@@ -131,6 +131,8 @@ const DE: Record<string, string> = {
   "Milestones & records": "Meilensteine & Rekorde",
   "Weekly & monthly": "Wöchentlich & monatlich",
   "8 areas": "8 Bereiche",
+  "Per-page colours": "Farben je Seite",
+  "Off, your accent colours the whole app. On, each page keeps its own hue.": "Aus färbt dein Akzent die ganze App. An behält jede Seite ihren eigenen Farbton.",
   "of 100": "von 100",
   "vs. last week": "ggü. letzter Woche",
   "Check-ins": "Check-ins",
