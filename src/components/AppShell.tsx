@@ -179,7 +179,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Quick capture — voice/AI entry, fixed just left of the avatar on every screen. */}
-      <QuickCaptureButton />
+      <QuickCaptureButton hidden={moreOpen} />
 
       {/* Profile avatar — fixed top-right corner on every screen (the page header keeps its
           title on the left and its actions below on mobile, so this corner stays free). */}
@@ -208,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <RecapGate />
           <WeeklyReviewGate />
           <CommandPalette />
-          {!isActive(pathname, "/coach") && <CoachLauncher />}
+          {!isActive(pathname, "/coach") && <CoachLauncher hidden={moreOpen} />}
           <div key={pathname} data-area={pageArea(pathname)} className={slideDir === "left" ? "slide-left" : slideDir === "right" ? "slide-right" : "animate-in"}>
             {children}
             {/* Nudges live below the page so every screen opens on its own header,

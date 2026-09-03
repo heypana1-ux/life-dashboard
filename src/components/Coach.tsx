@@ -584,7 +584,7 @@ function CoachAction({ onClick, children }: { onClick: () => void; children: Rea
 
 /* ---------------- Floating launcher + slide-over panel ---------------- */
 
-export function CoachLauncher() {
+export function CoachLauncher({ hidden = false }: { hidden?: boolean }) {
   const { data, ready } = useStore();
   const t = useT();
   const [open, setOpen] = useState(false);
@@ -601,8 +601,23 @@ export function CoachLauncher() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="grad fixed bottom-[144px] right-4 z-[54] flex h-13 w-13 items-center justify-center rounded-full text-white shadow-[var(--shadow)] md:bottom-6"
-          style={{ height: 52, width: 52 }}
+          className={`area-grad fixed bottom-[144px] right-4 z-[54] flex items-center justify-center rounded-full transition-all duration-200 active:scale-95 md:bottom-6 ${
+            hidden ? "pointer-events-none translate-y-2 scale-95 opacity-0" : "translate-y-0 scale-100 opacity-100"
+          }`}
+          aria-hidden={hidden}
+          style={{
+            height: 52,
+            width: 52,
+            /* .area-grad paints with --area-ink, which is near-black inside a dark page area;
+               the sparkles need to stay white on the accent gradient. */
+            color: "#fff",
+            /* A halo in the page's own accent, plus a light rim so the button lifts off
+               the background instead of sitting flat on it. */
+            boxShadow:
+              "0 0 0 1px color-mix(in srgb, var(--area-b) 45%, transparent)," +
+              " 0 6px 18px color-mix(in srgb, var(--area-a) 45%, transparent)," +
+              " 0 0 34px color-mix(in srgb, var(--area-a) 32%, transparent)",
+          }}
           aria-label={t("Open coach")}
         >
           <Sparkles size={22} />

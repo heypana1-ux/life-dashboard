@@ -27,9 +27,11 @@ const ERROR_MSG: Record<string, string> = {
   empty: "The AI didn't return anything — try rephrasing.",
 };
 
-/** Two fixed top-right controls: the mic (voice/AI capture) and, below it, a labelled
- *  "Quick capture" button that opens the manual, tap-to-check panels. */
-export function QuickCaptureButton() {
+/** Two fixed controls above the bottom nav: the mic (voice/AI capture) and a labelled
+ *  "Quick capture" button that opens the manual, tap-to-check panels.
+ *  `hidden` slides them away — they float above the "More" sheet and would otherwise sit
+ *  on top of its entries. */
+export function QuickCaptureButton({ hidden = false }: { hidden?: boolean }) {
   const t = useT();
   const [voice, setVoice] = useState(false);
   const [manual, setManual] = useState(false);
@@ -37,7 +39,12 @@ export function QuickCaptureButton() {
     <>
       {/* Capture controls sit above the bottom nav so every page header stays clean,
           exactly as in the design. */}
-      <div className="fixed bottom-[88px] right-3 z-50 flex items-center gap-2 md:bottom-6">
+      <div
+        className={`fixed bottom-[88px] right-3 z-50 flex items-center gap-2 transition-all duration-200 md:bottom-6 ${
+          hidden ? "pointer-events-none translate-y-2 scale-95 opacity-0" : "translate-y-0 scale-100 opacity-100"
+        }`}
+        aria-hidden={hidden}
+      >
         <button
           onClick={() => setVoice(true)}
           aria-label={t("Voice log")}
