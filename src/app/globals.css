@@ -429,6 +429,25 @@ body {
   );
   color: var(--area-text);
 }
+/* Dashboard area-tile colours (screen 4a). One hue per tile, deeper in light mode so the
+   wash keeps enough contrast, brighter in dark so it reads on the near-black ground. */
+:root {
+  --tile-health: #e11d48;
+  --tile-training: #ea580c;
+  --tile-finances: #0d9488;
+  --tile-projects: #0284c7;
+  --tile-journal: #c026d3;
+  --tile-goals: #65a30d;
+}
+.dark {
+  --tile-health: #fb7185;
+  --tile-training: #fb923c;
+  --tile-finances: #2dd4bf;
+  --tile-projects: #38bdf8;
+  --tile-journal: #e879f9;
+  --tile-goals: #a3e635;
+}
+
 /* Deep area wash — the saturated tint the design uses for a selected list row or a
    highlighted panel. Mixes against the page background, so it reads darker and richer
    than .area-soft (which is a light veil over a card). */
