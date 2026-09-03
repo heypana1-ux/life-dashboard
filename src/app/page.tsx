@@ -79,7 +79,6 @@ export default function DashboardPage() {
       })),
     [byDate, today],
   );
-  const weekMax = Math.max(60, ...week.map((w) => w.score));
 
   /* ---- Hairline stats ---- */
   const streak = activityStreak(d.history, data.settings);
@@ -238,22 +237,33 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Week strip */}
-        <div className="mt-[18px] flex items-end justify-between gap-[7px]" style={{ height: 50 }}>
+        {/* Week strip — height AND colour carry the day's score, so a weak day reads dark
+            and a strong one saturated. Today keeps the full-strength gradient. */}
+        {/* No fixed height: the columns (bar + label) are taller than a 52px band and would
+            overflow upward into the ring. Bottom-aligned, they size to their own content. */}
+        <div className="mt-7 flex items-end justify-between gap-[7px]">
           {week.map((w) => {
-            const h = w.score > 0 ? 28 + Math.round((w.score / weekMax) * 20) : 28;
+            // Real life scores cluster between ~30 and ~90, so a flat 0..100 ramp makes every
+            // day look alike. Stretch that band across the full height and colour range instead.
+            const f = Math.max(0, Math.min(1, (w.score - 30) / 60));
+            const h = w.score > 0 ? 24 + Math.round(f * 26) : 24;
+            const k = 26 + Math.round(f * 74);
             return (
               <div key={w.date} className="flex flex-1 flex-col items-center gap-1.5">
                 <span
                   className="w-full rounded-[9px]"
+                  title={w.score > 0 ? `${t(w.label)} · ${w.score}` : t(w.label)}
                   style={{
                     height: h,
                     background:
                       w.score === 0
                         ? "var(--surface-2)"
                         : w.isToday
-                          ? "linear-gradient(180deg, var(--area-b), var(--area-a))"
-                          : "color-mix(in srgb, var(--area-a) 55%, var(--surface-2))",
+                          ? "linear-gradient(180deg, var(--area-b) 0%, var(--area-a) 65%, color-mix(in srgb, var(--area-a) 82%, var(--surface-2)) 100%)"
+                          : `linear-gradient(180deg, color-mix(in srgb, var(--area-b) ${k}%, var(--surface-2)) 0%, color-mix(in srgb, var(--area-a) ${k}%, var(--surface-2)) 65%, color-mix(in srgb, var(--area-a) ${Math.round(k * 0.82)}%, var(--surface-2)) 100%)`,
+                    boxShadow: w.isToday
+                      ? "0 6px 16px color-mix(in srgb, var(--area-a) 35%, transparent)"
+                      : undefined,
                   }}
                 />
                 <span
