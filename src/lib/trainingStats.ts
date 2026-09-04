@@ -8,10 +8,22 @@ import { todayISO, addDays } from "./date";
    - per-muscle-group training volume (tonnage = reps × weight, summed)
 */
 
-/** Epley estimate of a one-rep max from a set. */
+/**
+ * Estimated one-rep max for a set (Epley).
+ *
+ * Two corrections over the bare formula:
+ *  - A single rep IS the max, so it's returned as-is. Plain Epley would inflate a logged
+ *    70 kg × 1 to 72 kg, which then shows up as a personal record you never lifted.
+ *  - Reps above 12 are clamped. Every e1RM formula assumes a set taken close to failure and
+ *    breaks down over ~12 reps, where it starts predicting maxes far above what you can lift.
+ *
+ * It still can only read the set it's given: a comfortable 40 kg × 10 estimates ~53 kg,
+ * because that's what ten easy reps imply. To record a real max, log the single itself.
+ */
 export function est1RM(weight: number, reps: number): number {
   if (weight <= 0 || reps <= 0) return 0;
-  return Math.round(weight * (1 + reps / 30));
+  if (reps === 1) return Math.round(weight);
+  return Math.round(weight * (1 + Math.min(reps, 12) / 30));
 }
 
 export interface ExercisePoint {

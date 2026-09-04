@@ -10,9 +10,11 @@ import { AreaKey } from "@/lib/types";
 import { AREA_LABELS } from "@/lib/defaults";
 import { sleepDurationMinutes } from "@/lib/date";
 import { whatIfSleep, project } from "@/lib/whatif";
-import { Card, PageHeader, SectionTitle, EmptyState, Badge, inputCls } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, EmptyState, Badge, Chip, inputCls } from "@/components/ui";
 import { ScatterCorrelation } from "@/components/charts";
-import { CoachInsightCard } from "@/components/Coach";
+import { CoachBriefing, CoachInsightCard, CoachWeeklyCheckin } from "@/components/Coach";
+import { HeadsUpCard, InsightsCard, WeeklyFocusCard } from "@/components/AiCards";
+import { WeeklyPlanner } from "@/components/WeeklyPlanner";
 
 export default function AnalysisPage() {
   const { data } = useStore();
@@ -33,6 +35,11 @@ export default function AnalysisPage() {
 
   const hasFindings = findings.length > 0;
 
+  /* Two halves of the same job. "Patterns" is the statistical read of your logs; "AI analysis"
+     is where the coach's own output and the data-driven cards live — the briefing, weekly
+     check-in, heads-up and insights that used to sit on the old customisable dashboard. */
+  const [tab, setTab] = useState<"patterns" | "ai">("patterns");
+
   return (
     <div className="space-y-[14px]">
       <PageHeader
@@ -41,6 +48,16 @@ export default function AnalysisPage() {
         title={t("Analysis")}
         subtitle={t("Everything you log, cross-analysed — patterns, connections and suggestions.")}
       />
+
+      <div className="flex flex-wrap gap-2">
+        <Chip active={tab === "patterns"} onClick={() => setTab("patterns")}>{t("Patterns")}</Chip>
+        <Chip active={tab === "ai"} onClick={() => setTab("ai")}>{t("AI analysis")}</Chip>
+      </div>
+
+      {tab === "ai" ? (
+        <AiTab />
+      ) : (
+        <>
 
       {/* Verdict */}
       <div className="area-grad relative overflow-hidden rounded-[22px] p-5 shadow-[0_18px_40px_color-mix(in_srgb,var(--area-a)_32%,transparent)]">
@@ -109,6 +126,37 @@ export default function AnalysisPage() {
       <p className="pb-4 text-center text-[10.5px] leading-[1.5] text-[var(--text-dim)]">
         {t("Observations from your own data — associations, not medical or causal advice.")}
       </p>
+        </>
+      )}
+    </div>
+  );
+}
+
+/** The AI half: the coach's proactive output plus the data-driven cards. */
+function AiTab() {
+  const { data } = useStore();
+  const t = useT();
+  const coachOn = !!data.settings.aiCoachEnabled;
+
+  return (
+    <div className="space-y-[14px]">
+      {coachOn ? (
+        <>
+          <CoachBriefing />
+          <CoachWeeklyCheckin />
+        </>
+      ) : (
+        <Card>
+          <SectionTitle>{t("AI coach")}</SectionTitle>
+          <p className="text-[13px] leading-[1.5] text-[var(--text-muted)]">
+            {t("Turn the AI coach on in Settings to get a daily briefing and a weekly check-in here.")}
+          </p>
+        </Card>
+      )}
+      <WeeklyFocusCard />
+      <WeeklyPlanner />
+      <HeadsUpCard />
+      <InsightsCard />
     </div>
   );
 }

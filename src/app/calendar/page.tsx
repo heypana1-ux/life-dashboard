@@ -164,7 +164,10 @@ function WeekdayCard() {
   const t = useT();
   const p = useMemo(() => weekdayPatterns(d.history), [d.history]);
   if (!p.enough) return null;
-  const maxAvg = Math.max(...p.stats.map((s) => s.avg), 1);
+  // Min–max over the days that actually have data, so the bars use the whole height band.
+  const withData = p.stats.filter((s) => s.n > 0).map((s) => s.avg);
+  const lo = withData.length ? Math.min(...withData) : 0;
+  const span = Math.max(1, (withData.length ? Math.max(...withData) : 1) - lo);
 
   return (
     <Card className="mx-auto max-w-[760px]">
@@ -177,24 +180,28 @@ function WeekdayCard() {
           })}
         </p>
       )}
-      {/* Bars carry a vertical gradient — saturated at the top, fading toward the base —
-          exactly like the design; best/worst days keep their own solid colour. */}
+      {/* One colour for every bar — a deep blue that runs from light at the top to a dark
+          violet-blue at the base. The comparison is carried entirely by height, so the weekday
+          averages are stretched across the full band instead of sitting at 80–100% of the max
+          (where a 20-point spread looks like no spread at all). */}
       <div className="flex items-end justify-between gap-[7px]" style={{ height: 130 }}>
         {p.stats.map((s) => {
-          const h = s.n > 0 ? Math.max(6, Math.round((s.avg / maxAvg) * 104)) : 4;
+          const h = s.n > 0 ? 22 + Math.round(((s.avg - lo) / span) * 68) : 6;
           const isBest = p.best?.wd === s.wd;
-          const isWorst = p.worst?.wd === s.wd;
-          const bg = isBest
-            ? "linear-gradient(180deg, var(--good), color-mix(in srgb, var(--good) 40%, transparent))"
-            : isWorst
-              ? "linear-gradient(180deg, var(--warn), color-mix(in srgb, var(--warn) 40%, transparent))"
-              : "linear-gradient(180deg, var(--area-a), color-mix(in srgb, var(--area-a) 40%, transparent))";
           return (
             <div key={s.wd} className="flex h-full flex-1 flex-col items-center justify-end gap-1.5">
-              <span className="num text-[11px] font-semibold text-[var(--text-faint)]">{s.n > 0 ? s.avg : "—"}</span>
+              <span
+                className={`num text-[11px] ${isBest ? "font-bold text-[var(--text-muted)]" : "font-semibold text-[var(--text-faint)]"}`}
+              >
+                {s.n > 0 ? s.avg : "—"}
+              </span>
               <div
                 className="w-full rounded-t-[7px] rounded-b-[3px]"
-                style={{ height: h, background: bg, opacity: s.n > 0 ? 1 : 0.3 }}
+                style={{
+                  height: h,
+                  background: "linear-gradient(180deg, #60a5fa 0%, #4f46e5 52%, #2e1f7a 100%)",
+                  opacity: s.n > 0 ? 1 : 0.25,
+                }}
               />
               <span className="text-[10.5px] text-[var(--text-dim)]">{t(weekdayLabel(s.wd)).slice(0, 2)}</span>
             </div>

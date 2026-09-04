@@ -73,14 +73,60 @@ export function weeklyChallenges(data: AppData, byDate: Map<string, DayScore>, t
   const logsSleep = data.sleep.length > 0;
   const journals = data.journal.length > 0;
 
+  // More week-scoped signals, so the optional pool is deep enough for the rotation to matter.
+  const trainMin = data.workouts.filter((w) => weekSet.has(w.date)).reduce((a, w) => a + w.durationMin, 0);
+  const deepMin = (data.focusSessions ?? []).filter((s) => weekSet.has(s.date)).reduce((a, s) => a + s.minutes, 0);
+  const deepDays = new Set((data.focusSessions ?? []).filter((s) => weekSet.has(s.date)).map((s) => s.date)).size;
+  const sleepNights = sleeps.length;
+  const earlyNights = sleeps.filter((s) => {
+    const [h] = s.bedTime.split(":").map(Number);
+    return h >= 21 && h < 24; // in bed before midnight
+  }).length;
+  const slipDays = new Set(
+    week.filter((d) =>
+      habitsForToday(data, d).some((g) => g.habit.kind === "reduce" && g.log?.done),
+    ),
+  ).size;
+  const cleanDays = 7 - slipDays;
+  const hasReduceHabits = data.habits.some((h) => !h.archived && h.kind === "reduce");
+  const bestDays = week.filter((d) => (byDate.get(d)?.lifeScore ?? 0) >= 70).length;
+  const txWeek = data.finances.transactions.filter((tx) => weekSet.has(tx.date)).length;
+  const weighIns = data.weight.filter((w) => weekSet.has(w.date)).length;
+  const journalWords = data.journal
+    .filter((j) => weekSet.has(j.date))
+    .reduce((a, j) => a + j.body.trim().split(/\s+/).filter(Boolean).length, 0);
+  const doesDeepWork = (data.focusSessions ?? []).length > 0;
+  const tracksMoney =
+    data.settings.areas.some((a) => a.key === "finances" && a.enabled) && data.finances.transactions.length > 0;
+  const tracksWeight = data.weight.length > 0;
+
   type Cand = Challenge & { relevant: boolean; core?: boolean };
   const candidates: Cand[] = [
-    { id: "train", title: "Train {n}× this week", icon: "🏋️", current: workouts, target: 3, done: workouts >= 3, relevant: trainsRelevant },
+    // Core — always on the board.
     { id: "logall", title: "Log all 7 days", icon: "📅", current: daysLogged, target: 7, done: daysLogged >= 7, relevant: true, core: true },
-    { id: "sleep", title: "Average {h}h sleep", icon: "😴", current: avgSleepH, target: 7.5, done: avgSleepH >= 7.5, relevant: logsSleep },
-    { id: "habits", title: "Hit {n}% of your habits", icon: "✅", current: habitRate, target: 80, done: habitRate >= 80, relevant: hasBuildHabits },
-    { id: "journal", title: "Write 3 journal entries", icon: "📔", current: journal, target: 3, done: journal >= 3, relevant: journals },
     { id: "checkin", title: "Check in on 5 days", icon: "📝", current: checkins, target: 5, done: checkins >= 5, relevant: true, core: true },
+    // Training
+    { id: "train", title: "Train {n}× this week", icon: "🏋️", current: workouts, target: 3, done: workouts >= 3, relevant: trainsRelevant },
+    { id: "train4", title: "Train {n}× this week", icon: "🔥", current: workouts, target: 4, done: workouts >= 4, relevant: trainsRelevant },
+    { id: "trainmin", title: "Train {n} minutes this week", icon: "⏱️", current: trainMin, target: 180, done: trainMin >= 180, relevant: trainsRelevant },
+    // Sleep
+    { id: "sleep", title: "Average {h}h sleep", icon: "😴", current: avgSleepH, target: 7.5, done: avgSleepH >= 7.5, relevant: logsSleep },
+    { id: "sleeplog", title: "Log {n} nights of sleep", icon: "🛏️", current: sleepNights, target: 6, done: sleepNights >= 6, relevant: logsSleep },
+    { id: "early", title: "Be in bed before midnight {n}×", icon: "🌙", current: earlyNights, target: 5, done: earlyNights >= 5, relevant: logsSleep },
+    // Habits
+    { id: "habits", title: "Hit {n}% of your habits", icon: "✅", current: habitRate, target: 80, done: habitRate >= 80, relevant: hasBuildHabits },
+    { id: "habits90", title: "Hit {n}% of your habits", icon: "🏆", current: habitRate, target: 90, done: habitRate >= 90, relevant: hasBuildHabits },
+    { id: "clean", title: "{n} days without a slip", icon: "🛡️", current: cleanDays, target: 5, done: cleanDays >= 5, relevant: hasReduceHabits },
+    // Reflection
+    { id: "journal", title: "Write 3 journal entries", icon: "📔", current: journal, target: 3, done: journal >= 3, relevant: journals },
+    { id: "journalwords", title: "Write {n} journal words", icon: "✍️", current: journalWords, target: 400, done: journalWords >= 400, relevant: journals },
+    // Focus
+    { id: "deepmin", title: "{n} minutes of deep work", icon: "🧠", current: deepMin, target: 300, done: deepMin >= 300, relevant: doesDeepWork },
+    { id: "deepdays", title: "Deep work on {n} days", icon: "🎧", current: deepDays, target: 4, done: deepDays >= 4, relevant: doesDeepWork },
+    // Score & the rest
+    { id: "strong", title: "{n} days at 70 or better", icon: "⭐", current: bestDays, target: 4, done: bestDays >= 4, relevant: true },
+    { id: "money", title: "Book {n} transactions", icon: "💶", current: txWeek, target: 5, done: txWeek >= 5, relevant: tracksMoney },
+    { id: "weigh", title: "Weigh in {n}×", icon: "⚖️", current: weighIns, target: 3, done: weighIns >= 3, relevant: tracksWeight },
   ];
 
   const applicable = candidates.filter((c) => c.relevant);

@@ -311,7 +311,8 @@ function ChallengeRow({ c, claimed, onClaim }: { c: Challenge; claimed: boolean;
 
 function QuestRow({ q, claimed, onClaim }: { q: Quest; claimed: boolean; onClaim: () => void }) {
   const t = useT();
-  const label = q.id === "habits3" ? t("Complete {n} habits today", { n: q.target }) : t(q.title);
+  // Same as challengeLabel: {n} in a quest title always means its target.
+  const label = t(q.title, { n: q.target });
   const pct = Math.min(100, Math.round((q.current / Math.max(1, q.target)) * 100));
   return (
     <div
@@ -346,21 +347,8 @@ function QuestRow({ q, claimed, onClaim }: { q: Quest; claimed: boolean; onClaim
   );
 }
 
+/** Titles are English keys that may carry {n} (a count) or {h} (hours); both resolve to the
+ *  challenge's own target, so every id in the pool renders without a per-id branch. */
 function challengeLabel(c: Challenge, t: (k: string, v?: Record<string, string | number>) => string): string {
-  switch (c.id) {
-    case "train":
-      return t("Train {n}× this week", { n: c.target });
-    case "logall":
-      return t("Log all 7 days");
-    case "sleep":
-      return t("Average {h}h sleep", { h: c.target });
-    case "habits":
-      return t("Hit {n}% of your habits", { n: c.target });
-    case "journal":
-      return t("Write 3 journal entries");
-    case "checkin":
-      return t("Check in on 5 days");
-    default:
-      return c.title;
-  }
+  return t(c.title, { n: c.target, h: c.target });
 }

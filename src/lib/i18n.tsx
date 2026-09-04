@@ -116,6 +116,10 @@ const DE: Record<string, string> = {
   nights: "Nächte",
   "Trends · 30 days": "Trends · 30 Tage",
   "Cross-analysed": "Querausgewertet",
+  Patterns: "Muster",
+  "AI analysis": "KI-Analyse",
+  "Turn the AI coach on in Settings to get a daily briefing and a weekly check-in here.":
+    "Schalte den KI-Coach in den Einstellungen ein, um hier ein tägliches Briefing und einen Wochen-Check-in zu bekommen.",
   "Tracking & scoring": "Tracking & Bewertung",
   "entries": "Einträge",
   "active goals": "aktive Ziele",
@@ -1167,6 +1171,33 @@ const DE: Record<string, string> = {
   "Log a workout": "Trag ein Training ein",
   "Finish your morning focus": "Schließe deinen Morgen-Fokus ab",
   "Avoid your watch-list today": "Vermeide heute deine Beobachtungsliste",
+  // --- Daily quests (rotating pool) ---
+  "Get halfway through your habits": "Schaffe die Hälfte deiner Gewohnheiten",
+  "A day without a slip": "Ein Tag ohne Ausrutscher",
+  "Note one thing that went well": "Notiere eine Sache, die gut lief",
+  "Add a photo to your journal": "Füge ein Foto zum Tagebuch hinzu",
+  "Hit your sleep target": "Erreiche dein Schlafziel",
+  "Train for 30 minutes": "30 Minuten trainieren",
+  "Log a focus session": "Eine Fokus-Session eintragen",
+  "Reach your focus target": "Erreiche dein Fokus-Ziel",
+  "Step on the scale": "Stell dich auf die Waage",
+  "Take a body measurement": "Nimm ein Körpermaß",
+  "Book today's spending": "Buche die Ausgaben von heute",
+  "Rate your wheel of life": "Bewerte dein Lebensrad",
+  // --- Weekly challenges (rotating pool) ---
+  "Train {n} minutes this week": "{n} Minuten trainieren diese Woche",
+  "Log {n} nights of sleep": "{n} Nächte Schlaf eintragen",
+  "Be in bed before midnight {n}×": "{n}× vor Mitternacht im Bett",
+  "{n} days without a slip": "{n} Tage ohne Ausrutscher",
+  "Write {n} journal words": "{n} Wörter Tagebuch schreiben",
+  "{n} minutes of deep work": "{n} Minuten Deep Work",
+  "Deep work on {n} days": "An {n} Tagen Deep Work",
+  "{n} days at 70 or better": "{n} Tage mit 70 oder besser",
+  "Book {n} transactions": "{n} Buchungen erfassen",
+  "Weigh in {n}×": "{n}× wiegen",
+  // --- Training ---
+  "Estimated from your best set, assuming it was taken close to failure — log a single rep to record a real max.":
+    "Geschätzt aus deinem besten Satz, unter der Annahme, dass er nah am Muskelversagen war — trag einen Einzelversuch ein, um ein echtes Maximum festzuhalten.",
   // --- Cosmetics / reward shop ---
   Cosmetics: "Kosmetik",
   "Unlock accent themes by leveling up or buying them in the Reward shop. Purely cosmetic.":

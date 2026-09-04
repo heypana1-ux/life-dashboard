@@ -446,7 +446,10 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
       {records.length > 0 && (
         <Card>
           <SectionTitle right={<Trophy size={16} className="text-[var(--text-faint)]" />}>{t("Personal records")}</SectionTitle>
-          <p className="mb-3 text-xs text-[var(--text-muted)]">{t("Best estimated one-rep max per exercise.")}</p>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">
+            {t("Best estimated one-rep max per exercise.")}{" "}
+            {t("Estimated from your best set, assuming it was taken close to failure — log a single rep to record a real max.")}
+          </p>
           <div className="space-y-1.5">
             {records.slice(0, 8).map((r) => (
               <div key={r.name} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--surface-2)]">

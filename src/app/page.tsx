@@ -361,7 +361,13 @@ export default function DashboardPage() {
   );
 }
 
-/** The 4a score ring: 100px, 7px stroke, big number with "of 100" beneath it. */
+/** The 4a score ring: 100px, 7px stroke, big number with "of 100" beneath it.
+ *
+ *  The stroke and the halo behind it read `--ring-grad-*` / `--ring-glow`, which the reward
+ *  shop's ring skins set on <html> via `data-ring`. Those are deliberately separate from the
+ *  accent tokens, so a bought skin (Ember, Prism, Gold …) paints the ring on its own while the
+ *  rest of the app stays in your system colour. With no skin chosen the vars are unset and the
+ *  fallbacks put it back on the page accent. */
 function ScoreRing({ value }: { value: number }) {
   const t = useT();
   const size = 100;
@@ -369,13 +375,28 @@ function ScoreRing({ value }: { value: number }) {
   const r = (size - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, value)) / 100;
+  const a = "var(--ring-grad-a, var(--area-a))";
+  const b = "var(--ring-grad-b, var(--area-b))";
+  // Skins ship their own glow; without one, derive it from the ring's own first stop.
+  const glow = `var(--ring-glow, color-mix(in srgb, ${a} 45%, transparent))`;
   return (
     <div className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
+      {/* Halo — a soft bloom of the ring's own colour, sitting behind the arc. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 rounded-full"
+        style={{
+          background: `radial-gradient(circle at 50% 50%, ${glow} 0%, transparent 68%)`,
+          filter: "blur(10px)",
+          transform: "scale(1.28)",
+          opacity: 0.9,
+        }}
+      />
+      <svg width={size} height={size} className="relative -rotate-90">
         <defs>
           <linearGradient id="dashRing" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" style={{ stopColor: "var(--area-a)" }} />
-            <stop offset="1" style={{ stopColor: "var(--area-b)" }} />
+            <stop offset="0" style={{ stopColor: a }} />
+            <stop offset="1" style={{ stopColor: b }} />
           </linearGradient>
         </defs>
         <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
@@ -389,7 +410,10 @@ function ScoreRing({ value }: { value: number }) {
           strokeLinecap="round"
           strokeDasharray={c}
           strokeDashoffset={c * (1 - pct)}
-          style={{ transition: "stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)" }}
+          style={{
+            transition: "stroke-dashoffset 1s cubic-bezier(.3,.8,.3,1)",
+            filter: `drop-shadow(0 0 6px ${glow})`,
+          }}
         />
       </svg>
       <div className="absolute flex flex-col items-center">

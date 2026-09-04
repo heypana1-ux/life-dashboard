@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarCheck, Gift, ImageDown, Sparkles } from "lucide-react";
+import { CalendarCheck, ChevronRight, Gift, ImageDown, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
@@ -32,7 +32,9 @@ export default function ReportsPage() {
   const lang = useLang();
   const [period, setPeriod] = useState<Period>("week");
   const [recap, setRecap] = useState(false);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  // Which week the guided reflection is open on: today's week for a new review, or any past
+  // week you tap in the list to read it back and edit it.
+  const [reviewAnchor, setReviewAnchor] = useState<string | null>(null);
   const [wrapYear, setWrapYear] = useState<number | null>(null);
   const wrapYears = useMemo(() => availableWrapYears(data, d.history), [data, d.history]);
 
@@ -117,7 +119,7 @@ export default function ReportsPage() {
 
       {recap && <RecapOverlay mode={period} refDate={todayISO()} onClose={() => setRecap(false)} />}
       {wrapYear != null && <YearWrappedOverlay year={wrapYear} onClose={() => setWrapYear(null)} />}
-      {reviewOpen && <WeeklyReviewFlow anchor={anchor} onClose={() => setReviewOpen(false)} />}
+      {reviewAnchor && <WeeklyReviewFlow anchor={reviewAnchor} onClose={() => setReviewAnchor(null)} />}
 
       <Card>
         <SectionTitle
@@ -141,7 +143,7 @@ export default function ReportsPage() {
       <Card>
         <SectionTitle
           right={
-            <Button variant="soft" size="sm" onClick={() => setReviewOpen(true)}>
+            <Button variant="soft" size="sm" onClick={() => setReviewAnchor(anchor)}>
               <CalendarCheck size={14} /> {thisWeekReviewed ? t("Edit review") : t("Start review")}
             </Button>
           }
@@ -154,8 +156,13 @@ export default function ReportsPage() {
           </p>
         ) : (
           <div className="divide-y divide-[var(--border)]">
+            {/* Tap a week to replay that reflection in the guided flow — and edit it if you want. */}
             {pastReviews.slice(0, 8).map((r) => (
-              <div key={r.weekOf} className="flex items-start gap-3 py-3">
+              <button
+                key={r.weekOf}
+                onClick={() => setReviewAnchor(r.weekOf)}
+                className="flex w-full items-start gap-3 py-3 text-left transition hover:bg-[var(--surface-2)]"
+              >
                 <span className="text-2xl leading-none">{RATING_EMOJI[Math.min(4, Math.max(0, r.rating - 1))]}</span>
                 <div className="min-w-0 flex-1">
                   <div className="text-sm font-medium">
@@ -168,7 +175,8 @@ export default function ReportsPage() {
                   )}
                   {r.wins && <div className="mt-0.5 truncate text-xs text-[var(--text-faint)]">🎉 {r.wins}</div>}
                 </div>
-              </div>
+                <ChevronRight size={16} className="mt-0.5 shrink-0 text-[var(--text-faint)]" />
+              </button>
             ))}
           </div>
         )}

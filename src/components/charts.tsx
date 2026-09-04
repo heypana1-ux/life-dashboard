@@ -115,6 +115,9 @@ export function TrendLine({
               <stop offset="100%" stopColor={color} stopOpacity={0} />
             </linearGradient>
           </defs>
+          {/* Hidden, but it makes `date` the row's x value — so the tooltip names the day
+              instead of the row index. ChartTip formats an ISO date on sight. */}
+          <XAxis dataKey="date" hide />
           <YAxis hide domain={domain ?? ["auto", "auto"]} />
           {refLine != null && (
             <ReferenceLine y={refLine} stroke={AXIS} strokeDasharray="4 4" strokeWidth={1} />
@@ -154,6 +157,8 @@ export function MultiLine({
     <div>
       <ResponsiveContainer width="100%" height={height}>
         <LineChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: 4 }}>
+          {/* See TrendLine: gives the tooltip a real date instead of the row index. */}
+          <XAxis dataKey="date" hide />
           <YAxis hide domain={domain ?? ["auto", "auto"]} />
           <Tooltip content={<ChartTip />} />
           {series.map((s) => (

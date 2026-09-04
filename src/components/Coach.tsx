@@ -376,10 +376,12 @@ export function CoachBriefing() {
   if (!enabled || (!text && !loading)) return null;
 
   return (
-    <div className="card border-[var(--accent)]/25">
+    /* The coach's own voice gets its own surface: a soft wash of the page accent with a
+       hairline in the same hue, so a briefing reads as "from the coach", not as another card. */
+    <div className="area-deep rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--area-a)_25%,transparent)] p-[18px]">
       <div className="mb-1.5 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+          <span className="area-grad flex h-7 w-7 items-center justify-center rounded-lg">
             <Sparkles size={15} />
           </span>
           <span className="text-sm font-semibold">{t("Coach briefing")}</span>
@@ -446,9 +448,9 @@ export function CoachWeeklyCheckin() {
   if (!enabled || (!text && !loading)) return null;
 
   return (
-    <div className="card border-[var(--accent)]/25">
+    <div className="area-deep rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--area-a)_25%,transparent)] p-[18px]">
       <div className="mb-1.5 flex items-center gap-2">
-        <span className="grad flex h-7 w-7 items-center justify-center rounded-lg text-white">
+        <span className="area-grad flex h-7 w-7 items-center justify-center rounded-lg">
           <MessageCircle size={15} />
         </span>
         <span className="text-sm font-semibold">{t("Weekly check-in")}</span>
