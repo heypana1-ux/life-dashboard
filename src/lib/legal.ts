@@ -32,10 +32,10 @@ export interface Operator {
 }
 
 export const OPERATOR: Operator = {
-  name: "",
-  street: "",
-  postalCode: "",
-  city: "",
+  name: "Philippe Egger",
+  street: "Wührstraße 4",
+  postalCode: "85232",
+  city: "Bergkirchen",
   country: "Deutschland",
   email: "heypana1@gmail.com",
   phone: "",
