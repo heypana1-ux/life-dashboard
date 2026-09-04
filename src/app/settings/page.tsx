@@ -429,10 +429,10 @@ export default function SettingsPage() {
       </div>
 
       <p className="text-center text-[11px] text-[var(--text-faint)]">
-        {t("Life Dashboard · your data lives in this browser only.")}
+        {t("Life Dashboard · your data belongs to you.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 37
+        Pulse Build 38
       </p>
     </div>
   );
@@ -996,7 +996,7 @@ function DataCard() {
         </div>
       )}
       <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
-        {t("Your data lives only in this browser. Export a backup regularly so you never lose it.")}
+        {t("Your data lives on this device and in your account. An export gives you a copy you own outright.")}
       </p>
     </SCard>
   );

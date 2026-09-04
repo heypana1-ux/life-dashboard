@@ -38,7 +38,7 @@ export const OPERATOR: Operator = {
   city: "Bergkirchen",
   country: "Deutschland",
   email: "heypana1@gmail.com",
-  phone: "",
+  phone: "+49 176 47130366",
   vatId: "",
   smallBusiness: true,
 };

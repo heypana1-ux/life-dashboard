@@ -248,6 +248,8 @@ interface StoreCtx {
   /* bulk */
   replaceAll: (d: AppData) => void;
   resetAll: () => void;
+  /** True when a save was rejected because storage is full. */
+  storageFull: boolean;
 }
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error";
@@ -275,6 +277,9 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<AppData>(() => emptyData());
   const [ready, setReady] = useState(false);
   const first = useRef(true);
+  /** True once a save was rejected (quota). Surfaced in the UI — never swallowed. */
+  const [storageFull, setStorageFull] = useState(false);
+  const lastBackupWrite = useRef(0);
 
   useEffect(() => {
     // Hydrate from localStorage after mount (avoids SSR/client mismatch).
@@ -283,7 +288,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     setReady(true);
   }, []);
 
-  // persist on change (after initial hydration)
+  /*
+    Persist on change (after initial hydration).
+
+    Two things this must not do, both of which it used to. It must not write the whole blob
+    twice on every keystroke — the "last good" copy doubled the storage cost for a safety net
+    that only needs to be recent, not current. And it must never swallow a failed write: on a
+    full quota the app kept running happily on in-memory state and everything since the first
+    failure disappeared on reload. Now a failure is surfaced, so the user can export and make
+    room instead of losing the day.
+  */
   useEffect(() => {
     if (!ready) return;
     if (first.current) {
@@ -293,13 +307,31 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     try {
       const json = JSON.stringify(data);
       localStorage.setItem(STORAGE_KEY, json);
-      // Keep a rolling "last good" copy as a corruption safety net.
-      localStorage.setItem(BACKUP_KEY, json);
       localStorage.setItem(UPDATED_KEY, String(Date.now()));
+      // Refresh the corruption safety net at most once a minute.
+      if (Date.now() - lastBackupWrite.current > 60_000) {
+        try {
+          localStorage.setItem(BACKUP_KEY, json);
+          lastBackupWrite.current = Date.now();
+        } catch {
+          // A backup that doesn't fit is not worth failing the real save over — drop the
+          // stale copy so the next successful write has room for a fresh one.
+          try {
+            localStorage.removeItem(BACKUP_KEY);
+          } catch {
+            /* nothing else to try */
+          }
+        }
+      }
+      // Clearing the warning from inside the persist effect is the point: the only proof that
+      // storage works again is a write that succeeded.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (storageFull) setStorageFull(false);
     } catch {
-      /* ignore quota errors */
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setStorageFull(true);
     }
-  }, [data, ready]);
+  }, [data, ready, storageFull]);
 
   const mutate = useCallback((fn: (d: AppData) => AppData) => {
     setData((prev) => fn(structuredCloneSafe(prev)));
@@ -936,6 +968,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
       replaceAll: (d) => setData(d),
       resetAll: () => setData(emptyData()),
+      storageFull,
     }),
     [
       data,
@@ -950,6 +983,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       signOut,
       syncNow,
       deleteAccount,
+      storageFull,
     ],
   );
 

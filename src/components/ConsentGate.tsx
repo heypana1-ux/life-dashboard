@@ -58,7 +58,7 @@ export function ConsentGate({ onDone }: { onDone: () => void }) {
       <Card className="animate-in">
         <h1 className="text-2xl font-semibold tracking-tight">{t("Before we start")}</h1>
         <p className="mt-1.5 text-sm leading-[1.55] text-[var(--text-muted)]">
-          {t("Everything you log stays on this device by default. Nothing is sent anywhere unless you switch it on yourself.")}
+          {t("Your entries live on this device and in your own account. Nothing goes to anyone else unless you switch on the AI coach.")}
         </p>
 
         <div className="mt-5 flex flex-col gap-2.5">

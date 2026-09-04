@@ -6,7 +6,9 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { JournalEntry } from "@/lib/types";
 import { addDays, fmtLong, fmtShort, todayISO, weekdayOf } from "@/lib/date";
-import { resizeImageToDataUrl } from "@/lib/image";
+import { resizeImageToBlob } from "@/lib/image";
+import { deleteImage, putImage } from "@/lib/photoStore";
+import { StoredImage } from "@/components/StoredImage";
 import { promptForDate, JOURNAL_PROMPTS } from "@/lib/journalPrompts";
 import { buildCoachContext } from "@/lib/coachContext";
 import { coachAsk, checkCoachConfigured } from "@/lib/ai";
@@ -215,13 +217,13 @@ export default function JournalPage() {
                 {(active.photos?.length ?? 0) > 0 && (
                   <div className="mt-3 flex flex-wrap gap-2">
                     {active.photos!.map((src, i) => (
-                      <div key={i} className="relative">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={src} alt="" className="h-[78px] w-[78px] rounded-[12px] border border-[var(--border)] object-cover" />
+                      <div key={src} className="relative">
+                        <StoredImage src={src} className="h-[78px] w-[78px] rounded-[12px] border border-[var(--border)] object-cover" />
                         <button
-                          onClick={() =>
-                            setDraft({ ...active, photos: active.photos!.filter((_, j) => j !== i) })
-                          }
+                          onClick={() => {
+                            void deleteImage(src);
+                            setDraft({ ...active, photos: active.photos!.filter((_, j) => j !== i) });
+                          }}
                           className="absolute -right-1.5 -top-1.5 rounded-full bg-[var(--bad)] p-0.5 text-white"
                           aria-label={t("Delete")}
                         >
@@ -296,14 +298,15 @@ export default function JournalPage() {
                     className="hidden"
                     onChange={async (e) => {
                       const file = e.target.files?.[0];
-                      if (!file) return;
-                      try {
-                        const url = await resizeImageToDataUrl(file);
-                        setDraft({ ...active, photos: [...(active.photos ?? []), url] });
-                      } catch {
-                        /* ignore */
-                      }
                       e.target.value = "";
+                      if (!file) return;
+                      // The bytes go to IndexedDB; the entry keeps only a short reference.
+                      try {
+                        const ref = await putImage(await resizeImageToBlob(file));
+                        setDraft({ ...active, photos: [...(active.photos ?? []), ref] });
+                      } catch {
+                        /* an unreadable file just doesn't get added */
+                      }
                     }}
                   />
                 </label>

@@ -4,7 +4,9 @@ import { useRef, useState } from "react";
 import { Check, ImagePlus, Pencil, Plus, Sparkles, Target, Trash2, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
-import { resizeImageToDataUrl } from "@/lib/image";
+import { resizeImageToBlob } from "@/lib/image";
+import { deleteImage, putImage } from "@/lib/photoStore";
+import { StoredImage } from "@/components/StoredImage";
 import { VisionItem } from "@/lib/types";
 import {
   Button,
@@ -52,8 +54,10 @@ export default function VisionPage() {
   async function pickImage(file?: File) {
     if (!file) return;
     try {
-      const url = await resizeImageToDataUrl(file, 1200, 0.72);
-      setDraft((d) => ({ ...d, image: url }));
+      // Card art goes to IndexedDB — a vision board is mostly images, and inline data URLs
+      // filled the localStorage budget after a handful of cards.
+      const ref = await putImage(await resizeImageToBlob(file, 1200, 0.72));
+      setDraft((d) => ({ ...d, image: ref }));
     } catch {
       /* ignore unreadable images */
     }
@@ -98,8 +102,7 @@ export default function VisionPage() {
               >
                 <div className="area-grad relative flex h-[150px] w-full items-center justify-center">
                   {v.image ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={v.image} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                    <StoredImage src={v.image} className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
                     <Sparkles size={30} className="opacity-55" />
                   )}
@@ -173,11 +176,11 @@ export default function VisionPage() {
           >
             {draft.image ? (
               <>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={draft.image} alt="" className="h-full w-full object-cover" />
+                <StoredImage src={draft.image} className="h-full w-full object-cover" />
                 <span
                   onClick={(e) => {
                     e.stopPropagation();
+                    if (draft.image) void deleteImage(draft.image);
                     setDraft((d) => ({ ...d, image: undefined }));
                   }}
                   className="absolute right-2 top-2 rounded-lg bg-black/50 p-1.5 text-white hover:bg-black/70"

@@ -36,7 +36,7 @@ export function BackupReminder() {
       <div className="flex items-start gap-2.5">
         <ShieldAlert size={18} className="mt-0.5 shrink-0 text-[var(--warn)]" />
         <p className="text-sm">
-          {t("Your data lives only in this browser. Export a backup so you don't lose it.")}
+          {t("An export gives you your own copy — independent of your account and this device.")}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-2">

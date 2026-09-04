@@ -382,16 +382,11 @@ export function Onboarding() {
       )}
 
       {step === 4 && (
-        <AccountStep
-          onBack={() => setStep(5)}
-          onSkip={() => finish(demoChoice ?? false)}
-          onDone={() => finish(demoChoice ?? false)}
-          sync={sync}
-        />
+        <AccountStep onBack={() => setStep(5)} onDone={() => finish(demoChoice ?? false)} sync={sync} />
       )}
 
-      <p className="mt-6 text-center text-xs text-[var(--text-faint)]">
-        {t("Everything is stored locally in your browser. Nothing is sent anywhere.")}
+      <p className="mt-6 text-center text-xs leading-[1.5] text-[var(--text-faint)]">
+        {t("Your entries live on this device and in your own account — nothing is shared with anyone.")}
       </p>
     </div>
   );
@@ -442,14 +437,20 @@ function OnboardingAboutField({
   );
 }
 
+/*
+  The account step is required, not optional.
+
+  Everything used to live only in localStorage, which a cleared browser, a lost phone or a new
+  device wipes without warning. For a tracker whose whole value is a long history, "your data
+  vanished" is the one failure that can't be apologised away — so an account is now part of
+  setting up, and the cloud copy exists from day one.
+*/
 function AccountStep({
   onBack,
-  onSkip,
   onDone,
   sync,
 }: {
   onBack: () => void;
-  onSkip: () => void;
   onDone: () => void;
   sync: ReturnType<typeof useStore>["sync"];
 }) {
@@ -476,9 +477,9 @@ function AccountStep({
 
   return (
     <Card className="animate-in">
-      <h1 className="text-2xl font-semibold tracking-tight">{t("Sync across your devices")}</h1>
-      <p className="mt-1 text-sm text-[var(--text-muted)]">
-        {t("Create an account to keep the same data on your phone and PC. Optional — you can also do this later in Settings.")}
+      <h1 className="text-2xl font-semibold tracking-tight">{t("Secure your data")}</h1>
+      <p className="mt-1 text-sm leading-[1.55] text-[var(--text-muted)]">
+        {t("An account keeps a backup of your history and the same data on every device. Without one, clearing your browser or losing your phone loses everything.")}
       </p>
 
       <div className="mt-5 flex gap-1 rounded-xl bg-[var(--surface-2)] p-1">
@@ -514,9 +515,6 @@ function AccountStep({
           {t("Back")}
         </Button>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" onClick={onSkip}>
-            {t("Skip for now")}
-          </Button>
           <Button onClick={submit} disabled={busy || !email || !password}>
             {mode === "up" ? t("Create account") : t("Sign in")}
           </Button>

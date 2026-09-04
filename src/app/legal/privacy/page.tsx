@@ -71,18 +71,23 @@ export default function PrivacyPage() {
       </Card>
 
       <Card>
-        <S>2. Der Grundsatz: deine Daten bleiben auf deinem Gerät</S>
+        <S>2. Wo deine Daten liegen</S>
         <P>
-          Life Dashboard ist so gebaut, dass alles, was du einträgst — Gewohnheiten, Schlaf,
-          Training, Gewicht, Körpermaße, Stimmung, Tagebuch, Ziele, Finanzen — ausschließlich
-          <strong className="text-[var(--text)]"> lokal in deinem Browser </strong>
-          gespeichert wird (localStorage). Diese Daten werden nicht automatisch an uns übertragen.
+          Alles, was du einträgst — Gewohnheiten, Schlaf, Training, Gewicht, Körpermaße,
+          Stimmung, Tagebuch, Ziele, Finanzen — wird{" "}
+          <strong className="text-[var(--text)]">auf deinem Gerät</strong> gespeichert und
+          zusätzlich in dein Konto synchronisiert, damit ein verlorenes oder zurückgesetztes
+          Gerät nicht deine gesamte Historie kostet. Das Konto ist Teil der Einrichtung.
         </P>
         <P className="mt-2">
-          Deine Daten verlassen dein Gerät nur, wenn du eine der folgenden Funktionen{" "}
-          <strong className="text-[var(--text)]">aktiv einschaltest</strong>: Cloud-Sync, KI-Coach,
-          Push-Benachrichtigungen oder die Strava-Verbindung. Jede davon ist unten einzeln
-          beschrieben und jederzeit abschaltbar.
+          Bilder aus Tagebuch und Vision Board bleiben ausschließlich lokal auf dem Gerät, auf
+          dem du sie hinzugefügt hast; sie werden nicht übertragen.
+        </P>
+        <P className="mt-2">
+          Darüber hinaus verlassen deine Daten dein Gerät nur, wenn du eine der folgenden
+          Funktionen <strong className="text-[var(--text)]">aktiv einschaltest</strong>:
+          KI-Coach, Push-Benachrichtigungen oder die Strava-Verbindung. Jede davon ist unten
+          einzeln beschrieben und jederzeit abschaltbar.
         </P>
         <P className="mt-2">
           Rechtsgrundlage für die lokale Speicherung ist Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des

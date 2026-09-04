@@ -20,6 +20,8 @@ import { QuickCaptureButton } from "@/components/QuickCapture";
 import { Tour } from "@/components/Tour";
 import { PWARegister, AppPromoBanner } from "@/components/PWA";
 import { LiveActivityHost, useLiveBarVisible } from "@/components/LiveActivity";
+import { MediaMigration } from "@/components/MediaMigration";
+import { StorageFullBanner } from "@/components/StorageFullBanner";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { data, ready, updateSettings } = useStore();
@@ -178,7 +180,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="flex items-center gap-2 px-2 pt-3 text-[11px] text-[var(--text-faint)]">
           <ShieldCheck size={13} />
-          <span>{t("Data stays on this device.")}</span>
+          <span>{t("Your data, your account.")}</span>
         </div>
       </aside>
 
@@ -206,8 +208,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1" onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
         <div className={clsx("mx-auto w-full max-w-[1160px] px-[22px] pb-28 sm:px-8 md:pb-12", liveBar && "pt-[46px]")}>
           <PWARegister />
+          <MediaMigration />
           <Reminders />
           <LiveActivityHost />
+          <StorageFullBanner />
           <Tour />
           <DayFlow />
           <RecapGate />

@@ -118,6 +118,24 @@ const DE: Record<string, string> = {
   "Cross-analysed": "Querausgewertet",
   // --- Legal, consent and account deletion ---
   Legal: "Rechtliches",
+  "Your entries live on this device and in your own account. Nothing goes to anyone else unless you switch on the AI coach.":
+    "Deine Einträge liegen auf diesem Gerät und in deinem eigenen Konto. An Dritte geht nichts — außer du schaltest den KI-Coach ein.",
+  "An export gives you your own copy — independent of your account and this device.":
+    "Ein Export gibt dir eine eigene Kopie — unabhängig von Konto und Gerät.",
+  "Your data, your account.": "Deine Daten, dein Konto.",
+  "Life Dashboard · your data belongs to you.": "Life Dashboard · deine Daten gehören dir.",
+  "Your data lives on this device and in your account. An export gives you a copy you own outright.":
+    "Deine Daten liegen auf diesem Gerät und in deinem Konto. Ein Export gibt dir eine Kopie, die dir allein gehört.",
+  // --- Storage, crashes, mandatory account ---
+  "Storage is full": "Speicher ist voll",
+  "New entries can't be saved right now. Export a backup, then remove a few photos to free up space.":
+    "Neue Einträge können gerade nicht gespeichert werden. Exportiere ein Backup und lösche dann ein paar Fotos, um Platz zu schaffen.",
+  "Export now": "Jetzt exportieren",
+  "Secure your data": "Sichere deine Daten",
+  "An account keeps a backup of your history and the same data on every device. Without one, clearing your browser or losing your phone loses everything.":
+    "Ein Konto sichert deine Historie und hält deine Daten auf allen Geräten gleich. Ohne Konto ist bei gelöschten Browserdaten oder einem verlorenen Handy alles weg.",
+  "Your entries live on this device and in your own account — nothing is shared with anyone.":
+    "Deine Einträge liegen auf diesem Gerät und in deinem eigenen Konto — geteilt wird nichts.",
   imprint: "Impressum",
   Imprint: "Impressum",
   privacy: "Datenschutz",
