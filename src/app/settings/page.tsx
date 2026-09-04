@@ -13,6 +13,7 @@ import {
   RefreshCw,
   RotateCcw,
   Scale,
+  ShieldCheck,
   Send,
   Sparkles,
   Sun,
@@ -21,7 +22,7 @@ import {
   User,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { AreaKey, Language, Profile } from "@/lib/types";
+import { AreaKey, Language, Profile, Settings } from "@/lib/types";
 import {
   isStravaConfigured,
   authorizeUrl,
@@ -39,6 +40,7 @@ import { useDerived } from "@/lib/useDerived";
 import { computeLevel } from "@/lib/level";
 import { ACCENT_REWARDS, ACCENT_SWATCH, accentOwned } from "@/lib/rewards";
 import { todayISO, fmtShort, ageFrom, addDays } from "@/lib/date";
+import { CONSENT_VERSION } from "@/lib/legal";
 import { PageHeader, Toggle, Badge, IconTile } from "@/components/ui";
 import { InstallAppCard } from "@/components/PWA";
 import { pushConfigured, enablePush, disablePush, syncPush, PushError } from "@/lib/push";
@@ -411,6 +413,9 @@ export default function SettingsPage() {
       {/* Data & backup */}
       <DataCard />
 
+      {/* Privacy, consents and the legal pages */}
+      <PrivacyCard />
+
       {/* Bugs & feedback */}
       <FeedbackCard />
 
@@ -427,9 +432,94 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data lives in this browser only.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 36
+        Pulse Build 37
       </p>
     </div>
+  );
+}
+
+/* The AI switch is also a consent (Art. 9(2)(a) — the summaries are derived from health data
+   and go to a US provider), so flipping it has to record or clear that consent, wherever the
+   switch happens to live. Both the coach card and the privacy card go through these. */
+type Consent = NonNullable<Settings["consent"]>;
+
+function nextAiConsent(c: Consent | undefined, on: boolean): Consent {
+  const now = new Date().toISOString();
+  return on
+    ? { ...c, version: CONSENT_VERSION, ai: now }
+    : { ...c, version: CONSENT_VERSION, ai: undefined, aiJournal: undefined };
+}
+
+function nextJournalConsent(c: Consent | undefined, on: boolean): Consent {
+  return { ...c, version: CONSENT_VERSION, aiJournal: on ? new Date().toISOString() : undefined };
+}
+
+/** Consent management: what you agreed to, when — and one tap to take it back (Art. 7(3)). */
+function PrivacyCard() {
+  const { data, updateSettings } = useStore();
+  const t = useT();
+  const c = data.settings.consent;
+  const lang = data.settings.language;
+  const when = (iso?: string) =>
+    iso ? new Date(iso).toLocaleDateString(lang === "de" ? "de-DE" : "en-US") : null;
+
+  /* Withdrawing has to be as easy as consenting was, and it has to actually stop the
+     processing — so pulling the AI consent switches the coach off in the same move. */
+  const setAi = (on: boolean) =>
+    updateSettings({ consent: nextAiConsent(c, on), aiCoachEnabled: on, ...(on ? {} : { aiJournalAccess: false }) });
+  const setAiJournal = (on: boolean) =>
+    updateSettings({ consent: nextJournalConsent(c, on), aiJournalAccess: on });
+
+  return (
+    <SCard title={t("Privacy & consent")} icon={<ShieldCheck size={16} />}>
+      <SRow
+        title={t("Health-related entries")}
+        desc={
+          c?.health
+            ? `${t("Agreed on {d}", { d: when(c.health) ?? "" })} · ${t("Art. 9 GDPR")}`
+            : t("Not yet agreed.")
+        }
+      >
+        <Link href="/profile" className="area-text text-[11.5px] font-medium hover:underline">
+          {t("Withdraw")}
+        </Link>
+      </SRow>
+
+      <SRow
+        title={t("AI coach")}
+        desc={c?.ai ? t("Agreed on {d}", { d: when(c.ai) ?? "" }) : t("Sends summaries of your data to a provider in the USA.")}
+      >
+        <Toggle checked={!!c?.ai} onChange={setAi} />
+      </SRow>
+
+      {c?.ai && (
+        <SRow
+          title={t("Journal for the coach")}
+          desc={c.aiJournal ? t("Agreed on {d}", { d: when(c.aiJournal) ?? "" }) : t("Off — only mood and tag summaries are sent.")}
+        >
+          <Toggle checked={!!c.aiJournal} onChange={setAiJournal} />
+        </SRow>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-2 border-t border-[var(--surface-2)] pt-3">
+        <Link
+          href="/legal/privacy"
+          className={clsx("inline-flex items-center gap-1.5 rounded-[12px] px-[13px] py-[9px] text-[12px] font-semibold transition", sBtn.surface)}
+        >
+          <ShieldCheck size={14} /> {t("Privacy notice")}
+        </Link>
+        <Link
+          href="/legal/imprint"
+          className={clsx("inline-flex items-center gap-1.5 rounded-[12px] px-[13px] py-[9px] text-[12px] font-semibold transition", sBtn.surface)}
+        >
+          <Scale size={14} /> {t("Imprint")}
+        </Link>
+      </div>
+
+      <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">
+        {t("Withdrawing a consent does not affect processing that already happened. To withdraw the health consent, delete your data under Profile.")}
+      </p>
+    </SCard>
   );
 }
 
@@ -443,14 +533,28 @@ function CoachCard() {
         title={t("Enable AI coach")}
         desc={t("A chat that interprets your data. Only derived summaries are sent — never your journal, health notes or finance amounts.")}
       >
-        <Toggle checked={on} onChange={(v) => updateSettings({ aiCoachEnabled: v })} />
+        <Toggle
+          checked={on}
+          onChange={(v) =>
+            updateSettings({
+              consent: nextAiConsent(data.settings.consent, v),
+              aiCoachEnabled: v,
+              ...(v ? {} : { aiJournalAccess: false }),
+            })
+          }
+        />
       </SRow>
       {on && (
         <SRow
           title={t("Let the coach read my journal")}
           desc={t("Shares recent entries (text, mood, tags) so the coach can reflect on them. Off = only mood/tag summaries.")}
         >
-          <Toggle checked={!!data.settings.aiJournalAccess} onChange={(v) => updateSettings({ aiJournalAccess: v })} />
+          <Toggle
+            checked={!!data.settings.aiJournalAccess}
+            onChange={(v) =>
+              updateSettings({ consent: nextJournalConsent(data.settings.consent, v), aiJournalAccess: v })
+            }
+          />
         </SRow>
       )}
       <p className="mt-2.5 text-[11px] leading-[1.45] text-[var(--text-faint)]">

@@ -116,6 +116,61 @@ const DE: Record<string, string> = {
   nights: "Nächte",
   "Trends · 30 days": "Trends · 30 Tage",
   "Cross-analysed": "Querausgewertet",
+  // --- Legal, consent and account deletion ---
+  Legal: "Rechtliches",
+  imprint: "Impressum",
+  Imprint: "Impressum",
+  privacy: "Datenschutz",
+  Privacy: "Datenschutz",
+  "Privacy notice": "Datenschutzerklärung",
+  "privacy notice": "Datenschutzerklärung",
+  "Privacy & consent": "Datenschutz & Einwilligungen",
+  "Before we start": "Bevor es losgeht",
+  "Everything you log stays on this device by default. Nothing is sent anywhere unless you switch it on yourself.":
+    "Alles, was du einträgst, bleibt standardmäßig auf diesem Gerät. Nichts wird irgendwohin gesendet, außer du schaltest es selbst ein.",
+  "Health-related entries": "Gesundheitsbezogene Einträge",
+  "Sleep, weight, body measurements, mood, wellbeing and journal entries count as health data under Art. 9 GDPR. I agree that the app may store and analyse them for me. Without this the app has nothing to track.":
+    "Schlaf, Gewicht, Körpermaße, Stimmung, Wohlbefinden und Tagebucheinträge gelten als Gesundheitsdaten nach Art. 9 DSGVO. Ich willige ein, dass die App sie für mich speichert und auswertet. Ohne das hat die App nichts zu tracken.",
+  "AI coach (optional)": "KI-Coach (optional)",
+  "Sends summaries of my data to Groq in the USA so the coach can interpret them. The USA has no EU-equivalent level of data protection. I can withdraw this at any time.":
+    "Sendet Zusammenfassungen meiner Daten an Groq in den USA, damit der Coach sie einordnen kann. In den USA besteht kein mit der EU vergleichbares Datenschutzniveau. Ich kann das jederzeit widerrufen.",
+  "Also my journal (optional)": "Auch mein Tagebuch (optional)",
+  "Additionally sends journal text, mood and tags, so the coach can reflect on what you wrote.":
+    "Sendet zusätzlich Tagebuchtext, Stimmung und Tags, damit der Coach darauf eingehen kann.",
+  "Details in the": "Details in der",
+  "Agree and continue": "Zustimmen und weiter",
+  "Withdraw any time in Settings.": "Widerruf jederzeit in den Einstellungen.",
+  required: "erforderlich",
+  Withdraw: "Widerrufen",
+  "Agreed on {d}": "Zugestimmt am {d}",
+  "Art. 9 GDPR": "Art. 9 DSGVO",
+  "Not yet agreed.": "Noch nicht zugestimmt.",
+  "Sends summaries of your data to a provider in the USA.": "Sendet Zusammenfassungen deiner Daten an einen Anbieter in den USA.",
+  "Journal for the coach": "Tagebuch für den Coach",
+  "Off — only mood and tag summaries are sent.": "Aus — es werden nur Stimmungs- und Tag-Zusammenfassungen gesendet.",
+  "Withdrawing a consent does not affect processing that already happened. To withdraw the health consent, delete your data under Profile.":
+    "Ein Widerruf berührt nicht die Rechtmäßigkeit der bis dahin erfolgten Verarbeitung. Um die Gesundheits-Einwilligung zu widerrufen, lösche deine Daten unter Profil.",
+  "Account & data": "Konto & Daten",
+  "You can take your data with you or delete it at any time. Export gives you everything as a JSON file.":
+    "Du kannst deine Daten jederzeit mitnehmen oder löschen. Der Export gibt dir alles als JSON-Datei.",
+  "Export my data": "Meine Daten exportieren",
+  "Delete account": "Konto löschen",
+  "Permanently removes {email} and everything synced to it. This cannot be undone.":
+    "Entfernt {email} und alles, was damit synchronisiert wurde, endgültig. Das lässt sich nicht rückgängig machen.",
+  "Delete this account permanently?": "Dieses Konto endgültig löschen?",
+  "Also erase the data on this device": "Auch die Daten auf diesem Gerät löschen",
+  "Yes, delete permanently": "Ja, endgültig löschen",
+  "Deleting…": "Wird gelöscht…",
+  "Account deletion isn't set up on the server yet.": "Die Kontolöschung ist auf dem Server noch nicht eingerichtet.",
+  "Couldn't delete the account. Try again, or write to us.": "Das Konto konnte nicht gelöscht werden. Versuch es erneut oder schreib uns.",
+  "Erase data on this device": "Daten auf diesem Gerät löschen",
+  "Clears this browser and restarts onboarding. Your synced copy stays until you delete the account.":
+    "Leert diesen Browser und startet die Einrichtung neu. Deine synchronisierte Kopie bleibt, bis du das Konto löschst.",
+  "Clears this browser and restarts onboarding. Since nothing is synced, this deletes everything.":
+    "Leert diesen Browser und startet die Einrichtung neu. Da nichts synchronisiert ist, löscht das alles.",
+  "Erase everything": "Alles löschen",
+  "This cannot be undone.": "Das lässt sich nicht rückgängig machen.",
+  "Yes, erase": "Ja, löschen",
   Patterns: "Muster",
   "AI analysis": "KI-Analyse",
   "Turn the AI coach on in Settings to get a daily briefing and a weekly check-in here.":

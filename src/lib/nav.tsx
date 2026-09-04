@@ -21,6 +21,8 @@ import {
   Moon,
   Sparkles,
   Sunrise,
+  Scale,
+  ShieldCheck,
   Target,
   Settings as SettingsIcon,
   Trophy,
@@ -62,6 +64,10 @@ export const NAV: NavItem[] = [
   { href: "/rewards", label: "Reward shop", icon: Gift },
   { href: "/scoreboard", label: "Scoreboard", icon: Medal },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
+  // Legal pages are nav items so the imprint is reachable in two taps (More → Imprint),
+  // which is what § 5 DDG's "easily recognisable and directly reachable" is read to mean.
+  { href: "/legal/privacy", label: "Privacy", icon: ShieldCheck },
+  { href: "/legal/imprint", label: "Imprint", icon: Scale },
 ];
 
 /** Default pages on the mobile bottom bar; the rest live under "More". User-customisable. */
@@ -81,7 +87,7 @@ export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/focus", "/training", "/sleep", "/health", "/journal", "/calendar"] },
   { label: "Insights", hrefs: ["/statistics", "/correlations", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/vision", "/projects", "/experiments", "/finances"] },
-  { label: "System", hrefs: ["/profile", "/about", "/settings"] },
+  { label: "System", hrefs: ["/profile", "/about", "/settings", "/legal/privacy", "/legal/imprint"] },
 ];
 
 /** Apply the user's saved sidebar order, keeping any new items at the end. */

@@ -9,6 +9,7 @@ import { generateDemo } from "@/lib/demo";
 import { AppData, AreaKey, Language, Profile } from "@/lib/types";
 import { todayISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
+import { ConsentGate } from "@/components/ConsentGate";
 import { Button, Card, Field, inputCls } from "@/components/ui";
 import clsx from "clsx";
 
@@ -41,6 +42,9 @@ export function Onboarding() {
   const t = useT();
   const lang = data.settings.language;
   const [step, setStep] = useState(0);
+  // Art. 9 consent comes first, before any screen that invites you to enter health data.
+  // Recorded in settings, so returning users never see it again and it can be withdrawn later.
+  const [consented, setConsented] = useState(!!data.settings.consent?.health);
   const [demoChoice, setDemoChoice] = useState<boolean | null>(null);
   const [selected, setSelected] = useState<Set<AreaKey>>(
     new Set(["sport", "sleep", "habits", "reflection", "productivity"]),
@@ -118,6 +122,8 @@ export function Onboarding() {
     if (sync.configured) setStep(4);
     else finish(demoChoice ?? false);
   }
+
+  if (!consented) return <ConsentGate onDone={() => setConsented(true)} />;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-lg flex-col justify-center px-4 py-10">

@@ -264,6 +264,9 @@ export interface SyncState {
   signUp: (email: string, password: string) => Promise<{ error?: string }>;
   signOut: () => Promise<void>;
   syncNow: () => Promise<void>;
+  /** Deletes the cloud account and its synced data (Art. 17 GDPR / store requirement).
+   *  Local data is untouched — the caller decides whether to wipe the device too. */
+  deleteAccount: () => Promise<{ error?: string }>;
 }
 
 const Ctx = createContext<StoreCtx | null>(null);
@@ -445,6 +448,27 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     if (!supabase || !session) return;
     await pushRemote(session.user.id, dataRef.current);
   }, [session, pushRemote]);
+
+  const deleteAccount = useCallback(async () => {
+    if (!supabase || !session) return { error: "not_signed_in" };
+    // Stop the debounced push first, or it would re-create the row we are about to delete.
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    reconciled.current = false;
+    const res = await fetch("/api/account/delete", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      return { error: String(body.error ?? "failed") };
+    }
+    await supabase.auth.signOut();
+    syncedJson.current = null;
+    forceRemote.current = false;
+    setSyncStatus("idle");
+    setLastSyncedAt(null);
+    return {};
+  }, [session]);
 
   const api: StoreCtx = useMemo(
     () => ({
@@ -907,6 +931,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         signUp,
         signOut,
         syncNow,
+        deleteAccount,
       },
 
       replaceAll: (d) => setData(d),
@@ -924,6 +949,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       signUp,
       signOut,
       syncNow,
+      deleteAccount,
     ],
   );
 

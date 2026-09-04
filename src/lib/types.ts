@@ -586,6 +586,19 @@ export interface Settings {
   /** Keep each page's own Pulse area colour. Off (default) = the chosen accent paints
       every gradient in the app. */
   areaColors?: boolean;
+  /** GDPR consents, each an ISO timestamp of when it was given (absent = not given).
+   *  Health data is a special category (Art. 9), so its consent is recorded separately from
+   *  the optional AI ones and can be withdrawn independently. `version` is the wording the
+   *  user actually agreed to, so a material change can trigger a re-ask. */
+  consent?: {
+    version: number;
+    /** Art. 9(2)(a) — processing health-related entries at all. */
+    health?: string;
+    /** Sending derived summaries to the AI provider (incl. the US transfer). */
+    ai?: string;
+    /** Additionally sending journal text, mood and tags to the AI provider. */
+    aiJournal?: string;
+  };
   accent: Accent;
   language: Language;
   areas: AreaConfig[];

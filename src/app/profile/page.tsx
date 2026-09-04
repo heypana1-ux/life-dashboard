@@ -15,6 +15,7 @@ import { resizeImageToDataUrl } from "@/lib/image";
 import { ageFrom, todayISO } from "@/lib/date";
 import { ProfileView, ProfileCardData } from "@/components/ProfileView";
 import { Card, PageHeader, SectionTitle, Field, Toggle, inputCls } from "@/components/ui";
+import { DangerZone } from "@/components/DangerZone";
 import clsx from "clsx";
 
 const SEXES: NonNullable<Profile["sex"]>[] = ["male", "female", "other", "prefer_not"];
@@ -193,6 +194,9 @@ export default function ProfilePage() {
           </div>
         </div>
       </Card>
+
+      {/* Account & data — Art. 17 GDPR, and both stores require an in-app way to delete. */}
+      <DangerZone />
     </div>
   );
 }
