@@ -42,9 +42,17 @@ export const MUSCLE_LABEL: Record<Muscle, string> = {
   cardio: "Cardio",
 };
 
+/** How a set of this exercise is counted. */
+export type ExerciseMode = "reps" | "time";
+
 export interface CatalogExercise {
   name: string;
   muscle: Muscle;
+  /** "time" exercises are held rather than repeated — a plank set is 45 s, not 45 reps. */
+  mode?: ExerciseMode;
+  /** Moves your own body weight. The log pre-fills your current weight and any plates or
+   *  a belt are entered as "+ kg" on top, so the real load is body weight + added. */
+  bodyweight?: boolean;
 }
 
 const CATALOG: CatalogExercise[] = [
@@ -57,13 +65,13 @@ const CATALOG: CatalogExercise[] = [
   { name: "Chest Fly", muscle: "chest" },
   { name: "Cable Crossover", muscle: "chest" },
   { name: "Machine Chest Press", muscle: "chest" },
-  { name: "Push-Up", muscle: "chest" },
-  { name: "Dips (Chest)", muscle: "chest" },
+  { name: "Push-Up", muscle: "chest", bodyweight: true },
+  { name: "Dips (Chest)", muscle: "chest", bodyweight: true },
   { name: "Pec Deck", muscle: "chest" },
   // Back
   { name: "Deadlift", muscle: "back" },
-  { name: "Pull-Up", muscle: "back" },
-  { name: "Chin-Up", muscle: "back" },
+  { name: "Pull-Up", muscle: "back", bodyweight: true },
+  { name: "Chin-Up", muscle: "back", bodyweight: true },
   { name: "Lat Pulldown", muscle: "back" },
   { name: "Barbell Row", muscle: "back" },
   { name: "Pendlay Row", muscle: "back" },
@@ -73,7 +81,7 @@ const CATALOG: CatalogExercise[] = [
   { name: "Face Pull", muscle: "back" },
   { name: "Straight-Arm Pulldown", muscle: "back" },
   { name: "Rack Pull", muscle: "back" },
-  { name: "Hyperextension", muscle: "back" },
+  { name: "Hyperextension", muscle: "back", bodyweight: true },
   // Shoulders
   { name: "Overhead Press", muscle: "shoulders" },
   { name: "Seated Dumbbell Press", muscle: "shoulders" },
@@ -96,15 +104,15 @@ const CATALOG: CatalogExercise[] = [
   { name: "Triceps Pushdown", muscle: "triceps" },
   { name: "Overhead Triceps Extension", muscle: "triceps" },
   { name: "Skull Crusher", muscle: "triceps" },
-  { name: "Dips (Triceps)", muscle: "triceps" },
+  { name: "Dips (Triceps)", muscle: "triceps", bodyweight: true },
   { name: "Triceps Kickback", muscle: "triceps" },
   // Quads
   { name: "Back Squat", muscle: "quads" },
   { name: "Front Squat", muscle: "quads" },
   { name: "Leg Press", muscle: "quads" },
   { name: "Hack Squat", muscle: "quads" },
-  { name: "Bulgarian Split Squat", muscle: "quads" },
-  { name: "Lunge", muscle: "quads" },
+  { name: "Bulgarian Split Squat", muscle: "quads", bodyweight: true },
+  { name: "Lunge", muscle: "quads", bodyweight: true },
   { name: "Leg Extension", muscle: "quads" },
   { name: "Goblet Squat", muscle: "quads" },
   // Hamstrings
@@ -113,31 +121,35 @@ const CATALOG: CatalogExercise[] = [
   { name: "Seated Leg Curl", muscle: "hamstrings" },
   { name: "Good Morning", muscle: "hamstrings" },
   { name: "Stiff-Leg Deadlift", muscle: "hamstrings" },
-  { name: "Nordic Curl", muscle: "hamstrings" },
+  { name: "Nordic Curl", muscle: "hamstrings", bodyweight: true },
   // Glutes
   { name: "Hip Thrust", muscle: "glutes" },
-  { name: "Glute Bridge", muscle: "glutes" },
+  { name: "Glute Bridge", muscle: "glutes", bodyweight: true },
   { name: "Cable Kickback", muscle: "glutes" },
   { name: "Sumo Deadlift", muscle: "glutes" },
-  { name: "Step-Up", muscle: "glutes" },
+  { name: "Step-Up", muscle: "glutes", bodyweight: true },
   // Calves
   { name: "Standing Calf Raise", muscle: "calves" },
   { name: "Seated Calf Raise", muscle: "calves" },
   { name: "Leg Press Calf Raise", muscle: "calves" },
   // Core
-  { name: "Plank", muscle: "core" },
-  { name: "Hanging Leg Raise", muscle: "core" },
+  { name: "Plank", muscle: "core", mode: "time", bodyweight: true },
+  { name: "Hanging Leg Raise", muscle: "core", bodyweight: true },
   { name: "Cable Crunch", muscle: "core" },
-  { name: "Ab Wheel Rollout", muscle: "core" },
-  { name: "Russian Twist", muscle: "core" },
-  { name: "Sit-Up", muscle: "core" },
-  { name: "Crunch", muscle: "core" },
-  { name: "Leg Raise", muscle: "core" },
-  { name: "Mountain Climber", muscle: "core" },
+  { name: "Ab Wheel Rollout", muscle: "core", bodyweight: true },
+  { name: "Russian Twist", muscle: "core", bodyweight: true },
+  { name: "Sit-Up", muscle: "core", bodyweight: true },
+  { name: "Crunch", muscle: "core", bodyweight: true },
+  { name: "Leg Raise", muscle: "core", bodyweight: true },
+  { name: "Side Plank", muscle: "core", mode: "time", bodyweight: true },
+  { name: "Hollow Hold", muscle: "core", mode: "time", bodyweight: true },
+  { name: "Dead Hang", muscle: "forearms", mode: "time", bodyweight: true },
+  { name: "Wall Sit", muscle: "quads", mode: "time", bodyweight: true },
+  { name: "Mountain Climber", muscle: "core", bodyweight: true, mode: "time" },
   // Forearms
   { name: "Wrist Curl", muscle: "forearms" },
   { name: "Reverse Curl", muscle: "forearms" },
-  { name: "Farmer's Walk", muscle: "forearms" },
+  { name: "Farmer's Walk", muscle: "forearms", mode: "time" },
   // Traps
   { name: "Barbell Shrug", muscle: "traps" },
   { name: "Dumbbell Shrug", muscle: "traps" },
@@ -147,7 +159,7 @@ const CATALOG: CatalogExercise[] = [
   { name: "Snatch", muscle: "fullbody" },
   { name: "Kettlebell Swing", muscle: "fullbody" },
   { name: "Thruster", muscle: "fullbody" },
-  { name: "Burpee", muscle: "fullbody" },
+  { name: "Burpee", muscle: "fullbody", bodyweight: true },
   // Cardio
   { name: "Running", muscle: "cardio" },
   { name: "Cycling", muscle: "cardio" },
@@ -159,11 +171,26 @@ const CATALOG: CatalogExercise[] = [
 
 export const EXERCISES: CatalogExercise[] = [...CATALOG].sort((a, b) => a.name.localeCompare(b.name));
 
-const BY_NAME = new Map(EXERCISES.map((e) => [e.name.toLowerCase(), e.muscle] as const));
+const BY_NAME = new Map(CATALOG.map((e) => [e.name.toLowerCase(), e] as const));
+
+/** Catalog entry for a name, if we know it. Custom exercises simply aren't in here. */
+export function catalogEntry(name: string): CatalogExercise | undefined {
+  return BY_NAME.get(name.trim().toLowerCase());
+}
+
+/** Is a set of this exercise measured in seconds held rather than reps? */
+export function isTimeBased(name: string): boolean {
+  return catalogEntry(name)?.mode === "time";
+}
+
+/** Does this exercise move your own body weight (so the log should pre-fill it)? */
+export function isBodyweight(name: string): boolean {
+  return catalogEntry(name)?.bodyweight === true;
+}
 
 /** Look up an exercise's muscle group by (case-insensitive) name. */
 export function muscleFor(name: string): Muscle | undefined {
-  return BY_NAME.get(name.trim().toLowerCase());
+  return BY_NAME.get(name.trim().toLowerCase())?.muscle;
 }
 
 /** Built-in starter plans the user can add and then customise. */

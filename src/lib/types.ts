@@ -377,7 +377,14 @@ export interface Finances {
 
 export interface ExerciseSet {
   reps?: number; // actual reps done
-  weight?: number; // actual kg
+  /** Actual kg. For a bodyweight exercise this is only the ADDED load (belt, plate, vest);
+   *  the body part of it lives in bodyWeightKg, so the two can be told apart later. */
+  weight?: number;
+  /** Seconds held, for exercises counted by time rather than reps (plank, dead hang). */
+  seconds?: number;
+  /** Body weight moved by this set, captured at the time it was logged — so a set from
+   *  when you weighed 78 kg keeps its real load after you gain or lose weight. */
+  bodyWeightKg?: number;
   targetReps?: number; // planned reps
   targetWeight?: number; // planned kg
 }

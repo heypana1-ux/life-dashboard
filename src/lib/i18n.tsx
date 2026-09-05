@@ -1969,7 +1969,26 @@ const DE: Record<string, string> = {
   "Edit workout": "Workout bearbeiten",
   Actual: "Ist",
   reps: "Wdh",
+  "{n} reps": "{n} Wdh",
   "Remove set": "Satz entfernen",
+  // held & bodyweight exercises
+  Seconds: "Sekunden",
+  seconds: "Sekunden",
+  Hold: "Halten",
+  "Longest hold": "Längstes Halten",
+  "Longest holds": "Längste Haltezeiten",
+  "For exercises you hold rather than repeat — a plank record is time, not weight.":
+    "Für Übungen, die du hältst statt wiederholst — ein Plank-Rekord ist Zeit, kein Gewicht.",
+  "Bodyweight exercise — your {kg} kg counts as the load.":
+    "Körpergewichtsübung — deine {kg} kg zählen als Last.",
+  "Bodyweight exercise — log a weigh-in to have your body weight counted.":
+    "Körpergewichtsübung — trage dein Gewicht ein, damit dein Körpergewicht mitzählt.",
+  // workout share image
+  "Workout image": "Trainingsbild",
+  "Save image": "Bild speichern",
+  Share: "Teilen",
+  Distance: "Distanz",
+  average: "im Schnitt",
   // muscle groups
   Chest: "Brust",
   "Back / Lats": "Rücken",

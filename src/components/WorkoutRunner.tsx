@@ -7,10 +7,12 @@ import { useStore } from "@/lib/store";
 import { uid } from "@/lib/defaults";
 import { useT } from "@/lib/i18n";
 import { Workout, WorkoutPlan } from "@/lib/types";
-import { muscleFor, Muscle } from "@/lib/exercises";
+import { isBodyweight, isTimeBased, muscleFor, Muscle } from "@/lib/exercises";
 import { todayISO } from "@/lib/date";
 import { elapsedSec, fmtClock, useLive } from "@/lib/liveActivity";
+import { describeSet } from "@/lib/trainingStats";
 import { Button, ScaleInput } from "@/components/ui";
+import { WorkoutImageAction } from "@/components/WorkoutShare";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 
 /*
@@ -25,8 +27,13 @@ import { ExerciseSelect } from "@/components/ExercisePicker";
 */
 
 interface RunSet {
+  /** Added load only (plates, belt, vest) — a bodyweight exercise keeps the body part apart. */
   weight: number;
   reps: number;
+  /** Seconds held, for time-based exercises. */
+  seconds?: number;
+  /** Body weight at the moment the set was logged, for bodyweight exercises. */
+  bodyWeightKg?: number;
 }
 export interface RunExercise {
   id: string;
@@ -90,12 +97,17 @@ export function WorkoutRunner() {
 
   const [weight, setWeight] = useState("");
   const [reps, setReps] = useState("");
+  const [secs, setSecs] = useState("");
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // Latest weigh-in: what a bodyweight set actually moves. Without one we just record the
+  // added load, and the set still counts — it simply can't know the body part.
+  const bodyWeight = data.weight.length ? data.weight[data.weight.length - 1].kg : undefined;
 
   const isWorkout = live?.kind === "workout" && (live.payload as WorkoutPayload | undefined)?.mode !== "form";
   const p = (isWorkout ? live!.payload : undefined) as WorkoutPayload | undefined;
@@ -109,21 +121,31 @@ export function WorkoutRunner() {
     const m = new Map<string, RunSet>();
     for (const w of [...data.workouts].sort((a, b) => (a.date < b.date ? -1 : 1))) {
       for (const ex of w.exercises) {
-        const done = ex.sets.filter((s) => (s.reps ?? 0) > 0);
+        const done = ex.sets.filter((s) => (s.reps ?? 0) > 0 || (s.seconds ?? 0) > 0);
         const last = done[done.length - 1];
-        if (last) m.set(ex.name.toLowerCase(), { weight: last.weight ?? 0, reps: last.reps ?? 0 });
+        if (last)
+          m.set(ex.name.toLowerCase(), {
+            weight: last.weight ?? 0,
+            reps: last.reps ?? 0,
+            seconds: last.seconds ?? (isTimeBased(ex.name) ? last.reps : undefined),
+            bodyWeightKg: last.bodyWeightKg,
+          });
       }
     }
     return m;
   }, [data.workouts]);
 
-  // Suggest last time's weight/reps when moving to an exercise.
+  const timed = !!curNameOf(active) && isTimeBased(curNameOf(active)!);
+  const bodyw = !!curNameOf(active) && isBodyweight(curNameOf(active)!);
+
+  // Suggest last time's numbers when moving to an exercise.
   const curName = active?.name;
   useEffect(() => {
     const ls = curName ? lastSet.get(curName.toLowerCase()) : undefined;
     /* eslint-disable react-hooks/set-state-in-effect */
     setWeight(ls ? String(ls.weight) : "");
     setReps(ls ? String(ls.reps) : "");
+    setSecs(ls?.seconds != null ? String(ls.seconds) : "");
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curName]);
@@ -158,23 +180,35 @@ export function WorkoutRunner() {
   }
 
   function logSet() {
-    const w = Number(weight) || 0;
+    if (!active) return;
+    const added = Number(weight) || 0;
     const r = Number(reps) || 0;
-    if (r <= 0 || !active) return;
+    const sec = Number(secs) || 0;
+    // A timed set needs seconds; everything else needs reps.
+    if (timed ? sec <= 0 : r <= 0) return;
+    const set: RunSet = {
+      weight: added,
+      reps: timed ? 0 : r,
+      ...(timed ? { seconds: sec } : {}),
+      // Captured now, so the set keeps the load it really moved even if you gain or lose.
+      ...(bodyw && bodyWeight ? { bodyWeightKg: bodyWeight } : {}),
+    };
     patchPayload({
-      exercises: exercises.map((e, i) => (i === cur ? { ...e, sets: [...e.sets, { weight: w, reps: r }] } : e)),
+      exercises: exercises.map((e, i) => (i === cur ? { ...e, sets: [...e.sets, set] } : e)),
       // Auto-start this exercise's configured rest (from the plan), if any.
       ...(active.restSec && active.restSec > 0 ? { restEndsAt: Date.now() + active.restSec * 1000 } : {}),
     });
-    setReps("");
+    if (timed) setSecs("");
+    else setReps("");
   }
 
   function removeSet(exIdx: number, setIdx: number) {
     setExercises((xs) => xs.map((e, i) => (i === exIdx ? { ...e, sets: e.sets.filter((_, j) => j !== setIdx) } : e)));
   }
 
-  function doSave() {
-    const w: Workout = {
+  /** The session as a Workout — used both to save it and to draw the share image. */
+  function buildWorkout(): Workout {
+    return {
       id: "",
       date: todayISO(),
       sport: "Strength Training",
@@ -188,10 +222,18 @@ export function WorkoutRunner() {
           id: uid("ex"),
           name: e.name,
           muscle: e.muscle,
-          sets: e.sets.map((s) => ({ reps: s.reps, weight: s.weight })),
+          sets: e.sets.map((s) => ({
+            reps: s.reps,
+            weight: s.weight,
+            ...(s.seconds != null ? { seconds: s.seconds } : {}),
+            ...(s.bodyWeightKg != null ? { bodyWeightKg: s.bodyWeightKg } : {}),
+          })),
         })),
     };
-    saveWorkout(w);
+  }
+
+  function doSave() {
+    saveWorkout(buildWorkout());
     stop();
   }
 
@@ -237,7 +279,12 @@ export function WorkoutRunner() {
             ))}
           </div>
         </div>
-        <div className="border-t border-[var(--border)] p-4">
+        <div className="space-y-2 border-t border-[var(--border)] p-4">
+          {/* The card is drawn from the session as it stands, so you can look at it — and
+              adjust the ratings — before the workout is filed away. */}
+          <div className="mx-auto w-full max-w-md">
+            <WorkoutImageAction build={buildWorkout} />
+          </div>
           <Button className="mx-auto block w-full max-w-md !py-3" onClick={doSave}>
             <Check size={16} /> {t("Save workout")}
           </Button>
@@ -337,9 +384,7 @@ export function WorkoutRunner() {
                 {active?.sets.map((s, j) => (
                   <div key={j} className="flex items-center gap-3 rounded-xl bg-[var(--surface-2)] px-3 py-2 text-sm">
                     <span className="text-[var(--text-faint)]">{j + 1}</span>
-                    <span className="flex-1 font-medium tabular-nums">
-                      {s.weight} kg × {s.reps}
-                    </span>
+                    <span className="flex-1 font-medium tabular-nums">{describeSet(active.name, s, t)}</span>
                     <button onClick={() => removeSet(cur, j)} className="text-[var(--text-faint)] hover:text-[var(--bad)]">
                       <Trash2 size={14} />
                     </button>
@@ -350,34 +395,44 @@ export function WorkoutRunner() {
               {/* Log a set */}
               <div className="flex items-end gap-2">
                 <label className="flex-1 text-xs font-medium text-[var(--text-muted)]">
-                  {t("Weight (kg)")}
+                  {/* A bodyweight exercise already carries your own weight, so this field is
+                      the load you ADD on top; everything else asks for the plain weight. */}
+                  {bodyw ? `+ ${t("Weight (kg)")}` : t("Weight (kg)")}
                   <input
                     type="number"
                     inputMode="decimal"
                     className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
                     value={weight}
                     onChange={(e) => setWeight(e.target.value)}
-                    placeholder={active?.targetWeight ? String(active.targetWeight) : ""}
+                    placeholder={bodyw ? "0" : active?.targetWeight ? String(active.targetWeight) : ""}
                   />
                 </label>
                 <label className="flex-1 text-xs font-medium text-[var(--text-muted)]">
-                  {t("Reps")}
+                  {timed ? t("Seconds") : t("Reps")}
                   <input
                     type="number"
                     inputMode="numeric"
                     className="mt-1 w-full rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2.5 text-sm outline-none focus:border-[var(--accent)]"
-                    value={reps}
-                    onChange={(e) => setReps(e.target.value)}
+                    value={timed ? secs : reps}
+                    onChange={(e) => (timed ? setSecs(e.target.value) : setReps(e.target.value))}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") logSet();
                     }}
-                    placeholder={active?.targetReps ? String(active.targetReps) : ""}
+                    placeholder={timed ? "60" : active?.targetReps ? String(active.targetReps) : ""}
                   />
                 </label>
-                <Button onClick={logSet} disabled={!reps}>
+                <Button onClick={logSet} disabled={timed ? !secs : !reps}>
                   <Plus size={16} /> {t("Log set")}
                 </Button>
               </div>
+
+              {bodyw && (
+                <p className="-mt-2 text-[11px] text-[var(--text-faint)]">
+                  {bodyWeight
+                    ? t("Bodyweight exercise — your {kg} kg counts as the load.", { kg: bodyWeight })
+                    : t("Bodyweight exercise — log a weigh-in to have your body weight counted.")}
+                </p>
+              )}
 
               {/* Rest */}
               <div>
@@ -430,3 +485,8 @@ export function WorkoutRunner() {
     document.body,
   );
 }
+
+function curNameOf(ex: RunExercise | undefined): string | undefined {
+  return ex?.name;
+}
+

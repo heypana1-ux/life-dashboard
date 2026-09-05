@@ -46,6 +46,7 @@ import {
 } from "./types";
 import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
 import { dueRecurring } from "./finance";
+import { migrateTimedSets } from "./trainingStats";
 import { todayISO, addDays, weekdayOf } from "./date";
 import type { Accent } from "./types";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
@@ -126,7 +127,8 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
       budgets: parsed.finances?.budgets ?? [],
       savingsGoals: parsed.finances?.savingsGoals ?? [],
     },
-    workouts: parsed.workouts ?? [],
+    // Old plank/hold sets were logged as reps; convert them once, on the way in.
+    workouts: migrateTimedSets(parsed.workouts ?? []),
     workoutPlans: parsed.workoutPlans ?? [],
     projects: parsed.projects ?? [],
     experiments: parsed.experiments ?? [],
@@ -140,14 +142,20 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
   };
 }
 
-function loadData(): AppData {
-  if (typeof window === "undefined") return emptyData();
+/** The loaded blob, plus whether normalizing it actually rewrote something on the way in
+ *  (currently: old plank/hold sets). A rewrite has to be persisted, or the stored copy keeps
+ *  its outdated shape and every export carries it along. */
+function loadData(): { data: AppData; rewritten: boolean } {
+  if (typeof window === "undefined") return { data: emptyData(), rewritten: false };
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return emptyData();
-    return normalizeData(JSON.parse(raw) as AppData);
+    if (!raw) return { data: emptyData(), rewritten: false };
+    const parsed = JSON.parse(raw) as AppData;
+    const data = normalizeData(parsed);
+    // migrateTimedSets hands back the very same array when it changed nothing.
+    return { data, rewritten: Array.isArray(parsed.workouts) && data.workouts !== parsed.workouts };
   } catch {
-    return emptyData();
+    return { data: emptyData(), rewritten: false };
   }
 }
 
@@ -283,8 +291,12 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Hydrate from localStorage after mount (avoids SSR/client mismatch).
+    const loaded = loadData();
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setData(loadData());
+    setData(loaded.data);
+    // Normally the first persist is skipped — writing back what we just read is pointless.
+    // When loading migrated the data, that write is the whole point, so let it through.
+    if (loaded.rewritten) first.current = false;
     setReady(true);
   }, []);
 

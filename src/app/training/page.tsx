@@ -8,9 +8,17 @@ import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { uid } from "@/lib/defaults";
 import { sportKind, paceLabel, speedKmh, hrZone } from "@/lib/sports";
 import { SportSelect } from "@/components/SportPicker";
-import { MUSCLE_LABEL, Muscle, muscleFor, PLAN_TEMPLATES } from "@/lib/exercises";
+import { MUSCLE_LABEL, Muscle, muscleFor, isBodyweight, isTimeBased, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
-import { exerciseHistory, loggedExerciseNames, muscleVolume, personalRecords } from "@/lib/trainingStats";
+import {
+  exerciseHistory,
+  loggedExerciseNames,
+  muscleVolume,
+  personalRecords,
+  holdRecords,
+  setSeconds as secondsOf,
+  setLoadKg as loadOf,
+} from "@/lib/trainingStats";
 import { ageFrom, fmtDuration, fmtShort, isoRange, todayISO } from "@/lib/date";
 import {
   Card,
@@ -30,6 +38,7 @@ import {
 import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
 import { useStartWorkout } from "@/components/WorkoutRunner";
+import { WorkoutImageButton } from "@/components/WorkoutShare";
 import { elapsedSec as liveElapsed, useLive } from "@/lib/liveActivity";
 
 type Tab = "workouts" | "plans" | "progress";
@@ -282,6 +291,7 @@ function WorkoutsTab({
                     </div>
                   </div>
                   <div className="flex gap-1">
+                    <WorkoutImageButton workout={w} />
                     <button onClick={() => onEdit(w)} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">
                       {t("Edit")}
                     </button>
@@ -293,10 +303,14 @@ function WorkoutsTab({
                 {w.exercises.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-1.5">
                     {w.exercises.map((ex) => {
-                      const best = ex.sets.reduce((m, s) => Math.max(m, s.weight ?? 0), 0);
+                      // A hold's best set is its longest, not its heaviest; a bodyweight set's
+                      // load includes the body it moved.
+                      const bestSec = ex.sets.reduce((m, s) => Math.max(m, secondsOf(ex.name, s)), 0);
+                      const bestKg = ex.sets.reduce((m, s) => Math.max(m, loadOf(s)), 0);
+                      const suffix = bestSec ? ` ${bestSec}s` : bestKg ? ` ${bestKg}kg` : "";
                       return (
                         <span key={ex.id} className="rounded-lg bg-[var(--surface-2)] px-2 py-1 text-xs">
-                          {ex.name} · {ex.sets.length}×{best ? ` ${best}kg` : ""}
+                          {ex.name} · {ex.sets.length}×{suffix}
                         </span>
                       );
                     })}
@@ -389,10 +403,17 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
   const history = useMemo(() => (selected ? exerciseHistory(workouts, selected) : []), [workouts, selected]);
   const muscles = useMemo(() => muscleVolume(workouts, 30), [workouts]);
   const records = useMemo(() => personalRecords(workouts), [workouts]);
+  const holds = useMemo(() => holdRecords(workouts), [workouts]);
 
-  const chart = history.map((p) => ({ date: p.date, value: p.best1RM || p.bestWeight }));
-  const first = history[0]?.best1RM || history[0]?.bestWeight || 0;
-  const last = history.length ? history[history.length - 1].best1RM || history[history.length - 1].bestWeight : 0;
+  // A plank has no one-rep max — its progress is a longer hold. Same chart, other axis.
+  const timed = !!selected && isTimeBased(selected);
+  const valueOf = (p: { best1RM: number; bestWeight: number; bestSeconds: number }) =>
+    timed ? p.bestSeconds : p.best1RM || p.bestWeight;
+  const chart = history.map((p) => ({ date: p.date, value: valueOf(p) }));
+  const unit = timed ? "s" : "kg";
+  const metric = timed ? t("Longest hold") : t("Estimated 1RM");
+  const first = history.length ? valueOf(history[0]) : 0;
+  const last = history.length ? valueOf(history[history.length - 1]) : 0;
   const delta = last - first;
 
   const maxVol = muscles.reduce((m, x) => Math.max(m, x.volume), 0) || 1;
@@ -428,15 +449,15 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
         {chart.length >= 2 ? (
           <>
             <div className="mb-2 flex items-baseline gap-2 text-sm">
-              <span className="text-[var(--text-muted)]">{t("Estimated 1RM")}:</span>
-              <span className="num text-lg font-bold">{last} kg</span>
+              <span className="text-[var(--text-muted)]">{metric}:</span>
+              <span className="num text-lg font-bold">{last} {unit}</span>
               {delta !== 0 && (
                 <span className={delta > 0 ? "text-[var(--good)]" : "text-[var(--bad)]"}>
-                  {delta > 0 ? "+" : ""}{delta} kg
+                  {delta > 0 ? "+" : ""}{delta} {unit}
                 </span>
               )}
             </div>
-            <TrendLine data={chart} color="var(--accent)" unit="kg" name={t("Estimated 1RM")} />
+            <TrendLine data={chart} color="var(--accent)" unit={unit} name={metric} />
           </>
         ) : (
           <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("Log this exercise on at least two days to see a trend.")}</p>
@@ -463,6 +484,25 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
         </Card>
       )}
 
+      {holds.length > 0 && (
+        <Card>
+          <SectionTitle right={<Timer size={16} className="text-[var(--text-faint)]" />}>{t("Longest holds")}</SectionTitle>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">
+            {t("For exercises you hold rather than repeat — a plank record is time, not weight.")}
+          </p>
+          <div className="space-y-1.5">
+            {holds.slice(0, 8).map((r) => (
+              <div key={r.name} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--surface-2)]">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{r.name}</span>
+                {r.isNew && <Badge tone="good">{t("New PR")}</Badge>}
+                <span className="text-xs text-[var(--text-faint)]">{fmtShort(r.date)}</span>
+                <span className="num w-16 text-right text-sm font-bold">{fmtClock(r.seconds)}</span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
       <Card>
         <SectionTitle>{t("Volume by muscle group")} · {t("last 30 days")}</SectionTitle>
         {muscles.length === 0 ? (
@@ -473,7 +513,10 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
               <div key={m.muscle}>
                 <div className="mb-1 flex items-center justify-between text-xs">
                   <span className="font-medium">{muscleLabel(m.muscle, t)}</span>
-                  <span className="text-[var(--text-faint)]">{m.sets} {t("sets")} · {m.volume.toLocaleString()} kg</span>
+                  {/* Held work has no tonnage, so show what it does have: time under tension. */}
+                  <span className="text-[var(--text-faint)]">
+                    {m.sets} {t("sets")} · {m.volume > 0 || !m.seconds ? `${m.volume.toLocaleString()} kg` : fmtClock(m.seconds)}
+                  </span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--ring-track)]">
                   <div className="grad h-full rounded-full" style={{ width: `${Math.round((m.volume / maxVol) * 100)}%` }} />
@@ -926,8 +969,14 @@ function WorkoutModal({
 }
 
 function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p: Partial<Exercise>) => void; onRemove: () => void }) {
+  const { data } = useStore();
   const t = useT();
   const muscle = ex.muscle;
+  // Held exercises are logged in seconds, and bodyweight ones split the load into "your body"
+  // plus whatever you hang off it — so the columns change per exercise, not per workout.
+  const timed = isTimeBased(ex.name);
+  const bodyw = isBodyweight(ex.name);
+  const bodyWeight = data.weight.length ? data.weight[data.weight.length - 1].kg : undefined;
   return (
     <div className="rounded-xl border border-[var(--border)] p-3">
       <div className="mb-2 flex items-center gap-2">
@@ -945,8 +994,12 @@ function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p
       </div>
       <div className="mb-1 grid grid-cols-[1.2rem_1fr_1fr] items-center gap-2 text-[10px] font-semibold uppercase tracking-wide text-[var(--text-faint)]">
         <span />
-        <span className="text-center">{t("Target")} ({t("reps")}×kg)</span>
-        <span className="text-center">{t("Actual")} ({t("reps")}×kg)</span>
+        <span className="text-center">
+          {t("Target")} ({timed ? t("seconds") : t("reps")}{timed ? "" : "×kg"})
+        </span>
+        <span className="text-center">
+          {t("Actual")} ({timed ? t("seconds") : t("reps")}{timed ? "" : bodyw ? "×+kg" : "×kg"})
+        </span>
       </div>
       <div className="space-y-1.5">
         {ex.sets.map((st, i) => (
@@ -954,13 +1007,43 @@ function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p
             <span className="text-xs text-[var(--text-faint)]">{i + 1}</span>
             <div className="flex items-center gap-1">
               <input type="number" className={`${inputCls} !py-1.5`} placeholder="—" value={st.targetReps ?? ""} onChange={(e) => setSet(ex, onChange, i, { targetReps: numOrU(e.target.value) })} />
-              <span className="text-[var(--text-faint)]">×</span>
-              <input type="number" className={`${inputCls} !py-1.5`} placeholder="—" value={st.targetWeight ?? ""} onChange={(e) => setSet(ex, onChange, i, { targetWeight: numOrU(e.target.value) })} />
+              {!timed && (
+                <>
+                  <span className="text-[var(--text-faint)]">×</span>
+                  <input type="number" className={`${inputCls} !py-1.5`} placeholder="—" value={st.targetWeight ?? ""} onChange={(e) => setSet(ex, onChange, i, { targetWeight: numOrU(e.target.value) })} />
+                </>
+              )}
             </div>
             <div className="flex items-center gap-1">
-              <input type="number" inputMode="numeric" className={`${inputCls} !py-1.5`} placeholder={String(st.targetReps ?? "")} value={st.reps ?? ""} onChange={(e) => setSet(ex, onChange, i, { reps: numOrU(e.target.value) })} />
-              <span className="text-[var(--text-faint)]">×</span>
-              <input type="number" inputMode="decimal" className={`${inputCls} !py-1.5`} placeholder={String(st.targetWeight ?? "")} value={st.weight ?? ""} onChange={(e) => setSet(ex, onChange, i, { weight: numOrU(e.target.value) })} />
+              {timed ? (
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  className={`${inputCls} !py-1.5`}
+                  placeholder="60"
+                  value={secondsOf(ex.name, st) || ""}
+                  onChange={(e) => setSet(ex, onChange, i, { seconds: numOrU(e.target.value), reps: undefined })}
+                />
+              ) : (
+                <>
+                  <input type="number" inputMode="numeric" className={`${inputCls} !py-1.5`} placeholder={String(st.targetReps ?? "")} value={st.reps ?? ""} onChange={(e) => setSet(ex, onChange, i, { reps: numOrU(e.target.value) })} />
+                  <span className="text-[var(--text-faint)]">×</span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    className={`${inputCls} !py-1.5`}
+                    placeholder={bodyw ? "0" : String(st.targetWeight ?? "")}
+                    value={st.weight ?? ""}
+                    onChange={(e) =>
+                      setSet(ex, onChange, i, {
+                        weight: numOrU(e.target.value),
+                        // Stamp the body weight the moment a bodyweight set gets a value.
+                        ...(bodyw && bodyWeight ? { bodyWeightKg: bodyWeight } : {}),
+                      })
+                    }
+                  />
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -981,6 +1064,13 @@ function ExerciseEditor({ ex, onChange, onRemove }: { ex: Exercise; onChange: (p
           )}
         </div>
       </div>
+      {bodyw && (
+        <p className="mt-2 text-[11px] text-[var(--text-faint)]">
+          {bodyWeight
+            ? t("Bodyweight exercise — your {kg} kg counts as the load.", { kg: bodyWeight })
+            : t("Bodyweight exercise — log a weigh-in to have your body weight counted.")}
+        </p>
+      )}
     </div>
   );
 }
