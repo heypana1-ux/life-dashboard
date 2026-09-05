@@ -344,7 +344,7 @@ function isActive(pathname: string, href: string): boolean {
 
 /** Maps a route to its "Pulse" area accent (sets --area-* via data-area on the page wrapper). */
 const AREA_BY_PREFIX: [string, string][] = [
-  ["/today", "core"], ["/morning", "core"], ["/habits", "core"], ["/calendar", "core"], ["/coach", "core"],
+  ["/today", "core"], ["/morning", "core"], ["/habits", "core"], ["/calendar", "core"], ["/coach", "core"], ["/ai", "core"],
   ["/focus", "focus"], ["/training", "training"], ["/sleep", "sleep"], ["/health", "health"],
   ["/journal", "journal"], ["/goals", "goals"], ["/vision", "vision"],
   ["/projects", "projects"], ["/experiments", "projects"],

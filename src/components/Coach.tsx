@@ -7,6 +7,7 @@ import { Bot, MessageCircle, Send, Shield, Sparkles, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
+import { CoachText } from "@/components/CoachText";
 import { buildCoachContext } from "@/lib/coachContext";
 import { askCoach, coachAsk, checkCoachConfigured, CoachTurn, askCoachAgent, AgentMsg } from "@/lib/ai";
 import { runCoachTool } from "@/lib/coachTools";
@@ -257,14 +258,16 @@ export function CoachChat({
         )}
         {messages.map((m, i) => (
           <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
+            {/* Your turn is a plain gradient bubble; the coach's sits on the same area wash
+                every other AI surface uses, and its markdown is rendered rather than printed. */}
             <div
               className={
                 m.role === "user"
                   ? "area-grad max-w-[78%] whitespace-pre-wrap rounded-[16px] rounded-br-[5px] px-[13px] py-[11px] text-[13px] leading-[1.5]"
-                  : "max-w-[88%] whitespace-pre-wrap rounded-[16px] rounded-bl-[5px] bg-[var(--surface-2)] px-3.5 py-3 text-[13px] leading-[1.55]"
+                  : "area-deep max-w-[88%] rounded-[16px] rounded-bl-[5px] border border-[color-mix(in_srgb,var(--area-a)_20%,transparent)] px-3.5 py-3 text-[13px] leading-[1.55]"
               }
             >
-              {m.content}
+              {m.role === "user" ? m.content : <CoachText text={m.content} />}
             </div>
           </div>
         ))}
@@ -402,7 +405,7 @@ export function CoachBriefing() {
           <div className="h-3 w-4/5 animate-pulse rounded bg-[var(--surface-2)]" />
         </div>
       ) : (
-        <p className="text-sm leading-relaxed text-[var(--text-muted)]">{text}</p>
+        <CoachText text={text} className="text-sm leading-relaxed text-[var(--text-muted)]" />
       )}
     </div>
   );
@@ -462,7 +465,7 @@ export function CoachWeeklyCheckin() {
         </div>
       ) : (
         <>
-          <p className="text-sm leading-relaxed text-[var(--text-muted)]">{text}</p>
+          <CoachText text={text} className="text-sm leading-relaxed text-[var(--text-muted)]" />
           <Link href="/coach">
             <Button variant="soft" size="sm" className="mt-3">
               <Sparkles size={14} /> {t("Reply to your coach")}
@@ -511,14 +514,15 @@ export function CoachInsightCard({
   }
 
   return (
-    /* Pulse: a normal card whose section head carries a "Coach" badge, with the
-       action as a full-width soft button underneath. The `deep` variant is the
-       design's glowing panel — a saturated area wash behind an area hairline. */
+    /* Everything the coach writes shares one surface: an area-tinted wash behind an area
+       hairline. That's what marks a card as "the AI talking" rather than another panel of your
+       own numbers — so it applies here, to the briefing and to the weekly check-in alike.
+       `deep` now only picks the tighter inline density used inside other cards. */
     <div
       className={
         deep
           ? "area-deep rounded-[16px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] px-3.5 py-[13px]"
-          : "card p-[18px]"
+          : "area-deep rounded-[var(--radius)] border border-[color-mix(in_srgb,var(--area-a)_25%,transparent)] p-[18px]"
       }
     >
       <div className={deep ? "mb-1.5 flex items-center justify-between gap-2" : "mb-3 flex items-center justify-between gap-2"}>
@@ -552,7 +556,7 @@ export function CoachInsightCard({
           <div className="h-3 w-3/5 animate-pulse rounded bg-[var(--surface-2)]" />
         </div>
       ) : text ? (
-        <p className="whitespace-pre-wrap text-[12.5px] leading-[1.5] text-[var(--text-muted)]">{text}</p>
+        <CoachText text={text} className="text-[12.5px] leading-[1.5] text-[var(--text-muted)]" />
       ) : err ? (
         <>
           <p className="text-[12.5px] leading-[1.5] text-[var(--bad)]">{t(ERROR_MSG[err] ?? ERROR_MSG.network)}</p>

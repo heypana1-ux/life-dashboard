@@ -5,12 +5,13 @@ import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import clsx from "clsx";
 import { AREA_LABELS } from "@/lib/defaults";
+import { AreaKey } from "@/lib/types";
 import { AREA_COLORS, AREA_ICONS } from "@/lib/areaStyle";
 import { weekdayLabel, fmtShort } from "@/lib/date";
 import { useT } from "@/lib/i18n";
-import { Card, PageHeader, SectionTitle, Chip, Badge } from "@/components/ui";
+import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components/ui";
 import { bestSelf } from "@/lib/bestSelf";
-import { TrendLine, MultiLine } from "@/components/charts";
+import { TrendLine, MultiLine, MiniSpark } from "@/components/charts";
 
 const RANGES: { key: string; days: number; label: string }[] = [
   { key: "7", days: 7, label: "7D" },
@@ -129,16 +130,56 @@ export default function StatisticsPage() {
           <TrendLine data={eloSeries} color="#d97706" name="ELO" height={150} />
         ) : (
           <>
-            <MultiLine
-              data={catSeries}
-              domain={[0, 100]}
-              height={150}
-              series={(soloCat ? enabledCats.filter((c) => c === soloCat) : enabledCats).map((c) => ({
-                key: c,
-                name: t(AREA_LABELS[c]),
-                color: AREA_COLORS[c] ?? "var(--accent)",
-              }))}
-            />
+            {/* Eight lines in one box is a hairball — you can't follow any single one, and the
+                colours stop meaning anything. So: one category at a time gets the full chart,
+                and the rest become a grid of small multiples. Same data, same colours, but each
+                trend is readable on its own and you still see them side by side. Tapping a tile
+                promotes it to the big chart. */}
+            {soloCat ? (
+              <>
+                <MultiLine
+                  data={catSeries}
+                  domain={[0, 100]}
+                  height={150}
+                  series={[
+                    { key: soloCat, name: t(AREA_LABELS[soloCat as AreaKey]), color: AREA_COLORS[soloCat as AreaKey] ?? "var(--accent)" },
+                  ]}
+                />
+                <p className="mt-2 text-xs text-[var(--text-faint)]">
+                  {t("Showing one category — tap it again to show all.")}
+                </p>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                {enabledCats.map((c) => {
+                  const series = catSeries.map((r) => ({ date: r.date as string, value: Number(r[c] ?? 0) }));
+                  const last = series.length ? series[series.length - 1].value : 0;
+                  const first = series.length ? series[0].value : 0;
+                  const Icon = AREA_ICONS[c];
+                  return (
+                    <button
+                      key={c}
+                      onClick={() => setSoloCat(c)}
+                      className="rounded-[16px] border border-[var(--border)] bg-[var(--surface-2)] p-2.5 text-left transition hover:border-[var(--accent)]"
+                    >
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium text-[var(--text-muted)]">
+                          {Icon && <Icon size={12} style={{ color: AREA_COLORS[c] }} />}
+                          <span className="truncate">{t(AREA_LABELS[c])}</span>
+                        </span>
+                        <span className="num text-[13px] font-bold" style={{ color: AREA_COLORS[c] }}>
+                          {Math.round(last)}
+                        </span>
+                      </div>
+                      <div className="mt-1.5">
+                        <MiniSpark data={series} color={AREA_COLORS[c] ?? "var(--accent)"} height={34} />
+                      </div>
+                      <Delta value={Math.round(last - first)} className="mt-1" />
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             <div className="mt-3 flex flex-wrap gap-2">
               {enabledCats.map((c) => {
                 const active = soloCat === null || soloCat === c;
@@ -161,7 +202,7 @@ export default function StatisticsPage() {
                 );
               })}
             </div>
-            {soloCat && (
+            {false && (
               <p className="mt-2 text-xs text-[var(--text-faint)]">{t("Showing one category — tap it again to show all.")}</p>
             )}
           </>

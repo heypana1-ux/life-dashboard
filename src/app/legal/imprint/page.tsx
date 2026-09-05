@@ -22,7 +22,7 @@ export default function ImprintPage() {
 
   return (
     <div className="space-y-[14px]">
-      <PageHeader kicker={t("Legal")} lead={t("Your")} title={t("imprint")} />
+      <PageHeader kicker={t("Legal")} title={t("Imprint")} />
 
       {!complete && <IncompleteWarning />}
 

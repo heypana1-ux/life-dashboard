@@ -55,6 +55,7 @@ export const NAV: NavItem[] = [
   { href: "/statistics", label: "Statistics", icon: BarChart3 },
   { href: "/correlations", label: "Correlations", icon: ArrowLeftRight },
   { href: "/analysis", label: "Analysis", icon: Brain },
+  { href: "/ai", label: "AI analysis", icon: Sparkles },
   { href: "/wheel", label: "Wheel of Life", icon: Compass },
   { href: "/coach", label: "Coach", icon: Sparkles },
   { href: "/profile", label: "Profile", icon: UserCircle },
@@ -85,7 +86,7 @@ export function pinnedNav(pinned?: string[]): NavItem[] {
 /** Grouping for the mobile "More" sheet (keeps it scannable as features grow). */
 export const SECTIONS: { label: string; hrefs: string[] }[] = [
   { label: "Daily", hrefs: ["/", "/today", "/morning", "/habits", "/focus", "/training", "/sleep", "/health", "/journal", "/calendar"] },
-  { label: "Insights", hrefs: ["/statistics", "/correlations", "/analysis", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
+  { label: "Insights", hrefs: ["/statistics", "/correlations", "/analysis", "/ai", "/wheel", "/coach", "/reports", "/achievements", "/rewards", "/scoreboard"] },
   { label: "Areas", hrefs: ["/goals", "/vision", "/projects", "/experiments", "/finances"] },
   { label: "System", hrefs: ["/profile", "/about", "/settings", "/legal/privacy", "/legal/imprint"] },
 ];

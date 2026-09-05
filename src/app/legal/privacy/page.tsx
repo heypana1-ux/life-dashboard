@@ -28,8 +28,7 @@ export default function PrivacyPage() {
     <div className="space-y-[14px]">
       <PageHeader
         kicker={t("Legal")}
-        lead={t("Your")}
-        title={t("privacy")}
+        title={t("Privacy")}
         subtitle={`Stand: ${new Date(PRIVACY_UPDATED).toLocaleDateString("de-DE")}`}
       />
 

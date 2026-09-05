@@ -31,6 +31,19 @@ export async function GET() {
   return NextResponse.json({ configured: !!apiKey() });
 }
 
+
+/**
+ * When the provider stops because it hit the token ceiling, the last sentence is a fragment.
+ * Cutting back to the last completed sentence and marking the break is more honest than
+ * handing the user half a thought as if it were the whole answer.
+ */
+function trimIfTruncated(text: string, finishReason: unknown): string {
+  if (finishReason !== "length" || !text) return text;
+  const cut = Math.max(text.lastIndexOf(". "), text.lastIndexOf("!\n"), text.lastIndexOf("?\n"), text.lastIndexOf("\n"));
+  const trimmed = cut > text.length * 0.5 ? text.slice(0, cut + 1) : text;
+  return `${trimmed.trimEnd()} …`;
+}
+
 export async function POST(req: NextRequest) {
   const key = apiKey();
   if (!key) {
@@ -260,7 +273,8 @@ export async function POST(req: NextRequest) {
     const agentPayload = {
       model: process.env.AI_MODEL || process.env.GROQ_MODEL || DEFAULT_MODEL,
       temperature: 0.3,
-      max_tokens: 800,
+      // Same reason as the plain chat below: the agent turn also has to fit a real answer.
+      max_tokens: 2000,
       tools: COACH_TOOLS,
       tool_choice: "auto" as const,
       messages: [
@@ -286,7 +300,10 @@ export async function POST(req: NextRequest) {
       }
       const json = await res.json();
       const msg = json?.choices?.[0]?.message ?? {};
-      return NextResponse.json({ reply: (msg.content ?? "").trim(), toolCalls: msg.tool_calls ?? null });
+      return NextResponse.json({
+        reply: trimIfTruncated((msg.content ?? "").trim(), json?.choices?.[0]?.finish_reason),
+        toolCalls: msg.tool_calls ?? null,
+      });
     } catch {
       return NextResponse.json({ error: "network" }, { status: 502 });
     }
@@ -312,7 +329,9 @@ export async function POST(req: NextRequest) {
   const payload = {
     model: process.env.AI_MODEL || process.env.GROQ_MODEL || DEFAULT_MODEL,
     temperature: 0.5,
-    max_tokens: 700,
+    // Room for a full answer with a list. At 700 the coach was regularly cut off mid-sentence;
+    // the prompt already asks it to be brief, so this is a ceiling, not a target.
+    max_tokens: 2000,
     messages: [
       { role: "system", content: system },
       { role: "system", content: snapshot },
@@ -343,9 +362,9 @@ export async function POST(req: NextRequest) {
     }
 
     const json = await res.json();
-    const reply: string = json?.choices?.[0]?.message?.content?.trim() || "";
-    if (!reply) return NextResponse.json({ error: "empty" }, { status: 502 });
-    return NextResponse.json({ reply });
+    const raw: string = json?.choices?.[0]?.message?.content?.trim() || "";
+    if (!raw) return NextResponse.json({ error: "empty" }, { status: 502 });
+    return NextResponse.json({ reply: trimIfTruncated(raw, json?.choices?.[0]?.finish_reason) });
   } catch {
     return NextResponse.json({ error: "network" }, { status: 502 });
   }

@@ -191,6 +191,10 @@ const DE: Record<string, string> = {
   "Yes, erase": "Ja, löschen",
   Patterns: "Muster",
   "AI analysis": "KI-Analyse",
+  "What your coach makes of your data — read together in one place.":
+    "Was dein Coach aus deinen Daten liest — alles an einem Ort.",
+  "The bigger picture": "Das große Ganze",
+  "Open settings": "Einstellungen öffnen",
   "Turn the AI coach on in Settings to get a daily briefing and a weekly check-in here.":
     "Schalte den KI-Coach in den Einstellungen ein, um hier ein tägliches Briefing und einen Wochen-Check-in zu bekommen.",
   "Tracking & scoring": "Tracking & Bewertung",

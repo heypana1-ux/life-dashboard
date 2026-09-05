@@ -381,15 +381,18 @@ function ScoreRing({ value }: { value: number }) {
   const glow = `var(--ring-glow, color-mix(in srgb, ${a} 45%, transparent))`;
   return (
     <div className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
-      {/* Halo — a soft bloom of the ring's own colour, sitting behind the arc. */}
+      {/* Halo — a soft bloom of the ring's own colour behind the arc.
+          Done with box-shadow on a circle rather than a blurred radial-gradient: a gradient
+          painted inside a square box leaves faint straight edges where the box ends, which is
+          exactly what you notice on a dark background. A shadow spreads from the shape itself,
+          so it can only ever be round. */}
       <span
         aria-hidden
-        className="pointer-events-none absolute inset-0 rounded-full"
+        className="pointer-events-none absolute rounded-full"
         style={{
-          background: `radial-gradient(circle at 50% 50%, ${glow} 0%, transparent 68%)`,
-          filter: "blur(10px)",
-          transform: "scale(1.28)",
-          opacity: 0.9,
+          inset: "14%",
+          boxShadow: `0 0 22px 10px ${glow}, 0 0 46px 18px ${glow}`,
+          opacity: 0.75,
         }}
       />
       <svg width={size} height={size} className="relative -rotate-90">
