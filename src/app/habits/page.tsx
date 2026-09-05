@@ -16,6 +16,8 @@ import { fmtDuration, todayISO } from "@/lib/date";
 import { habitsForToday } from "@/lib/habitView";
 import { useDerived } from "@/lib/useDerived";
 import { habitCurrentStreak, habitHeatmap, habit30dRate, habitLifeScoreImpact, habitMomentum } from "@/lib/habitStats";
+import { activityStates, weekDays } from "@/lib/activity";
+import { ActivityWeek } from "@/components/ActivityBoxes";
 import { bestHabitHour } from "@/lib/habitTimes";
 import { HABIT_TEMPLATE_GROUPS } from "@/lib/templates";
 import { AREA_ICONS, areaColor } from "@/lib/areaStyle";
@@ -366,6 +368,8 @@ function HabitCard({
   const impact = habitLifeScoreImpact(data, d.history, h);
   const Icon = AREA_ICONS[h.area] ?? Repeat;
   const dots = habitHeatmap(data, h).slice(-30);
+  const week = weekDays(todayISO());
+  const weekStates = activityStates(data, `habit:${h.id}`, week);
   const smartTime = isReduce ? null : bestHabitHour(data.habitLogs, h.id);
   const heatColor = (lvl: string) =>
     lvl === "done" ? "var(--good)" : lvl === "missed" ? "var(--bad-soft)" : "var(--surface-3)";
@@ -403,6 +407,11 @@ function HabitCard({
             <span>{t("You usually do this around {time}", { time: `${String(smartTime.hour).padStart(2, "0")}:00` })}</span>
           </div>
         )}
+
+        {/* This week at a glance — the 30-dot row next to it only exists on wide screens. */}
+        <div className="mt-2.5 max-w-[220px]">
+          <ActivityWeek dates={week} states={weekStates} today={todayISO()} />
+        </div>
       </div>
 
       <div className="hidden items-center gap-[3px] lg:flex">

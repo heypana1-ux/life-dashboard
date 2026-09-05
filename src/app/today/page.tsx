@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { CalendarDays, ChevronDown, ChevronLeft, ChevronRight, Moon, Save } from "lucide-react";
 import { useStore } from "@/lib/store";
@@ -19,6 +19,8 @@ import {
 } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
 import { BackfillNudge } from "@/components/BackfillNudge";
+import { ActivityWeek } from "@/components/ActivityBoxes";
+import { activityStates, weekDays } from "@/lib/activity";
 
 const REVIEW_FIELDS: { key: keyof DailyReview; label: string }[] = [
   { key: "productivity", label: "Productivity" },
@@ -75,6 +77,7 @@ export default function TodayPage() {
   const t = useT();
   const today = todayISO();
   const [date, setDate] = useState(today);
+  const dateInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const q = new URLSearchParams(window.location.search).get("date");
@@ -133,18 +136,34 @@ export default function TodayPage() {
             >
               <ChevronLeft size={16} />
             </button>
-            <label className="relative flex h-8 cursor-pointer items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[12px] font-medium">
+            {/* The picker used to be a transparent <input> stretched across this chip. A
+                native date input keeps a touch target wider than its box, so a thumb aimed at
+                the arrow next to it kept opening the calendar. The input is now a hidden,
+                click-through element and the chip opens it explicitly. */}
+            <button
+              type="button"
+              onClick={() => {
+                const el = dateInput.current;
+                if (!el) return;
+                if (typeof el.showPicker === "function") el.showPicker();
+                else el.click();
+              }}
+              className="relative flex h-8 items-center gap-1.5 rounded-[11px] border border-[var(--border)] bg-[var(--surface)] px-2.5 text-[12px] font-medium hover:border-[var(--accent)]"
+              aria-label={t("Pick a date")}
+            >
               <CalendarDays size={14} className="text-[var(--text-faint)]" />
               <span className="whitespace-nowrap">{fmtShort(date)}</span>
               <input
+                ref={dateInput}
                 type="date"
                 max={today}
                 value={date}
                 onChange={(e) => e.target.value && setDate(e.target.value)}
-                className="absolute inset-0 cursor-pointer opacity-0"
-                aria-label={t("Pick a date")}
+                className="pointer-events-none absolute h-0 w-0 opacity-0"
+                tabIndex={-1}
+                aria-hidden
               />
-            </label>
+            </button>
             <button
               onClick={() => setDate((d) => (d < today ? addDays(d, 1) : d))}
               disabled={isToday}
@@ -176,6 +195,7 @@ export default function TodayPage() {
               { label: t("Daily check-in"), value: checkinAvg },
             ]}
           />
+          <WeekStrip date={date} />
         </section>
 
         {/* Goals */}
@@ -323,6 +343,34 @@ export default function TodayPage() {
           </Link>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * This week's goal days, seven boxes under the day's numbers. Filled = every habit due that
+ * day was done. It always shows the Monday–Sunday week the shown date falls in, so it reads
+ * as "this week" and starts over on its own every Monday — no reset to store anywhere.
+ */
+function WeekStrip({ date }: { date: string }) {
+  const { data } = useStore();
+  const t = useT();
+  const days = useMemo(() => weekDays(date), [date]);
+  const states = useMemo(() => activityStates(data, "app:goals", days), [data, days]);
+  const done = states.filter((s) => s === "done").length;
+  const planned = states.filter((s) => s !== "off").length;
+
+  return (
+    <div className="mt-4 border-t border-[var(--border)] pt-3.5">
+      <div className="mb-2 flex items-baseline justify-between">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
+          {t("This week")}
+        </span>
+        <span className="text-[11px] font-medium text-[var(--text-muted)]">
+          {planned > 0 ? t("{done} of {n} days", { done, n: planned }) : t("Nothing scheduled")}
+        </span>
+      </div>
+      <ActivityWeek dates={days} states={states} today={todayISO()} />
     </div>
   );
 }

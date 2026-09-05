@@ -2172,6 +2172,17 @@ const DE: Record<string, string> = {
   "Check-in": "Check-in",
   Weight: "Gewicht",
   "Not done": "Nicht erledigt",
+  // activity grid
+  "Activity grid": "Aktivitäten-Raster",
+  "1 month": "1 Monat",
+  "1 year": "1 Jahr",
+  "Not scheduled": "Nicht geplant",
+  "{done} of {n} days": "{done} von {n} Tagen",
+  "Nothing scheduled": "Nichts geplant",
+  "Nothing to show yet": "Noch nichts zu zeigen",
+  "Add a habit or log a workout — every day you do it fills a box here.":
+    "Lege eine Gewohnheit an oder trage ein Training ein — jeder Tag, an dem du es machst, füllt hier ein Kästchen.",
+  "All goals": "Alle Ziele",
   "The AI isn't set up yet. Add your Groq API key in the coach setup.":
     "Die KI ist noch nicht eingerichtet. Füge deinen Groq-API-Key im Coach-Setup hinzu.",
   "Couldn't read anything to log — try rephrasing.": "Konnte nichts zum Eintragen erkennen – formuliere es anders.",
