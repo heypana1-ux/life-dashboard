@@ -17,6 +17,8 @@ import { coachAsk, checkCoachConfigured } from "@/lib/ai";
 import { fmtDuration, fmtShort, sleepDurationMinutes, todayISO, weekdayOf, weekdayLabel } from "@/lib/date";
 import { Card, PageHeader, SectionTitle } from "@/components/ui";
 import { HabitRow } from "@/components/HabitRow";
+import { ActivityWeek } from "@/components/ActivityBoxes";
+import { activityStates, weekDays } from "@/lib/activity";
 import { CoachBriefing } from "@/components/Coach";
 
 export default function MorningPage() {
@@ -33,6 +35,8 @@ export default function MorningPage() {
   const sScore = sleep ? Math.round(sleepScore(sleep, data.settings.sleepTargetMinutes)) : null;
 
   const goals = habitsForToday(data, date).filter((g) => g.habit.kind === "build");
+  // Same week strip the habits page shows, so a goal carries its own recent history here too.
+  const week = weekDays(date);
   const elo = d.todayScore?.elo ?? data.settings.eloStart;
 
   const streak = useMemo(() => activityStreak(d.history, data.settings), [d.history, data.settings]);
@@ -126,6 +130,15 @@ export default function MorningPage() {
                     <span className="num shrink-0 text-[11.5px] font-semibold text-[var(--good)]">
                       +{PRIORITY_POINTS[g.habit.priority]}
                     </span>
+                  }
+                  below={
+                    <div className="max-w-[220px]">
+                      <ActivityWeek
+                        dates={week}
+                        states={activityStates(data, `habit:${g.habit.id}`, week)}
+                        today={date}
+                      />
+                    </div>
                   }
                 />
               ))}

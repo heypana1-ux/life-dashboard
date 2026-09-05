@@ -27,6 +27,7 @@ export function HabitRow({
   showAmount = false,
   meta,
   trailing,
+  below,
 }: {
   item: HabitToday;
   date: string;
@@ -35,6 +36,8 @@ export function HabitRow({
   meta?: string;
   /** Extra right-aligned content before the check circle (Morning shows the "+N" points). */
   trailing?: React.ReactNode;
+  /** Rendered under the row, indented past the icon (Morning shows the week strip). */
+  below?: React.ReactNode;
 }) {
   const { toggleHabit, setHabitLog } = useStore();
   const t = useT();
@@ -71,7 +74,7 @@ export function HabitRow({
   const struck = isReduce ? !marked : marked;
 
   return (
-    <div className="flex items-center gap-3 border-b border-[var(--surface-2)] py-[11px] last:border-0">
+    <div className="flex flex-wrap items-center gap-3 border-b border-[var(--surface-2)] py-[11px] last:border-0">
       <IconTile color={color}>
         <Icon size={15} strokeWidth={2} />
       </IconTile>
@@ -143,6 +146,10 @@ export function HabitRow({
       >
         {isReduce ? marked ? <X size={14} strokeWidth={2.6} /> : null : marked ? <Check size={14} strokeWidth={2.6} /> : null}
       </button>
+
+      {/* w-full inside the wrapping row puts this on its own line; the 42px inset is the
+          30px icon tile plus the 12px gap, so it lines up with the habit's name. */}
+      {below && <div className="-mt-1 w-full pl-[42px]">{below}</div>}
     </div>
   );
 }

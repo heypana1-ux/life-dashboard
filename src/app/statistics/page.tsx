@@ -88,8 +88,6 @@ export default function StatisticsPage() {
 
       <BestSelfCard />
 
-      <ActivityCard />
-
       {/* Range selector */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex gap-1.5">
@@ -303,6 +301,9 @@ export default function StatisticsPage() {
           </p>
         </Card>
       </div>
+
+      {/* Last on the page on purpose: it's for browsing, not for the headline numbers. */}
+      <ActivityCard />
     </div>
   );
 }

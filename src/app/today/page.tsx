@@ -195,7 +195,6 @@ export default function TodayPage() {
               { label: t("Daily check-in"), value: checkinAvg },
             ]}
           />
-          <WeekStrip date={date} />
         </section>
 
         {/* Goals */}
@@ -327,6 +326,9 @@ export default function TodayPage() {
           )}
         </section>
 
+        {/* This week — under the day's own numbers and categories, since it summarises them. */}
+        <WeekStrip date={date} />
+
         {/* Sleep nudge */}
         {!sleepLogged && (
           <Link href="/sleep" className="block">
@@ -361,16 +363,17 @@ function WeekStrip({ date }: { date: string }) {
   const planned = states.filter((s) => s !== "off").length;
 
   return (
-    <div className="mt-4 border-t border-[var(--border)] pt-3.5">
-      <div className="mb-2 flex items-baseline justify-between">
-        <span className="text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[var(--text-faint)]">
-          {t("This week")}
-        </span>
-        <span className="text-[11px] font-medium text-[var(--text-muted)]">
-          {planned > 0 ? t("{done} of {n} days", { done, n: planned }) : t("Nothing scheduled")}
-        </span>
-      </div>
+    <section>
+      <SectionHead
+        right={
+          <span className="text-xs text-[var(--text-faint)]">
+            {planned > 0 ? t("{done} of {n} days", { done, n: planned }) : t("Nothing scheduled")}
+          </span>
+        }
+      >
+        {t("This week")}
+      </SectionHead>
       <ActivityWeek dates={days} states={states} today={todayISO()} />
-    </div>
+    </section>
   );
 }
