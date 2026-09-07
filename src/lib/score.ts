@@ -10,6 +10,7 @@ import {
 } from "./types";
 import { addDays, isoRange, parseISO, sleepDurationMinutes, weekdayOf } from "./date";
 import { inVacation } from "./streak";
+import { healthScore } from "./health";
 
 /*
   Scoring model (transparent by design):
@@ -230,19 +231,24 @@ function sleepDurationScore(minutes: number, targetMinutes: number): number {
   return clamp(100 - (deficit / 60) * 14); // steeper penalty for deficit
 }
 
+/**
+ * How good a night was, 0..100.
+ *
+ * Time asleep carries the score. The minutes spent falling asleep are already subtracted by
+ * `sleepDurationMinutes`, so they are not penalised a second time here — a long latency shows
+ * up as exactly what it is, less sleep. Waking up in the night is a real but small cost: a
+ * couple of wake-ups is normal and shouldn't sink an otherwise good night.
+ */
 export function sleepScore(log: SleepLog, targetMinutes: number): number {
   const dur = sleepDurationMinutes(log.bedTime, log.wakeTime, log.fallAsleepMinutes ?? 0);
   const durScore = sleepDurationScore(dur, targetMinutes);
   const qualityScore = clamp(log.quality * 10);
   const energyScore = clamp((log.morningEnergy ?? log.quality) * 10);
-  // Blend duration, self-rated quality, and how you woke up.
-  let s = 0.45 * durScore + 0.3 * qualityScore + 0.25 * energyScore;
-  // Falling asleep slowly costs a little (nothing under 20 min); capped.
-  const latency = log.fallAsleepMinutes ?? 0;
-  if (latency > 20) s -= Math.min(12, ((latency - 20) / 10) * 3);
-  // Each night-waking costs a little; capped.
+  // Duration leads; how it felt adjusts it rather than deciding it.
+  let s = 0.6 * durScore + 0.24 * qualityScore + 0.16 * energyScore;
+  // Each night-waking costs a little; capped low on purpose.
   const wakes = log.awakenings ?? 0;
-  if (wakes > 0) s -= Math.min(12, wakes * 3);
+  if (wakes > 0) s -= Math.min(5, wakes * 1.5);
   return Math.round(clamp(s));
 }
 
@@ -265,7 +271,7 @@ export interface DayComputation {
 
 /** Compute a single day's categories and Life Score from the raw data. */
 export function computeDay(data: AppData, dateISO: string): DayComputation {
-  const { habits, habitLogs, reviews, sleep, settings } = data;
+  const { habits, habitLogs, reviews, sleep, health, settings } = data;
   const enabled = settings.areas.filter((a) => a.enabled);
   // On vacation days scoring is lenient: missed habits and slips simply don't count.
   const lenient = inVacation(settings, dateISO);
@@ -295,7 +301,10 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
     } else if (area.key === "finances") {
       score = null; // manual net-worth tracking exists, but no daily-scoring engine yet
     } else if (area.key === "health") {
-      score = null; // tracked & correlated, but deliberately never part of the Life Score
+      // Shown as its own tile, still deliberately kept out of the Life Score blend below —
+      // a bad back shouldn't cost you points, but it shouldn't read as a zero either.
+      const log = health.find((h) => h.date === dateISO);
+      score = log ? healthScore(log) : null;
     } else {
       habitAreaKeys.add(area.key);
       score = habitAreaScore(area.key, dateISO, habits, habitLogs, lenient);

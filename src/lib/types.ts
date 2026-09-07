@@ -593,6 +593,10 @@ export interface Settings {
   /** Keep each page's own Pulse area colour. Off (default) = the chosen accent paints
       every gradient in the app. */
   areaColors?: boolean;
+  /** Exercises you typed yourself because the catalogue didn't have them. Kept so the second
+   *  time you do that exercise it's already in the picker. `muscle` is a `Muscle` key — typed
+   *  loosely here to keep types.ts free of an import cycle with exercises.ts. */
+  customExercises?: { name: string; muscle: string }[];
   /** GDPR consents, each an ISO timestamp of when it was given (absent = not given).
    *  Health data is a special category (Art. 9), so its consent is recorded separately from
    *  the optional AI ones and can be withdrawn independently. `version` is the wording the

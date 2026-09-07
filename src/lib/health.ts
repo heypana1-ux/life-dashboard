@@ -67,3 +67,31 @@ export function computeWellbeing(log: { physical?: number; mental?: number; ener
   if (vals.length === 0) return null;
   return Math.round(vals.reduce((a, b) => a + b, 0) / vals.length);
 }
+
+/**
+ * A 0..100 health score for one logged day.
+ *
+ * It is a picture of how you felt, not a judgement: the rated wellbeing carries it, symptoms
+ * subtract by how bad they actually were (mild < moderate < strong), and being ill subtracts a
+ * fixed amount on top. A day you logged with nothing wrong and nothing rated still reads as a
+ * good day, because that's what it was.
+ *
+ * Deliberately kept out of the Life Score — see `computeDay`. Being sick shouldn't cost points.
+ */
+export function healthScore(log: {
+  wellbeing?: number;
+  physical?: number;
+  mental?: number;
+  energy?: number;
+  stress?: number;
+  symptoms?: Record<string, number>;
+  sick?: boolean;
+}): number {
+  const wb = computeWellbeing(log) ?? log.wellbeing ?? null;
+  // No rating given: start from "fine" and let the symptoms speak.
+  let s = wb != null ? wb * 10 : 80;
+  const severity = Object.values(log.symptoms ?? {}).reduce((a, b) => a + (b > 0 ? b : 0), 0);
+  s -= Math.min(30, severity * 5);
+  if (log.sick) s -= 15;
+  return Math.max(0, Math.min(100, Math.round(s)));
+}

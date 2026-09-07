@@ -16,9 +16,10 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useStore } from "@/lib/store";
-import { useDerived, useTodayComputation } from "@/lib/useDerived";
+import { headlineScore, useDerived, useTodayComputation } from "@/lib/useDerived";
 import { habitsForToday } from "@/lib/habitView";
 import { activityStreak } from "@/lib/streak";
+import { healthScore } from "@/lib/health";
 import { addDays, isoRange, todayISO, weekdayLabel, weekdayOf, monthLabel, parseISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { AnimatedNumber, Delta } from "@/components/ui";
@@ -39,7 +40,8 @@ interface AreaTile {
   icon: LucideIcon;
   /** [light-theme stop, dark-theme stop] — the tile paints with the current theme's stop. */
   color: string;
-  score: number;
+  /** null = nothing logged for it yet. A tile shows "—" rather than a zero it didn't earn. */
+  score: number | null;
 }
 
 export default function DashboardPage() {
@@ -54,6 +56,9 @@ export default function DashboardPage() {
 
   /* ---- Life score + week ---- */
   const liveScore = todayComp.lifeScore ?? 0;
+  // Before midday, a day with nothing logged yet keeps yesterday's number instead of showing
+  // a 0 nobody earned. Recomputed every render, so it steps aside on the stroke of noon.
+  const headline = headlineScore(liveScore, d.yesterdayScore, today);
   const byDate = d.byDate;
 
   // This week vs last week, so "+4 vs. last week" is a real comparison.
@@ -120,15 +125,30 @@ export default function DashboardPage() {
       ? Math.round(open.reduce((s, g) => s + Math.max(0, Math.min(100, g.progress)), 0) / open.length)
       : 0;
 
+    // Health is only logged on the days you feel like logging it. Carrying the last week's
+    // entry forward is the honest reading — "this is where you were" — where a 0 would claim
+    // you were at rock bottom on every day you simply didn't open the page.
+    const recentHealth = (data.health ?? [])
+      .filter((h) => h.date <= today && h.date >= addDays(today, -6))
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .pop();
+
     return [
-      { key: "health", label: t("Health"), href: "/health", icon: HeartPulse, color: "var(--tile-health)", score: Math.round(cat.health ?? 0) },
+      {
+        key: "health",
+        label: t("Health"),
+        href: "/health",
+        icon: HeartPulse,
+        color: "var(--tile-health)",
+        score: cat.health ?? (recentHealth ? healthScore(recentHealth) : null),
+      },
       { key: "training", label: t("Training"), href: "/training", icon: Dumbbell, color: "var(--tile-training)", score: Math.round(cat.sport ?? 0) },
-      { key: "finances", label: t("Finances"), href: "/finances", icon: Wallet, color: "var(--tile-finances)", score: Math.round(cat.finances ?? 0) },
+      { key: "finances", label: t("Finances"), href: "/finances", icon: Wallet, color: "var(--tile-finances)", score: cat.finances ?? null },
       { key: "projects", label: t("Projects"), href: "/projects", icon: FolderKanban, color: "var(--tile-projects)", score: projectPct },
       { key: "journal", label: t("Journal"), href: "/journal", icon: BookOpen, color: "var(--tile-journal)", score: journalPct },
       { key: "goals", label: t("Goals"), href: "/goals", icon: Target, color: "var(--tile-goals)", score: goalPct },
     ];
-  }, [todayComp.categories, data.projects, data.journal, data.goals, today, t]);
+  }, [todayComp.categories, data.projects, data.journal, data.goals, data.health, today, t]);
 
   /* ---- Up next today ---- */
   const upNext = useMemo(() => {
@@ -179,7 +199,7 @@ export default function DashboardPage() {
 
   /* ---- Coach hint: the area furthest below the rest ---- */
   const hint = useMemo(() => {
-    const scored = tiles.filter((x) => x.score > 0);
+    const scored = tiles.filter((x): x is AreaTile & { score: number } => (x.score ?? 0) > 0);
     if (scored.length < 3) return null;
     const avg = scored.reduce((s, x) => s + x.score, 0) / scored.length;
     const worst = scored.reduce((a, b) => (a.score < b.score ? a : b));
@@ -228,8 +248,11 @@ export default function DashboardPage() {
       <div className="mt-[22px]">
         <div className="slabel">{t("Life Score")}</div>
         <div className="mt-3 flex items-center gap-[18px]">
-          <ScoreRing value={liveScore} />
-          {vsLastWeek !== null && (
+          <ScoreRing value={headline.score} />
+          {headline.carriedOver && (
+            <span className="text-[12.5px] text-[var(--text-faint)]">{t("Yesterday · nothing logged today yet")}</span>
+          )}
+          {!headline.carriedOver && vsLastWeek !== null && (
             <span className="flex items-center gap-1.5">
               <Delta value={vsLastWeek as number} />
               <span className="text-[12.5px] text-[var(--text-faint)]">{t("vs. last week")}</span>
@@ -477,13 +500,19 @@ function AreaCard({ tile }: { tile: AreaTile }) {
         >
           <Icon size={14} />
         </span>
-        <span className="num text-[20px] font-bold leading-none tracking-[-0.03em]">{tile.score}</span>
+        <span className="num text-[20px] font-bold leading-none tracking-[-0.03em]">
+          {tile.score ?? "—"}
+        </span>
       </div>
       <div className="mt-3.5 text-[12.5px] font-medium">{tile.label}</div>
       <div className="mt-2 h-[3px] overflow-hidden rounded-full" style={{ background: "color-mix(in srgb, var(--text) 10%, transparent)" }}>
         <div
           className="h-full rounded-full"
-          style={{ width: `${Math.max(2, Math.min(100, tile.score))}%`, background: tile.color, transition: "width .6s ease" }}
+          style={{
+            width: tile.score == null ? "0%" : `${Math.max(2, Math.min(100, tile.score))}%`,
+            background: tile.color,
+            transition: "width .6s ease",
+          }}
         />
       </div>
     </Link>

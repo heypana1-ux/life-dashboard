@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n";
 import { Workout, WorkoutPlan } from "@/lib/types";
 import { isBodyweight, isTimeBased, muscleFor, Muscle } from "@/lib/exercises";
 import { todayISO } from "@/lib/date";
+import { habitMatchesSport } from "@/lib/sports";
 import { elapsedSec, fmtClock, useLive } from "@/lib/liveActivity";
 import { describeSet } from "@/lib/trainingStats";
 import { Button, ScaleInput } from "@/components/ui";
@@ -134,6 +135,11 @@ export function WorkoutRunner() {
     }
     return m;
   }, [data.workouts]);
+
+  // The habit this session will tick when it's saved (matched on the habit's own name).
+  const linkedHabit =
+    data.habits.find((h) => !h.archived && h.kind === "build" && h.area === "sport" && habitMatchesSport(h.name, "Strength Training")) ??
+    data.habits.find((h) => !h.archived && h.kind === "build" && habitMatchesSport(h.name, "Strength Training"));
 
   const timed = !!curNameOf(active) && isTimeBased(curNameOf(active)!);
   const bodyw = !!curNameOf(active) && isBodyweight(curNameOf(active)!);
@@ -262,6 +268,12 @@ export function WorkoutRunner() {
                 {fmtClock(elapsed)} · {totalSets} {t("sets")}
               </span>
             </div>
+            {linkedHabit && (
+              // Saving also ticks this habit off — say so, rather than having it happen quietly.
+              <p className="-mt-3 text-[11.5px] text-[var(--text-faint)]">
+                {t("Also checks off “{name}” for today.", { name: linkedHabit.name })}
+              </p>
+            )}
             {(
               [
                 [t("Intensity"), p?.intensity ?? 7, "intensity"],

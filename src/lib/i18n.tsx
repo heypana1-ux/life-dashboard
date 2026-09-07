@@ -2172,6 +2172,17 @@ const DE: Record<string, string> = {
   "Check-in": "Check-in",
   Weight: "Gewicht",
   "Not done": "Nicht erledigt",
+  // workout ↔ habit link, custom exercises, carried-over score
+  "Counts for habit": "Zählt für Gewohnheit",
+  Automatic: "Automatisch",
+  "no match": "keine Übereinstimmung",
+  "Saving marks it done for that day and copies the duration over.":
+    "Beim Speichern wird sie für den Tag abgehakt und die Dauer übernommen.",
+  "Also checks off “{name}” for today.": "Hakt außerdem „{name}“ für heute ab.",
+  "Muscle group": "Muskelgruppe",
+  Remove: "Entfernen",
+  "Saved for next time.": "Wird für das nächste Mal gespeichert.",
+  "Yesterday · nothing logged today yet": "Gestern · heute noch nichts eingetragen",
   // activity grid
   "Activity grid": "Aktivitäten-Raster",
   "1 month": "1 Monat",

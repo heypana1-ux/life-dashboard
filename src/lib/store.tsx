@@ -47,6 +47,7 @@ import {
 import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
 import { dueRecurring } from "./finance";
 import { migrateTimedSets } from "./trainingStats";
+import { habitMatchesSport } from "./sports";
 import { todayISO, addDays, weekdayOf } from "./date";
 import type { Accent } from "./types";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
@@ -145,6 +146,19 @@ export function normalizeData(parsed: Partial<AppData> | null | undefined): AppD
 /** The loaded blob, plus whether normalizing it actually rewrote something on the way in
  *  (currently: old plank/hold sets). A rewrite has to be persisted, or the stored copy keeps
  *  its outdated shape and every export carries it along. */
+/**
+ * The habit a workout should tick off, if any: an explicit link first, otherwise the first
+ * active build habit whose name matches the sport. Sport-area habits win a tie, since that's
+ * where a training habit almost always lives.
+ */
+function habitForWorkout(d: AppData, w: Workout): Habit | undefined {
+  const candidates = d.habits.filter((h) => !h.archived && h.kind === "build");
+  // An explicit choice wins, including the explicit "don't tick anything" (empty string).
+  if (w.habitId !== undefined) return w.habitId ? candidates.find((h) => h.id === w.habitId) : undefined;
+  const matches = candidates.filter((h) => habitMatchesSport(h.name, w.sport));
+  return matches.find((h) => h.area === "sport") ?? matches[0];
+}
+
 function loadData(): { data: AppData; rewritten: boolean } {
   if (typeof window === "undefined") return { data: emptyData(), rewritten: false };
   try {
@@ -848,12 +862,51 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
         const workout: Workout = w.id ? w : { ...w, id: uid("wk") };
         mutate((d) => {
           const others = d.workouts.filter((x) => x.id !== workout.id);
-          return { ...d, workouts: [...others, workout] };
+          const next = { ...d, workouts: [...others, workout] };
+          // Logging the workout IS doing the habit — you shouldn't have to tick it twice.
+          const habit = habitForWorkout(next, workout);
+          if (!habit) return next;
+          const i = next.habitLogs.findIndex((l) => l.habitId === habit.id && l.date === workout.date);
+          const prev = i >= 0 ? next.habitLogs[i] : undefined;
+          // Two sessions on one day add up; a re-saved workout must not double-count, so the
+          // minutes are summed across that day's workouts rather than added to what's there.
+          const minutes = next.workouts
+            .filter((x) => x.date === workout.date && habitForWorkout(next, x)?.id === habit.id)
+            .reduce((sum, x) => sum + x.durationMin, 0);
+          const log: HabitLog = {
+            ...prev,
+            habitId: habit.id,
+            date: workout.date,
+            done: true,
+            minutes,
+            doneAt: prev?.doneAt ?? new Date().toISOString(),
+          };
+          const logs = [...next.habitLogs];
+          if (i >= 0) logs[i] = log;
+          else logs.push(log);
+          return { ...next, habitLogs: logs };
         });
         return workout;
       },
       removeWorkout: (id) =>
-        mutate((d) => ({ ...d, workouts: d.workouts.filter((x) => x.id !== id) })),
+        mutate((d) => {
+          const gone = d.workouts.find((x) => x.id === id);
+          const workouts = d.workouts.filter((x) => x.id !== id);
+          const next = { ...d, workouts };
+          const habit = gone ? habitForWorkout(d, gone) : undefined;
+          if (!gone || !habit) return next;
+          // Keep the linked habit's minutes honest. The tick itself stays: it may have been
+          // yours, and silently un-doing a habit because a workout was deleted is worse.
+          const minutes = workouts
+            .filter((x) => x.date === gone.date && habitForWorkout(next, x)?.id === habit.id)
+            .reduce((sum, x) => sum + x.durationMin, 0);
+          return {
+            ...next,
+            habitLogs: next.habitLogs.map((l) =>
+              l.habitId === habit.id && l.date === gone.date ? { ...l, minutes: minutes || undefined } : l,
+            ),
+          };
+        }),
       savePlan: (p) => {
         const plan: WorkoutPlan = p.id
           ? p

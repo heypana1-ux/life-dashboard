@@ -73,3 +73,63 @@ export function hrZone(pulse?: number, age?: number | null): { pct: number; labe
   else if (pct >= 60) label = "Easy";
   return { pct, label };
 }
+
+/*
+  Ticking a habit when you log a workout.
+
+  A habit is the user's own words — "Krafttraining", "Laufen", "Gym" — and the sport is one of
+  the catalogue's English names. So each sport carries the names people actually give it, in
+  both languages the app speaks, and a habit matches when its name is (or contains) one of them.
+*/
+
+const SPORT_ALIASES: Record<string, string[]> = {
+  "Strength Training": ["strengthtraining", "krafttraining", "kraft", "gym", "weights", "gewichte", "hanteln"],
+  Running: ["running", "run", "laufen", "lauf", "joggen", "jogging", "joggen gehen"],
+  Sprint: ["sprint", "sprints", "sprinten"],
+  Cycling: ["cycling", "bike", "biking", "radfahren", "fahrrad", "rad"],
+  Swimming: ["swimming", "swim", "schwimmen"],
+  Rowing: ["rowing", "row", "rudern"],
+  Walking: ["walking", "walk", "spazieren", "spaziergang", "gehen"],
+  Hiking: ["hiking", "hike", "wandern", "wanderung"],
+  Taekwondo: ["taekwondo", "tkd"],
+  "Martial Arts": ["martialarts", "kampfsport", "kampfkunst"],
+  Boxing: ["boxing", "boxen"],
+  Kickboxing: ["kickboxing", "kickboxen"],
+  Judo: ["judo"],
+  Karate: ["karate"],
+  BJJ: ["bjj", "jiujitsu", "brazilianjiujitsu"],
+  Football: ["football", "soccer", "fussball"],
+  Basketball: ["basketball"],
+  Tennis: ["tennis"],
+  Yoga: ["yoga"],
+  Mobility: ["mobility", "mobilitaet", "beweglichkeit"],
+  Stretching: ["stretching", "dehnen"],
+};
+
+/** Habit names that mean "any workout at all" — those get ticked by every sport. */
+const ANY_SPORT_ALIASES = ["sport", "training", "trainieren", "workout", "exercise", "bewegung"];
+
+/** Lower-case, letters and digits only — so "Kraft-Training 3×" and "krafttraining" meet. */
+function norm(s: string): string {
+  return s
+    .toLowerCase()
+    .replace(/\u00df/g, "ss")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+/**
+ * Whether a habit with this name should count as done when a workout of this sport is logged.
+ *
+ * Matching is deliberately conservative: an alias has to be the whole habit name or a whole
+ * chunk of it (at least 4 characters), so "Kraftraining 3x/Woche" matches Strength Training
+ * while "Krafttraining planen" would too — but a habit called "Rad putzen" doesn't get ticked
+ * by a bike ride it never claimed.
+ */
+export function habitMatchesSport(habitName: string, sport: string): boolean {
+  const h = norm(habitName);
+  if (!h) return false;
+  const aliases = [norm(sport), ...(SPORT_ALIASES[sport] ?? []).map(norm), ...ANY_SPORT_ALIASES];
+  return aliases.some((a) => a.length >= 4 && (h === a || h.includes(a)));
+}

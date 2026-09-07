@@ -432,7 +432,7 @@ export default function SettingsPage() {
         {t("Life Dashboard · your data belongs to you.")}
       </p>
       <p className="pb-4 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--area-text)]">
-        Pulse Build 42
+        Pulse Build 43
       </p>
     </div>
   );

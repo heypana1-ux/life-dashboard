@@ -21,6 +21,35 @@ export interface Derived {
   firstDate: string;
 }
 
+export interface Headline {
+  score: number;
+  /** The day the number actually belongs to. */
+  date: string;
+  /** True when it is yesterday's score, still standing because today is untouched. */
+  carriedOver: boolean;
+}
+
+/**
+ * A fresh day starts with nothing logged, so a live score would read 0 from midnight until
+ * the first habit is ticked — which looks like a collapse rather than a blank slate.
+ *
+ * So yesterday's score stays on screen through the first half of the new day, and steps aside
+ * the moment either of two things happens: you log something today, or it is midday. After
+ * that the day stands on its own, however it is going.
+ */
+export function headlineScore(
+  liveScore: number,
+  yesterday: DayScore | undefined,
+  today: string,
+  now = new Date(),
+): Headline {
+  const CARRY_UNTIL_HOUR = 12;
+  if (liveScore > 0 || now.getHours() >= CARRY_UNTIL_HOUR || !yesterday || yesterday.lifeScore <= 0) {
+    return { score: liveScore, date: today, carriedOver: false };
+  }
+  return { score: yesterday.lifeScore, date: yesterday.date, carriedOver: true };
+}
+
 function earliestDataDate(data: AppData, fallback: string): string {
   const dates: string[] = [];
   for (const l of data.habitLogs) dates.push(l.date);

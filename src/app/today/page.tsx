@@ -209,7 +209,16 @@ export default function TodayPage() {
             </p>
           ) : (
             <div className="flex flex-col">
-              {build.map((g) => <HabitRow key={g.habit.id} item={g} date={date} showAmount meta={scheduleMeta(g.habit, t)} />)}
+              {build.map((g) => (
+                <HabitRow
+                  key={g.habit.id}
+                  item={g}
+                  date={date}
+                  showAmount
+                  meta={scheduleMeta(g.habit, t)}
+                  below={<HabitWeek habitId={g.habit.id} date={date} />}
+                />
+              ))}
             </div>
           )}
         </section>
@@ -222,7 +231,15 @@ export default function TodayPage() {
               {t("Tap only if the behavior happened today. Avoided by default.")}
             </p>
             <div className="flex flex-col">
-              {reduce.map((g) => <HabitRow key={g.habit.id} item={g} date={date} meta={`${t("Reduce")} · ${scheduleMeta(g.habit, t)}`} />)}
+              {reduce.map((g) => (
+                <HabitRow
+                  key={g.habit.id}
+                  item={g}
+                  date={date}
+                  meta={`${t("Reduce")} · ${scheduleMeta(g.habit, t)}`}
+                  below={<HabitWeek habitId={g.habit.id} date={date} />}
+                />
+              ))}
             </div>
             {occurred.length > 0 && (
               <div className="mt-3">
@@ -326,9 +343,6 @@ export default function TodayPage() {
           )}
         </section>
 
-        {/* This week — under the day's own numbers and categories, since it summarises them. */}
-        <WeekStrip date={date} />
-
         {/* Sleep nudge */}
         {!sleepLogged && (
           <Link href="/sleep" className="block">
@@ -349,31 +363,19 @@ export default function TodayPage() {
   );
 }
 
-/**
- * This week's goal days, seven boxes under the day's numbers. Filled = every habit due that
- * day was done. It always shows the Monday–Sunday week the shown date falls in, so it reads
- * as "this week" and starts over on its own every Monday — no reset to store anywhere.
- */
-function WeekStrip({ date }: { date: string }) {
-  const { data } = useStore();
-  const t = useT();
-  const days = useMemo(() => weekDays(date), [date]);
-  const states = useMemo(() => activityStates(data, "app:goals", days), [data, days]);
-  const done = states.filter((s) => s === "done").length;
-  const planned = states.filter((s) => s !== "off").length;
 
+/**
+ * The week under a single habit: seven boxes, filled on the days it was ticked. Same idea as
+ * the habit cards and the morning screen, so the row you tap and the history you build sit in
+ * the same place.
+ */
+function HabitWeek({ habitId, date }: { habitId: string; date: string }) {
+  const { data } = useStore();
+  const days = useMemo(() => weekDays(date), [date]);
+  const states = useMemo(() => activityStates(data, `habit:${habitId}`, days), [data, habitId, days]);
   return (
-    <section>
-      <SectionHead
-        right={
-          <span className="text-xs text-[var(--text-faint)]">
-            {planned > 0 ? t("{done} of {n} days", { done, n: planned }) : t("Nothing scheduled")}
-          </span>
-        }
-      >
-        {t("This week")}
-      </SectionHead>
+    <div className="max-w-[220px]">
       <ActivityWeek dates={days} states={states} today={todayISO()} />
-    </section>
+    </div>
   );
 }

@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Exercise, Workout, WorkoutPlan, PlanExercise } from "@/lib/types";
 import { uid } from "@/lib/defaults";
-import { sportKind, paceLabel, speedKmh, hrZone } from "@/lib/sports";
+import { sportKind, paceLabel, speedKmh, hrZone, habitMatchesSport } from "@/lib/sports";
 import { SportSelect } from "@/components/SportPicker";
 import { MUSCLE_LABEL, Muscle, muscleFor, isBodyweight, isTimeBased, PLAN_TEMPLATES } from "@/lib/exercises";
 import { ExerciseSelect } from "@/components/ExercisePicker";
@@ -842,6 +842,11 @@ function WorkoutModal({
   }, [autoStart, quickSport]);
 
   const set = (patch: Partial<Workout>) => setDraft((d) => ({ ...d, ...patch }));
+
+  // Which habit this session would tick, and the list to override it with.
+  const buildHabits = data.habits.filter((h) => !h.archived && h.kind === "build");
+  const autoHabit = buildHabits.find((h) => h.area === "sport" && habitMatchesSport(h.name, draft.sport))
+    ?? buildHabits.find((h) => habitMatchesSport(h.name, draft.sport));
   const kind = sportKind(draft.sport);
 
   function toggleTimer() {
@@ -952,6 +957,27 @@ function WorkoutModal({
             </div>
           </div>
         )}
+
+        {/* Which habit this session ticks off. Left on "automatic", the name decides:
+            a habit called "Krafttraining" is checked by a Strength Training session. */}
+        <Field label={t("Counts for habit")}>
+          <select
+            className={inputCls}
+            value={draft.habitId ?? "auto"}
+            onChange={(e) => set({ habitId: e.target.value === "auto" ? undefined : e.target.value })}
+          >
+            <option value="auto">
+              {autoHabit ? `${t("Automatic")} · ${autoHabit.name}` : `${t("Automatic")} · ${t("no match")}`}
+            </option>
+            <option value="">{t("None")}</option>
+            {buildHabits.map((h) => (
+              <option key={h.id} value={h.id}>{h.name}</option>
+            ))}
+          </select>
+          <span className="mt-1 block text-xs text-[var(--text-faint)]">
+            {t("Saving marks it done for that day and copies the duration over.")}
+          </span>
+        </Field>
 
         <Field label={t("Notes")}>
           <textarea className={inputCls} rows={2} value={draft.notes ?? ""} onChange={(e) => set({ notes: e.target.value })} />
