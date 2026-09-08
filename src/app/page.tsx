@@ -20,6 +20,7 @@ import { headlineScore, useDerived, useTodayComputation } from "@/lib/useDerived
 import { habitsForToday } from "@/lib/habitView";
 import { activityStreak } from "@/lib/streak";
 import { healthScore } from "@/lib/health";
+import { scoreLabel } from "@/lib/score";
 import { addDays, isoRange, todayISO, weekdayLabel, weekdayOf, monthLabel, parseISO } from "@/lib/date";
 import { useT } from "@/lib/i18n";
 import { AnimatedNumber, Delta } from "@/components/ui";
@@ -247,21 +248,32 @@ export default function DashboardPage() {
       {/* ---------- Life score ---------- */}
       <div className="mt-[22px]">
         <div className="slabel">{t("Life Score")}</div>
-        <div className="mt-3 flex items-center gap-[18px]">
+        {/* The number lives beside the ring, not inside it: a figure sitting in the middle of
+            a glow is hard to read and buries the halo it's meant to sit in. */}
+        <div className="mt-3 flex items-center gap-5">
           <ScoreRing value={headline.score} />
-          {headline.carriedOver && (
-            // Say whose score this is. The number changing without explanation is what made
-            // the old rule confusing, not the number itself.
-            <span className="text-[12.5px] text-[var(--text-faint)]">
-              {t("Yesterday · today counts from midday")}
-            </span>
-          )}
-          {!headline.carriedOver && vsLastWeek !== null && (
-            <span className="flex items-center gap-1.5">
-              <Delta value={vsLastWeek as number} />
-              <span className="text-[12.5px] text-[var(--text-faint)]">{t("vs. last week")}</span>
-            </span>
-          )}
+          <div className="min-w-0">
+            <div className="flex items-baseline gap-1.5">
+              <span className="num text-[44px] font-bold leading-none tracking-[-0.04em]">
+                <AnimatedNumber value={headline.score} />
+              </span>
+              <span className="text-[13px] font-semibold text-[var(--text-dim)]">{t("of 100")}</span>
+            </div>
+            <div className="mt-2 text-[12.5px] text-[var(--text-faint)]">
+              {headline.carriedOver ? (
+                // Say whose score this is. The number changing without explanation is what
+                // made the old rule confusing, not the number itself.
+                t("Yesterday · today counts from midday")
+              ) : vsLastWeek !== null ? (
+                <span className="flex items-center gap-1.5">
+                  <Delta value={vsLastWeek as number} />
+                  {t("vs. last week")}
+                </span>
+              ) : (
+                t(scoreLabel(headline.score))
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Week strip — height AND colour carry the day's score, so a weak day reads dark
@@ -396,10 +408,13 @@ export default function DashboardPage() {
  *  rest of the app stays in your system colour. With no skin chosen the vars are unset and the
  *  fallbacks put it back on the page accent. */
 function ScoreRing({ value }: { value: number }) {
-  const t = useT();
-  const size = 100;
+  // The box is deliberately bigger than the ring. An <svg> clips to its own viewport, so the
+  // arc's drop-shadow used to be cut off flat where the box ended — that was the square edge
+  // you could see glowing behind the circle. The padding gives the glow room to fade out.
+  const box = 132;
   const stroke = 7;
-  const r = (size - stroke) / 2;
+  const pad = 16;
+  const r = (box - pad * 2 - stroke) / 2;
   const c = 2 * Math.PI * r;
   const pct = Math.max(0, Math.min(100, value)) / 100;
   const a = "var(--ring-grad-a, var(--area-a))";
@@ -407,32 +422,40 @@ function ScoreRing({ value }: { value: number }) {
   // Skins ship their own glow; without one, derive it from the ring's own first stop.
   const glow = `var(--ring-glow, color-mix(in srgb, ${a} 45%, transparent))`;
   return (
-    <div className="relative flex shrink-0 items-center justify-center" style={{ width: size, height: size }}>
-      {/* Halo — a soft bloom of the ring's own colour behind the arc.
-          Done with box-shadow on a circle rather than a blurred radial-gradient: a gradient
-          painted inside a square box leaves faint straight edges where the box ends, which is
-          exactly what you notice on a dark background. A shadow spreads from the shape itself,
-          so it can only ever be round. */}
+    <div className="relative flex shrink-0 items-center justify-center" style={{ width: box, height: box }}>
+      {/* Outward bloom. A box-shadow on a round element rather than a blurred radial gradient:
+          a gradient painted inside a square box leaves straight edges where the box ends. */}
       <span
         aria-hidden
         className="pointer-events-none absolute rounded-full"
         style={{
-          inset: "14%",
+          inset: pad + stroke,
           boxShadow: `0 0 22px 10px ${glow}, 0 0 46px 18px ${glow}`,
           opacity: 0.75,
         }}
       />
-      <svg width={size} height={size} className="relative -rotate-90">
+      {/* …and inward, so the disc inside the ring is lit from its own edge instead of being a
+          flat hole. An inset shadow paints inside the element whether or not it has a fill. */}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          inset: pad + stroke,
+          boxShadow: `inset 0 0 38px 6px ${glow}, inset 0 0 10px 0 ${glow}`,
+          opacity: 1,
+        }}
+      />
+      <svg width={box} height={box} className="relative -rotate-90" style={{ overflow: "visible" }}>
         <defs>
           <linearGradient id="dashRing" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" style={{ stopColor: a }} />
             <stop offset="1" style={{ stopColor: b }} />
           </linearGradient>
         </defs>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
+        <circle cx={box / 2} cy={box / 2} r={r} fill="none" stroke="var(--surface-2)" strokeWidth={stroke} />
         <circle
-          cx={size / 2}
-          cy={size / 2}
+          cx={box / 2}
+          cy={box / 2}
           r={r}
           fill="none"
           stroke="url(#dashRing)"
@@ -446,14 +469,6 @@ function ScoreRing({ value }: { value: number }) {
           }}
         />
       </svg>
-      <div className="absolute flex flex-col items-center">
-        <span className="num text-[30px] font-bold leading-none tracking-[-0.03em]">
-          <AnimatedNumber value={value} />
-        </span>
-        <span className="mt-[3px] text-[9px] font-semibold uppercase tracking-[0.1em] text-[var(--text-dim)]">
-          {t("of 100")}
-        </span>
-      </div>
     </div>
   );
 }
