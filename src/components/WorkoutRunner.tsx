@@ -12,6 +12,7 @@ import { todayISO } from "@/lib/date";
 import { habitMatchesSport } from "@/lib/sports";
 import { elapsedSec, fmtClock, useLive } from "@/lib/liveActivity";
 import { describeSet } from "@/lib/trainingStats";
+import { Progression, suggestNext } from "@/lib/progression";
 import { Button, ScaleInput } from "@/components/ui";
 import { WorkoutImageAction } from "@/components/WorkoutShare";
 import { ExerciseSelect } from "@/components/ExercisePicker";
@@ -117,24 +118,12 @@ export function WorkoutRunner() {
   const phase = p?.phase ?? "run";
   const active = exercises[cur];
 
-  // Last logged set per exercise (across all history) → suggested weight/reps.
-  const lastSet = useMemo(() => {
-    const m = new Map<string, RunSet>();
-    for (const w of [...data.workouts].sort((a, b) => (a.date < b.date ? -1 : 1))) {
-      for (const ex of w.exercises) {
-        const done = ex.sets.filter((s) => (s.reps ?? 0) > 0 || (s.seconds ?? 0) > 0);
-        const last = done[done.length - 1];
-        if (last)
-          m.set(ex.name.toLowerCase(), {
-            weight: last.weight ?? 0,
-            reps: last.reps ?? 0,
-            seconds: last.seconds ?? (isTimeBased(ex.name) ? last.reps : undefined),
-            bodyWeightKg: last.bodyWeightKg,
-          });
-      }
-    }
-    return m;
-  }, [data.workouts]);
+  // What to aim for on the current exercise, from what the last sessions actually were.
+  const curName = active?.name;
+  const suggestion = useMemo(
+    () => (curName ? suggestNext(data.workouts, curName) : null),
+    [data.workouts, curName],
+  );
 
   // The habit this session will tick when it's saved (matched on the habit's own name).
   const linkedHabit =
@@ -144,14 +133,13 @@ export function WorkoutRunner() {
   const timed = !!curNameOf(active) && isTimeBased(curNameOf(active)!);
   const bodyw = !!curNameOf(active) && isBodyweight(curNameOf(active)!);
 
-  // Suggest last time's numbers when moving to an exercise.
-  const curName = active?.name;
+  // Pre-fill the target when you move to an exercise. Keyed on the exercise alone, so typing
+  // over it survives every re-render until you switch to another one.
   useEffect(() => {
-    const ls = curName ? lastSet.get(curName.toLowerCase()) : undefined;
     /* eslint-disable react-hooks/set-state-in-effect */
-    setWeight(ls ? String(ls.weight) : "");
-    setReps(ls ? String(ls.reps) : "");
-    setSecs(ls?.seconds != null ? String(ls.seconds) : "");
+    setWeight(suggestion && suggestion.seconds == null ? String(suggestion.weight) : "");
+    setReps(suggestion && suggestion.seconds == null ? String(suggestion.reps) : "");
+    setSecs(suggestion?.seconds != null ? String(suggestion.seconds) : "");
     /* eslint-enable react-hooks/set-state-in-effect */
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curName]);
@@ -438,6 +426,28 @@ export function WorkoutRunner() {
                 </Button>
               </div>
 
+              {suggestion && (
+                // The target is pre-filled; this line says where it came from, so a number
+                // that just appeared in the field is never a mystery.
+                <p
+                  className={`-mt-2 text-[11px] ${
+                    suggestion.kind === "deload" ? "text-[var(--warn)]" : "text-[var(--text-faint)]"
+                  }`}
+                >
+                  {suggestion.kind === "deload"
+                    ? t("No progress in {n} sessions — back off to {target} and build up again.", {
+                        n: suggestion.stalledSessions,
+                        target: targetText(suggestion, t),
+                      })
+                    : suggestion.kind === "progress"
+                      ? t("Last time {last} — today {target}.", {
+                          last: lastText(suggestion, t),
+                          target: targetText(suggestion, t),
+                        })
+                      : t("Last time {last} — repeat it, then it goes up.", { last: lastText(suggestion, t) })}
+                </p>
+              )}
+
               {bodyw && (
                 <p className="-mt-2 text-[11px] text-[var(--text-faint)]">
                   {bodyWeight
@@ -502,3 +512,18 @@ function curNameOf(ex: RunExercise | undefined): string | undefined {
   return ex?.name;
 }
 
+
+/** "3 × 8 · 70 kg" / "3 × 45 s" — what the last session was. */
+function lastText(p: Progression, t: (k: string) => string): string {
+  const { last } = p;
+  if (p.seconds != null) return `${last.sets} × ${last.seconds || last.reps} s`;
+  const load = last.weight > 0 ? ` · ${last.weight} ${t("kg")}` : "";
+  return `${last.sets} × ${last.reps}${load}`;
+}
+
+/** The number the fields were filled with, in the same shape. */
+function targetText(p: Progression, t: (k: string) => string): string {
+  if (p.seconds != null) return `${p.seconds} s`;
+  const load = p.weight > 0 ? ` ${t("kg")}` : "";
+  return p.weight > 0 ? `${p.weight}${load} × ${p.reps}` : `${p.reps} ${t("reps")}`;
+}

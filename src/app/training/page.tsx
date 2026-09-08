@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, Dumbbell, Footprints, Play, Plus, Save, Square, Swords, Timer, Trash2, TrendingUp, Trophy } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
@@ -40,6 +40,8 @@ import { CoachInsightCard } from "@/components/Coach";
 import { useStartWorkout } from "@/components/WorkoutRunner";
 import { WorkoutImageButton } from "@/components/WorkoutShare";
 import { elapsedSec as liveElapsed, useLive } from "@/lib/liveActivity";
+import { useLaunchAction } from "@/lib/launch";
+import { nextTargets } from "@/lib/progression";
 
 type Tab = "workouts" | "plans" | "progress";
 
@@ -54,6 +56,8 @@ export default function TrainingPage() {
   // The guided session is a live activity owned by the app shell, so it keeps running when
   // you leave this page. Starting it is all this screen does.
   const startWorkout = useStartWorkout();
+  // Opened from the homescreen shortcut: go straight into a session.
+  useLaunchAction("start", "workout", useCallback(() => startWorkout(), [startWorkout]));
 
   // A cardio session timed from the log form is a live activity too, but the form belongs to
   // this page — so this page is what reopens it when you tap the floating bar.
@@ -404,6 +408,7 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
   const muscles = useMemo(() => muscleVolume(workouts, 30), [workouts]);
   const records = useMemo(() => personalRecords(workouts), [workouts]);
   const holds = useMemo(() => holdRecords(workouts), [workouts]);
+  const targets = useMemo(() => nextTargets(workouts), [workouts]);
 
   // A plank has no one-rep max — its progress is a longer hold. Same chart, other axis.
   const timed = !!selected && isTimeBased(selected);
@@ -463,6 +468,29 @@ function ProgressTab({ workouts }: { workouts: Workout[] }) {
           <p className="py-8 text-center text-sm text-[var(--text-muted)]">{t("Log this exercise on at least two days to see a trend.")}</p>
         )}
       </Card>
+
+      {targets.length > 0 && (
+        <Card>
+          <SectionTitle right={<TrendingUp size={16} className="text-[var(--text-faint)]" />}>{t("Next time")}</SectionTitle>
+          <p className="mb-3 text-xs text-[var(--text-muted)]">
+            {t("Hit every set and the weight goes up. Miss, and it stays. Three sessions without a best and it backs off.")}
+          </p>
+          <div className="space-y-1.5">
+            {targets.map(({ name, next }) => (
+              <div key={name} className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-[var(--surface-2)]">
+                <span className="min-w-0 flex-1 truncate text-sm font-medium">{name}</span>
+                {next.kind === "deload" && <Badge tone="bad">{t("Deload")}</Badge>}
+                {next.kind === "progress" && next.step > 0 && <Badge tone="good">+{next.step} kg</Badge>}
+                <span className="num w-[92px] text-right text-sm font-bold">
+                  {next.seconds != null
+                    ? `${next.sets} × ${next.seconds} s`
+                    : `${next.sets} × ${next.reps}${next.weight > 0 ? ` · ${next.weight}` : ""}`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {records.length > 0 && (
         <Card>

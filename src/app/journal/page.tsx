@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLaunchAction } from "@/lib/launch";
 import { BookOpen, ChevronLeft, ChevronRight, ImagePlus, Lightbulb, Mic, Plus, Save, Search, Shuffle, Sparkles, Trash2, X } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
@@ -62,6 +63,9 @@ export default function JournalPage() {
     setActiveId(null);
     setDraft(e);
   }
+  // Opened from the homescreen shortcut: straight into a blank entry.
+  useLaunchAction("new", "1", useCallback(() => newEntry(), []));
+
 
   function save() {
     if (!draft) return;

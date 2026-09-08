@@ -14,11 +14,13 @@ import {
   X,
 } from "lucide-react";
 import { useStore } from "@/lib/store";
+import { checkCoachConfigured, parseWeekBriefing, reviewWeek, WeekBriefing } from "@/lib/ai";
+import { buildCoachContext } from "@/lib/coachContext";
 import { useDerived } from "@/lib/useDerived";
 import { useT } from "@/lib/i18n";
 import { periodRecap, weekRange, weekAnchor } from "@/lib/recap";
 import { analyze } from "@/lib/analysis";
-import { fmtShort, todayISO } from "@/lib/date";
+import { addDays, fmtShort, todayISO } from "@/lib/date";
 import { scoreLabel } from "@/lib/score";
 import { AnimatedRing } from "@/components/Recap";
 import { Button, inputCls } from "@/components/ui";
@@ -38,7 +40,7 @@ const RATINGS: { v: number; emoji: string; label: string }[] = [
 ];
 
 export function WeeklyReviewFlow({ anchor, onClose }: { anchor: string; onClose: () => void }) {
-  const { data, saveWeeklyReview } = useStore();
+  const { data, saveWeeklyReview, saveWeeklyPlan } = useStore();
   const d = useDerived();
   const t = useT();
   const [mounted, setMounted] = useState(false);
@@ -70,14 +72,59 @@ export function WeeklyReviewFlow({ anchor, onClose }: { anchor: string; onClose:
   const [rating, setRating] = useState(existing?.rating ?? 0);
   const [focus, setFocus] = useState(existing?.focus ?? "");
 
+  // The AI briefing for the week that just ended. Generated on demand — never on open, so a
+  // review you only want to write yourself costs nothing.
+  const [brief, setBrief] = useState<WeekBriefing | null>(null);
+  const [briefLoading, setBriefLoading] = useState(false);
+  const [briefErr, setBriefErr] = useState<string | null>(null);
+  const aiOn = !!data.settings.aiCoachEnabled;
+
+  async function generateBriefing() {
+    setBriefErr(null);
+    setBriefLoading(true);
+    if (!(await checkCoachConfigured())) {
+      setBriefLoading(false);
+      setBriefErr("not_configured");
+      return;
+    }
+    const summary = [
+      `Week ${range.start} to ${range.end}.`,
+      `Average Life Score ${rec.avgScore} (${rec.trend >= 0 ? "+" : ""}${rec.trend} vs the week before).`,
+      `Days logged ${rec.daysLogged}/${rec.totalDays}. Habit completion ${rec.habitRate}%.`,
+      `Workouts ${rec.workouts}. Average sleep ${Math.round(rec.sleepAvgMin / 60 * 10) / 10}h.`,
+      rec.bestDay ? `Best day ${rec.bestDay.date} at ${rec.bestDay.score}.` : "",
+      wins.trim() ? `They wrote as wins: ${wins.trim()}` : "",
+      challenges.trim() ? `They wrote as challenges: ${challenges.trim()}` : "",
+      prev?.focus ? `Last week's focus was: ${prev.focus}` : "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    const res = await reviewWeek(summary, buildCoachContext(data, d.history).text, data.settings.language);
+    setBriefLoading(false);
+    const parsed = res.reply ? parseWeekBriefing(res.reply) : null;
+    if (parsed) setBrief(parsed);
+    else setBriefErr(res.error ?? "empty");
+  }
+
   const [play, setPlay] = useState(false);
   useEffect(() => {
     const id = setTimeout(() => setPlay(true), 80);
     return () => clearTimeout(id);
   }, []);
 
-  const STEPS = 5;
+  const STEPS = 6;
   const last = step === STEPS - 1;
+
+  /* Habits the briefing named, matched against the ones that actually exist. A handful of
+     string compares — not worth a memo, and the compiler optimises the component better
+     without one here. */
+  const planText = brief ? [...brief.suggestions.map((sg) => sg.title), brief.intention ?? ""].join(" ").toLowerCase() : "";
+  const planHabitIds = brief
+    ? data.habits
+        .filter((h) => !h.archived && h.kind === "build" && h.name.trim().length > 2 && planText.includes(h.name.trim().toLowerCase()))
+        .slice(0, 3)
+        .map((h) => h.id)
+    : [];
 
   function finish() {
     saveWeeklyReview({
@@ -88,8 +135,13 @@ export function WeeklyReviewFlow({ anchor, onClose }: { anchor: string; onClose:
       focus: focus.trim() || undefined,
       createdAt: new Date().toISOString(),
     });
+    // The review looks back; the plan it produces belongs to the week ahead. Writing it here
+    // is what makes the ritual worth doing — otherwise the focus is just a note to yourself.
+    const intention = focus.trim() || brief?.intention?.trim();
+    if (intention) saveWeeklyPlan({ weekOf: addDays(anchor, 7), intention, focusHabitIds: planHabitIds.length ? planHabitIds : undefined });
     onClose();
   }
+
 
   if (!mounted) return null;
 
@@ -210,8 +262,78 @@ export function WeeklyReviewFlow({ anchor, onClose }: { anchor: string; onClose:
             </div>
           )}
 
-          {/* Step 4 — focus for next week */}
+          {/* Step 4 — the AI reads the week back to you */}
           {step === 4 && (
+            <div className="py-1">
+              <div className="text-center">
+                <div className="text-3xl">🧠</div>
+                <h3 className="mt-2 text-lg font-semibold">{t("Your week, read back")}</h3>
+                <p className="mt-1 text-[13px] text-[var(--text-muted)]">
+                  {t("The coach reads this week's numbers and suggests three things for the next one.")}
+                </p>
+              </div>
+
+              {!aiOn ? (
+                <p className="mt-4 rounded-xl bg-[var(--surface-2)] p-3 text-center text-[12.5px] text-[var(--text-muted)]">
+                  {t("Turn on the AI coach in Settings to use this. You can finish the review without it.")}
+                </p>
+              ) : !brief ? (
+                <div className="mt-5 text-center">
+                  <Button onClick={generateBriefing} disabled={briefLoading}>
+                    <Sparkles size={16} /> {briefLoading ? t("Thinking…") : t("Generate briefing")}
+                  </Button>
+                  {briefErr && (
+                    <p className="mt-3 text-[12.5px] text-[var(--bad)]">
+                      {briefErr === "not_configured" ? t("The AI coach isn't set up on this deployment.") : t("Couldn't reach the coach. Try again.")}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="mt-4 space-y-3 text-left">
+                  {brief.wentWell.length > 0 && (
+                    <BriefList title={t("What went well")} tone="good" items={brief.wentWell} />
+                  )}
+                  {brief.struggled.length > 0 && (
+                    <BriefList title={t("What was hard")} tone="warn" items={brief.struggled} />
+                  )}
+                  {brief.suggestions.length > 0 && (
+                    <div className="area-deep rounded-[16px] border border-[color-mix(in_srgb,var(--area-a)_22%,transparent)] p-3">
+                      <div className="slabel mb-2 !text-[var(--area-text)]">{t("For next week")}</div>
+                      <ol className="space-y-2">
+                        {brief.suggestions.map((sg, i) => (
+                          <li key={i} className="flex gap-2">
+                            <span className="num mt-[1px] text-[11px] font-bold text-[var(--area-text)]">{i + 1}</span>
+                            <div className="min-w-0">
+                              <div className="text-[13px] font-semibold leading-snug">{sg.title}</div>
+                              {sg.why && <div className="text-[11.5px] leading-snug text-[var(--text-muted)]">{sg.why}</div>}
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                      <Button
+                        variant="soft"
+                        size="sm"
+                        className="mt-3 w-full"
+                        onClick={() => {
+                          // Fill the focus field so the next step is a decision, not a blank page.
+                          setFocus(brief.suggestions.map((sg) => sg.title).join(" · "));
+                          setStep(5);
+                        }}
+                      >
+                        <Check size={15} /> {t("Use as next week's focus")}
+                      </Button>
+                    </div>
+                  )}
+                  <button onClick={generateBriefing} disabled={briefLoading} className="w-full text-[11.5px] text-[var(--text-faint)] hover:text-[var(--text)] disabled:opacity-40">
+                    {t("Regenerate")}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Step 5 — focus for next week */}
+          {step === 5 && (
             <ReflectStep
               emoji="🎯"
               title={t("Your focus for next week")}
@@ -351,6 +473,25 @@ export function WeeklyReviewGate() {
           </button>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** One labelled list inside the weekly briefing. */
+function BriefList({ title, items, tone }: { title: string; items: string[]; tone: "good" | "warn" }) {
+  return (
+    <div className="rounded-[16px] bg-[var(--surface-2)] p-3">
+      <div className="slabel mb-1.5" style={{ color: tone === "good" ? "var(--good)" : "var(--warn)" }}>
+        {title}
+      </div>
+      <ul className="space-y-1">
+        {items.map((it, i) => (
+          <li key={i} className="flex gap-2 text-[12.5px] leading-snug">
+            <span className="mt-[6px] h-1 w-1 shrink-0 rounded-full" style={{ background: tone === "good" ? "var(--good)" : "var(--warn)" }} />
+            {it}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useLaunchAction } from "@/lib/launch";
 import { Brain, Check, Pause, Play, RotateCcw, Target, Timer, Trash2 } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
@@ -59,6 +60,11 @@ export default function FocusPage() {
     }
     live.start({ kind: "focus", totalSec: draftMin * 60, label: draftLabel.trim() || undefined });
   }
+  // Opened from the homescreen shortcut: start the timer straight away.
+  useLaunchAction("start", "focus", useCallback(() => {
+    if (!session) live.start({ kind: "focus", totalSec: draftMin * 60 });
+  }, [session, live, draftMin]));
+
   function reset() {
     live.stop();
   }

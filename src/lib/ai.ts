@@ -256,3 +256,68 @@ export function parseGoalPlan(reply: string): GoalPlan | null {
     return null;
   }
 }
+
+/* ---------------- AI weekly review ---------------- */
+
+export interface WeekSuggestion {
+  title: string;
+  why?: string;
+}
+export interface WeekBriefing {
+  wentWell: string[];
+  struggled: string[];
+  suggestions: WeekSuggestion[];
+  intention?: string;
+}
+
+/** Ask the model to read the week that just ended and hand back a structured briefing. */
+export async function reviewWeek(weekSummary: string, context: string, language: string): Promise<CoachResult> {
+  return askCoach([{ role: "user", content: weekSummary }], context, language, "weekplan");
+}
+
+const asLines = (v: unknown, max: number): string[] =>
+  Array.isArray(v)
+    ? v
+        .map((x) => (typeof x === "string" ? x.trim() : ""))
+        .filter((x) => x.length > 0 && x.length < 240)
+        .slice(0, max)
+    : [];
+
+/**
+ * Leniently parse the weekly briefing. Returns null when there is nothing usable — a partial
+ * briefing is still worth showing, but an empty one would just be a blank panel pretending to
+ * be an answer.
+ */
+export function parseWeekBriefing(reply: string): WeekBriefing | null {
+  let raw = reply.trim().replace(/^```(?:json)?/i, "").replace(/```$/, "").trim();
+  const start = raw.indexOf("{");
+  const end = raw.lastIndexOf("}");
+  if (start >= 0 && end > start) raw = raw.slice(start, end + 1);
+  let obj: Record<string, unknown>;
+  try {
+    obj = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+  const suggestions: WeekSuggestion[] = Array.isArray(obj.suggestions)
+    ? obj.suggestions
+        .map((s) => {
+          if (typeof s === "string") return { title: s.trim() };
+          const o = s as Record<string, unknown>;
+          const title = typeof o?.title === "string" ? o.title.trim() : "";
+          const why = typeof o?.why === "string" ? o.why.trim() : undefined;
+          return { title, why: why || undefined };
+        })
+        .filter((s) => s.title.length > 0 && s.title.length < 160)
+        .slice(0, 3)
+    : [];
+
+  const out: WeekBriefing = {
+    wentWell: asLines(obj.wentWell, 3),
+    struggled: asLines(obj.struggled, 3),
+    suggestions,
+    intention: typeof obj.intention === "string" && obj.intention.trim() ? obj.intention.trim().slice(0, 240) : undefined,
+  };
+  if (!out.wentWell.length && !out.struggled.length && !out.suggestions.length) return null;
+  return out;
+}

@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarCheck, ChevronRight, Gift, ImageDown, Sparkles } from "lucide-react";
+import Link from "next/link";
+import { CalendarCheck, ChevronRight, Gift, ImageDown, Printer, Sparkles } from "lucide-react";
 import { useStore } from "@/lib/store";
 import { useDerived } from "@/lib/useDerived";
 import { useT, useLang } from "@/lib/i18n";
@@ -101,6 +102,13 @@ export default function ReportsPage() {
         <Button variant="soft" className="!rounded-full !px-3 !py-1.5 !text-[12.5px]" onClick={() => setRecap(true)}>
           <Sparkles size={14} /> {t("Play recap")}
         </Button>
+        {wrapYears.length > 0 && (
+          <Link href="/reports/year">
+            <Button variant="soft" className="!rounded-full !px-3 !py-1.5 !text-[12.5px]">
+              <Printer size={14} /> {t("Year report")}
+            </Button>
+          </Link>
+        )}
         {report.hasData && (
           <Button variant="soft" className="!rounded-full !px-3 !py-1.5 !text-[12.5px]" onClick={() => shareImage(report, data.finances.currency, t)}>
             <ImageDown size={14} /> {t("Share")}

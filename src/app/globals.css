@@ -571,3 +571,63 @@ input[type="range"] {
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
+
+/*
+  Printing the year report.
+
+  Only `.print-doc` reaches the paper: everything else is made invisible rather than hidden, so
+  the document keeps its place in the flow and doesn't collapse. Colours are forced back to ink
+  on white — a dark-theme screenshot of a report is unreadable on paper and empties a cartridge.
+*/
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-doc,
+  .print-doc * {
+    visibility: visible;
+  }
+  .print-doc {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+  }
+  .print-doc * {
+    color: #111 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+  .print-doc th,
+  .print-doc footer,
+  .print-doc .text-\[var\(--text-muted\)\],
+  .print-doc .text-\[var\(--text-faint\)\] {
+    color: #555 !important;
+  }
+  .print-doc [class*="border"] {
+    border-color: #d5d8dd !important;
+  }
+  /* Tables scroll on a phone; paper has no scrollbar, so let them lay out full width. */
+  .print-doc .overflow-x-auto {
+    overflow: visible !important;
+  }
+  .print-doc table {
+    width: 100% !important;
+  }
+  /* Keep a section and its heading together where the page breaks. */
+  .print-section {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .no-print {
+    display: none !important;
+  }
+  @page {
+    margin: 16mm 14mm;
+  }
+}

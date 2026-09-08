@@ -2172,6 +2172,62 @@ const DE: Record<string, string> = {
   "Check-in": "Check-in",
   Weight: "Gewicht",
   "Not done": "Nicht erledigt",
+  // training progression
+  "Next time": "Beim nächsten Mal",
+  "Hit every set and the weight goes up. Miss, and it stays. Three sessions without a best and it backs off.":
+    "Schaffst du alle Sätze, geht das Gewicht hoch. Wenn nicht, bleibt es. Drei Einheiten ohne Bestwert, dann geht es runter.",
+  Deload: "Deload",
+  "No progress in {n} sessions — back off to {target} and build up again.":
+    "Seit {n} Einheiten kein Fortschritt — runter auf {target} und wieder aufbauen.",
+  "Last time {last} — today {target}.": "Letztes Mal {last} — heute {target}.",
+  "Last time {last} — repeat it, then it goes up.": "Letztes Mal {last} — noch mal, dann geht es rauf.",
+  kg: "kg",
+  // AI weekly briefing
+  "Your week, read back": "Deine Woche, zurückgespiegelt",
+  "The coach reads this week's numbers and suggests three things for the next one.":
+    "Der Coach liest die Zahlen dieser Woche und schlägt drei Dinge für die nächste vor.",
+  "Turn on the AI coach in Settings to use this. You can finish the review without it.":
+    "Schalte den KI-Coach in den Einstellungen ein, um das zu nutzen. Der Rückblick geht auch ohne.",
+  "Generate briefing": "Briefing erstellen",
+  "The AI coach isn't set up on this deployment.": "Der KI-Coach ist auf dieser Installation nicht eingerichtet.",
+  "Couldn't reach the coach. Try again.": "Der Coach war nicht erreichbar. Versuch es nochmal.",
+  "What went well": "Was gut lief",
+  "What was hard": "Was schwer war",
+  "For next week": "Für nächste Woche",
+  "Use as next week's focus": "Als Fokus für nächste Woche übernehmen",
+  // year report
+  "Year report": "Jahresbericht",
+  "Nothing to report yet": "Noch nichts zu berichten",
+  "Log a few weeks and a full year report appears here.":
+    "Trage ein paar Wochen ein, dann erscheint hier ein vollständiger Jahresbericht.",
+  "A printable summary of everything you logged. Save it as a PDF from the print dialog.":
+    "Eine druckbare Zusammenfassung von allem, was du eingetragen hast. Im Druckdialog als PDF sichern.",
+  "Save as PDF": "Als PDF speichern",
+  "Generated {date}": "Erstellt am {date}",
+  "The year in numbers": "Das Jahr in Zahlen",
+  "Training time": "Trainingszeit",
+  "Goals reached": "Ziele erreicht",
+  "Strongest month": "Stärkster Monat",
+  "Most consistent habit": "Konstanteste Gewohnheit",
+  "Month by month": "Monat für Monat",
+  Month: "Monat",
+  Days: "Tage",
+  "Ø Score": "Ø Score",
+  "Ø Sleep": "Ø Schlaf",
+  "Days done": "Tage erledigt",
+  "Days tracked": "Tage erfasst",
+  Sessions: "Einheiten",
+  Time: "Zeit",
+  "Best set": "Bester Satz",
+  "Nights logged": "Nächte erfasst",
+  "Average duration": "Ø Dauer",
+  "Average quality": "Ø Qualität",
+  "Average wellbeing": "Ø Wohlbefinden",
+  "Days with symptoms": "Tage mit Symptomen",
+  "Sick days": "Krankheitstage",
+  "Most frequent": "Am häufigsten",
+  "Everything here comes from entries you made yourself. Nothing is estimated or filled in.":
+    "Alles hier stammt aus Einträgen, die du selbst gemacht hast. Nichts ist geschätzt oder ergänzt.",
   // workout ↔ habit link, custom exercises, carried-over score
   "Counts for habit": "Zählt für Gewohnheit",
   Automatic: "Automatisch",
