@@ -60,6 +60,7 @@ export default function DashboardPage() {
   // Before midday, a day with nothing logged yet keeps yesterday's number instead of showing
   // a 0 nobody earned. Recomputed every render, so it steps aside on the stroke of noon.
   const headline = headlineScore(liveScore, d.yesterdayScore, today);
+  const headlineLabel = t(scoreLabel(headline.score));
   const byDate = d.byDate;
 
   // This week vs last week, so "+4 vs. last week" is a real comparison.
@@ -270,7 +271,7 @@ export default function DashboardPage() {
                   {t("vs. last week")}
                 </span>
               ) : (
-                t(scoreLabel(headline.score))
+                headlineLabel
               )}
             </div>
           </div>
