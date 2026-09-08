@@ -250,7 +250,11 @@ export default function DashboardPage() {
         <div className="mt-3 flex items-center gap-[18px]">
           <ScoreRing value={headline.score} />
           {headline.carriedOver && (
-            <span className="text-[12.5px] text-[var(--text-faint)]">{t("Yesterday · nothing logged today yet")}</span>
+            // Say whose score this is. The number changing without explanation is what made
+            // the old rule confusing, not the number itself.
+            <span className="text-[12.5px] text-[var(--text-faint)]">
+              {t("Yesterday · today counts from midday")}
+            </span>
           )}
           {!headline.carriedOver && vsLastWeek !== null && (
             <span className="flex items-center gap-1.5">

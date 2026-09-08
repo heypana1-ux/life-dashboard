@@ -30,12 +30,17 @@ export interface Headline {
 }
 
 /**
- * A fresh day starts with nothing logged, so a live score would read 0 from midnight until
- * the first habit is ticked — which looks like a collapse rather than a blank slate.
+ * A morning is not a day.
  *
- * So yesterday's score stays on screen through the first half of the new day, and steps aside
- * the moment either of two things happens: you log something today, or it is midday. After
- * that the day stands on its own, however it is going.
+ * The live score of a day that has barely started is not a bad score, it is an incomplete one:
+ * log last night's sleep at breakfast and the number is that single entry, weighed against a
+ * full day's worth of habits nobody has had the chance to do yet. Shown as "your score" it
+ * reads as a collapse — 98 yesterday, 14 this morning — when nothing has actually gone wrong.
+ *
+ * So until midday the number stays on yesterday, the last day that was actually finished.
+ * The one exception is a morning that has already passed yesterday: there is no dip left to
+ * smooth over, so the real, better number wins. Either way the score shown belongs to a real
+ * day, and the label says which one.
  */
 export function headlineScore(
   liveScore: number,
@@ -44,10 +49,11 @@ export function headlineScore(
   now = new Date(),
 ): Headline {
   const CARRY_UNTIL_HOUR = 12;
-  if (liveScore > 0 || now.getHours() >= CARRY_UNTIL_HOUR || !yesterday || yesterday.lifeScore <= 0) {
-    return { score: liveScore, date: today, carriedOver: false };
+  const prev = yesterday?.lifeScore ?? 0;
+  if (now.getHours() < CARRY_UNTIL_HOUR && prev > 0 && liveScore <= prev) {
+    return { score: prev, date: yesterday!.date, carriedOver: true };
   }
-  return { score: yesterday.lifeScore, date: yesterday.date, carriedOver: true };
+  return { score: liveScore, date: today, carriedOver: false };
 }
 
 function earliestDataDate(data: AppData, fallback: string): string {

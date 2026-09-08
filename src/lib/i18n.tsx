@@ -2182,7 +2182,7 @@ const DE: Record<string, string> = {
   "Muscle group": "Muskelgruppe",
   Remove: "Entfernen",
   "Saved for next time.": "Wird für das nächste Mal gespeichert.",
-  "Yesterday · nothing logged today yet": "Gestern · heute noch nichts eingetragen",
+  "Yesterday · today counts from midday": "Gestern · heute zählt ab Mittag",
   // activity grid
   "Activity grid": "Aktivitäten-Raster",
   "1 month": "1 Monat",
