@@ -2172,6 +2172,29 @@ const DE: Record<string, string> = {
   "Check-in": "Check-in",
   Weight: "Gewicht",
   "Not done": "Nicht erledigt",
+  // day ledger
+  "Where the score came from": "Woher der Score kommt",
+  "Previous day": "Vorheriger Tag",
+  "Next day": "Nächster Tag",
+  "Nothing logged on this day": "An diesem Tag nichts eingetragen",
+  "Holiday — a missed habit costs nothing here.": "Urlaub — eine verpasste Gewohnheit kostet hier nichts.",
+  "Rest day — a missed habit costs a third of the usual.":
+    "Ruhetag — eine verpasste Gewohnheit kostet nur ein Drittel.",
+  "Rows are rounded to one decimal, so they can differ from the balance by a fraction.":
+    "Die Zeilen sind auf eine Nachkommastelle gerundet und können deshalb minimal von der Bilanz abweichen.",
+  "Partly done": "Teilweise erledigt",
+  Missed: "Verpasst",
+  Slipped: "Ausgerutscht",
+  // custom exercises & plans from a session
+  "Counted in": "Gezählt in",
+  "Bodyweight exercise (your weight counts as the load)":
+    "Körpergewichtsübung (dein Gewicht zählt als Last)",
+  "Your exercises": "Deine Übungen",
+  "Remove from the list": "Aus der Liste entfernen",
+  "Save as plan": "Als Plan speichern",
+  "Start without a plan": "Ohne Plan starten",
+  "Add exercises as you go — at the end you can keep the session as a plan.":
+    "Übungen einfach unterwegs hinzufügen — am Ende kannst du die Einheit als Plan behalten.",
   // training progression
   "Next time": "Beim nächsten Mal",
   "Hit every set and the weight goes up. Miss, and it stays. Three sessions without a best and it backs off.":

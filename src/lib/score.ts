@@ -6,10 +6,11 @@ import {
   Habit,
   HabitLog,
   Priority,
+  Settings,
   SleepLog,
 } from "./types";
 import { addDays, isoRange, parseISO, sleepDurationMinutes, weekdayOf } from "./date";
-import { inVacation } from "./streak";
+import { inVacation, isRestDay } from "./streak";
 import { healthScore } from "./health";
 
 /*
@@ -31,9 +32,9 @@ import { healthScore } from "./health";
       (settings.checkinCounts); otherwise the check-in stays informational and doesn't score.
 
   Per-area category scores (0..100) are still computed for display, but the Life Score comes
-  from the pool + sleep + optional check-in, not from averaging the areas. On vacation days
-  scoring is lenient (missed habits and slips simply don't count). Long-term movement is
-  captured by ELO, not by the daily number.
+  from the pool + sleep + optional check-in, not from averaging the areas. Rest days and
+  holidays are scored gently — see missWeightFor. Long-term movement is captured by ELO, not
+  by the daily number.
 */
 
 /** Per-area display weighting (importance 1..5, falling back to priority). */
@@ -131,6 +132,27 @@ function weeklyFraction(habit: Habit, dateISO: string, logs: HabitLog[]): number
   return Math.min(1 + OVERFILL_CAP, sum / target);
 }
 
+/**
+ * How much a missed habit still counts on a day you took off.
+ *
+ * A planned rest day is a decision, not a failure — the habits you deliberately skipped
+ * shouldn't read as misses. But it is still a day of your life, so a miss isn't free either:
+ * it weighs about a third. Away on holiday it weighs nothing at all, because the point of
+ * being away is that the plan doesn't apply.
+ *
+ * Before this, only holidays were treated leniently and a rest day counted like any other —
+ * which is exactly backwards for the days you most need the app to be forgiving.
+ */
+const REST_DAY_MISS = 0.3;
+const VACATION_MISS = 0;
+
+/** 1 on an ordinary day, less on a rest day, 0 on holiday. */
+export function missWeightFor(settings: Settings, dateISO: string): number {
+  if (inVacation(settings, dateISO)) return VACATION_MISS;
+  if (isRestDay(settings, dateISO)) return REST_DAY_MISS;
+  return 1;
+}
+
 /** One shared points pool across every in-scope habit for the day, regardless of area.
  *  `possible` is the total points at stake (priority for build, severity for reduce) and
  *  `earned` is what the user actually got. Dividing the two gives a habit adherence 0..1 that
@@ -140,33 +162,33 @@ function habitPool(
   habits: Habit[],
   logs: HabitLog[],
   areaKeys: Set<AreaKey>,
-  lenient: boolean,
+  missWeight: number,
 ): { earned: number; possible: number } {
   let earned = 0;
   let possible = 0;
   const active = habits.filter(
     (h) => !h.archived && areaKeys.has(h.area) && parseISO(h.createdAt) <= parseISO(dateISO),
   );
+  // What you did always counts in full; only the part you missed is scaled by the day's
+  // leniency. At missWeight 1 this is the ordinary rule, at 0 a miss drops out entirely.
+  const stake = (pts: number, f: number) => pts * (f + (1 - f) * missWeight);
   for (const h of active) {
     if (h.kind === "build") {
       const pts = PRIORITY_POINTS[h.priority];
       if (h.schedule.type === "weekly") {
         const f = Math.min(1, weeklyFraction(h, dateISO, logs));
-        if (lenient && f === 0) continue; // vacation: a missed habit simply doesn't count
         earned += pts * f;
-        possible += pts;
+        possible += stake(pts, f);
       } else if (isDueOn(h, dateISO)) {
         const f = Math.min(1, fulfillment(h, logFor(logs, h.id, dateISO)));
-        if (lenient && f === 0) continue;
         earned += pts * f;
-        possible += pts;
+        possible += stake(pts, f);
       }
     } else if (isDueOn(h, dateISO)) {
       const pts = reducePoints(h.severity);
       const slipped = !!logFor(logs, h.id, dateISO)?.done;
-      if (lenient && slipped) continue; // vacation: a slip simply doesn't count
       earned += slipped ? 0 : pts;
-      possible += pts;
+      possible += stake(pts, slipped ? 0 : 1);
     }
   }
   return { earned, possible };
@@ -178,7 +200,7 @@ function habitAreaScore(
   dateISO: string,
   habits: Habit[],
   logs: HabitLog[],
-  lenient = false,
+  missWeight = 1,
 ): number | null {
   const active = habits.filter(
     (h) => h.area === area && !h.archived && parseISO(h.createdAt) <= parseISO(dateISO),
@@ -188,32 +210,32 @@ function habitAreaScore(
   let wSum = 0;
   let fSum = 0;
   let counted = 0;
+  const stake = (w: number, f: number) => w * (f + (1 - f) * missWeight);
   for (const h of active) {
     if (h.kind === "build") {
       // Importance (1..5) sets how much this habit moves the area score; falls back to the
       // habit's priority for records created before explicit weighting existed.
       const w = h.weight ?? PRIORITY_WEIGHT[h.priority];
+      // Same leniency as the pool: what you did counts in full, what you missed counts less
+      // on a rest day and not at all on holiday. `Math.min(1, f)` keeps an over-fulfilment
+      // bonus out of the denominator, where it would otherwise shrink the stake.
       if (h.schedule.type === "weekly") {
         const f = weeklyFraction(h, dateISO, logs);
-        // On lenient (vacation) days a missed habit simply doesn't count against you.
-        if (!lenient || f > 0) {
-          fSum += w * f;
-          wSum += w;
-          counted++;
-        }
+        fSum += w * f;
+        wSum += w * stake(1, Math.min(1, f));
+        counted++;
       } else if (isDueOn(h, dateISO)) {
         const f = fulfillment(h, logFor(logs, h.id, dateISO));
-        if (!lenient || f > 0) {
-          fSum += w * f;
-          wSum += w;
-          counted++;
-        }
+        fSum += w * f;
+        wSum += w * stake(1, Math.min(1, f));
+        counted++;
       }
     } else if (isDueOn(h, dateISO)) {
       // reduce habit: avoided (no occurrence) is full credit; weighted by severity
       const w = h.severity ?? 2;
-      fSum += w * (logFor(logs, h.id, dateISO)?.done ? 0 : 1);
-      wSum += w;
+      const avoided = logFor(logs, h.id, dateISO)?.done ? 0 : 1;
+      fSum += w * avoided;
+      wSum += w * stake(1, avoided);
       counted++;
     }
   }
@@ -273,8 +295,8 @@ export interface DayComputation {
 export function computeDay(data: AppData, dateISO: string): DayComputation {
   const { habits, habitLogs, reviews, sleep, health, settings } = data;
   const enabled = settings.areas.filter((a) => a.enabled);
-  // On vacation days scoring is lenient: missed habits and slips simply don't count.
-  const lenient = inVacation(settings, dateISO);
+  // Rest days and holidays are scored gently — see missWeightFor.
+  const missWeight = missWeightFor(settings, dateISO);
   const categories: Partial<Record<AreaKey, number>> = {};
 
   const habitAreaKeys = new Set<AreaKey>();
@@ -307,7 +329,7 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
       score = log ? healthScore(log) : null;
     } else {
       habitAreaKeys.add(area.key);
-      score = habitAreaScore(area.key, dateISO, habits, habitLogs, lenient);
+      score = habitAreaScore(area.key, dateISO, habits, habitLogs, missWeight);
     }
 
     if (score !== null) {
@@ -317,7 +339,7 @@ export function computeDay(data: AppData, dateISO: string): DayComputation {
   }
 
   const slips = reduceSlips(dateISO, habits, habitLogs);
-  const pool = habitPool(dateISO, habits, habitLogs, habitAreaKeys, lenient);
+  const pool = habitPool(dateISO, habits, habitLogs, habitAreaKeys, missWeight);
 
   // Blend the parts that have data, renormalized over whatever is present today.
   const parts: { w: number; v: number }[] = [];
@@ -415,3 +437,161 @@ export const scoreLabel = (s: number): string =>
 
 export const scoreColor = (s: number): string =>
   s >= 70 ? "var(--good)" : s >= 45 ? "var(--warn)" : "var(--bad)";
+
+/* ---------------- Where a day's score came from ---------------- */
+
+export interface ScoreLine {
+  id: string;
+  /** A habit's own name, or an English i18n key for the fixed rows. */
+  label: string;
+  /** True when `label` is a key to run through t(). */
+  translate: boolean;
+  kind: "habit" | "reduce" | "sleep" | "checkin" | "bonus";
+  /** Life-Score points this row actually contributed. */
+  plus: number;
+  /** Points it was holding and didn't deliver — what the miss cost you. */
+  minus: number;
+  /** Short state for the row ("Done", "Missed", "7h 15m"). An i18n key when `translate`. */
+  detail?: string;
+  detailTranslate?: boolean;
+}
+
+export interface DayExplanation {
+  date: string;
+  lifeScore: number | null;
+  lines: ScoreLine[];
+  plus: number;
+  minus: number;
+  /** How much a miss weighed that day: 1 ordinary, 0.3 rest day, 0 holiday. */
+  missWeight: number;
+}
+
+/**
+ * The same arithmetic as `computeDay`, kept as a ledger instead of a single number.
+ *
+ * Every row says what it added and what it was holding and didn't deliver, and the pluses add
+ * up to the day's Life Score — so the breakdown can never quietly disagree with the score on
+ * the dashboard. It is derived from computeDay's own weights rather than re-invented, which is
+ * the only way the two stay in step when the weights change.
+ */
+export function explainDay(data: AppData, dateISO: string): DayExplanation {
+  const { habits, habitLogs, reviews, sleep, settings } = data;
+  const enabled = settings.areas.filter((a) => a.enabled);
+  const missWeight = missWeightFor(settings, dateISO);
+  const lines: ScoreLine[] = [];
+
+  const habitAreaKeys = new Set<AreaKey>();
+  for (const area of enabled) {
+    if (area.key !== "sleep" && area.key !== "reflection" && area.key !== "finances" && area.key !== "health") {
+      habitAreaKeys.add(area.key);
+    }
+  }
+
+  const pool = habitPool(dateISO, habits, habitLogs, habitAreaKeys, missWeight);
+  const sleepLog = enabled.some((a) => a.key === "sleep") ? sleep.find((s) => s.date === dateISO) : undefined;
+  const sleepVal = sleepLog ? sleepScore(sleepLog, settings.sleepTargetMinutes) : null;
+  const review = enabled.some((a) => a.key === "reflection") ? reviews.find((r) => r.date === dateISO) : undefined;
+  const reviewVal = review ? reviewScore(review) : null;
+
+  // The same renormalised blend computeDay uses, so a share here is a share there.
+  const parts: number[] = [];
+  if (pool.possible > 0) parts.push(HABIT_WEIGHT);
+  if (sleepVal !== null) parts.push(SLEEP_WEIGHT);
+  if (settings.checkinCounts && reviewVal !== null) parts.push(CHECKIN_WEIGHT);
+  const wSum = parts.reduce((a, b) => a + b, 0);
+
+  if (wSum > 0 && pool.possible > 0) {
+    const share = (HABIT_WEIGHT / wSum) * 100; // points the whole habit pool is worth today
+    const active = habits.filter(
+      (h) => !h.archived && habitAreaKeys.has(h.area) && parseISO(h.createdAt) <= parseISO(dateISO),
+    );
+    for (const h of active) {
+      const isBuild = h.kind === "build";
+      const due = isBuild ? h.schedule.type === "weekly" || isDueOn(h, dateISO) : isDueOn(h, dateISO);
+      if (!due) continue;
+      const pts = isBuild ? PRIORITY_POINTS[h.priority] : reducePoints(h.severity);
+      const f = isBuild
+        ? Math.min(1, h.schedule.type === "weekly" ? weeklyFraction(h, dateISO, habitLogs) : fulfillment(h, logFor(habitLogs, h.id, dateISO)))
+        : logFor(habitLogs, h.id, dateISO)?.done
+          ? 0
+          : 1;
+      const got = (pts * f * share) / pool.possible;
+      const lost = (pts * (1 - f) * missWeight * share) / pool.possible;
+      if (got === 0 && lost === 0) continue;
+      lines.push({
+        id: h.id,
+        label: h.name,
+        translate: false,
+        kind: isBuild ? "habit" : "reduce",
+        plus: got,
+        minus: lost,
+        detail: isBuild ? (f >= 1 ? "Done" : f > 0 ? "Partly done" : "Missed") : f > 0 ? "Avoided" : "Slipped",
+        detailTranslate: true,
+      });
+    }
+  }
+
+  if (sleepVal !== null && wSum > 0) {
+    const share = (SLEEP_WEIGHT / wSum) * 100;
+    lines.push({
+      id: "sleep",
+      label: "Sleep",
+      translate: true,
+      kind: "sleep",
+      plus: (sleepVal / 100) * share,
+      minus: ((100 - sleepVal) / 100) * share,
+      detail: `${sleepVal}/100`,
+    });
+  }
+
+  if (settings.checkinCounts && reviewVal !== null && wSum > 0) {
+    const share = (CHECKIN_WEIGHT / wSum) * 100;
+    lines.push({
+      id: "checkin",
+      label: "Daily check-in",
+      translate: true,
+      kind: "checkin",
+      plus: (reviewVal / 100) * share,
+      minus: ((100 - reviewVal) / 100) * share,
+      detail: `${reviewVal}/100`,
+    });
+  }
+
+  // Bonuses sit on top of the blend, so they add points without any being at stake elsewhere.
+  const focus = data.focus?.find((f) => f.date === dateISO);
+  if (wSum > 0 && focus && focus.items.length > 0) {
+    const frac = focus.items.filter((i) => i.done).length / focus.items.length;
+    lines.push({
+      id: "focus3",
+      label: "Today's focus",
+      translate: true,
+      kind: "bonus",
+      plus: frac * FOCUS_BONUS,
+      minus: (1 - frac) * FOCUS_BONUS,
+      detail: `${focus.items.filter((i) => i.done).length}/${focus.items.length}`,
+    });
+  }
+  const focusMin = (data.focusSessions ?? []).filter((f) => f.date === dateISO).reduce((s, f) => s + f.minutes, 0);
+  if (wSum > 0 && focusMin > 0) {
+    const frac = Math.min(1, focusMin / (settings.focusTargetMinutes || DEFAULT_FOCUS_TARGET));
+    lines.push({
+      id: "deepwork",
+      label: "Deep work",
+      translate: true,
+      kind: "bonus",
+      plus: frac * DEEPWORK_BONUS,
+      minus: (1 - frac) * DEEPWORK_BONUS,
+      detail: `${focusMin} min`,
+    });
+  }
+
+  lines.sort((a, b) => b.plus + b.minus - (a.plus + a.minus));
+  return {
+    date: dateISO,
+    lifeScore: computeDay(data, dateISO).lifeScore,
+    lines,
+    plus: lines.reduce((s, l) => s + l.plus, 0),
+    minus: lines.reduce((s, l) => s + l.minus, 0),
+    missWeight,
+  };
+}

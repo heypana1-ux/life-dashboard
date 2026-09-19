@@ -13,6 +13,7 @@ import { Card, PageHeader, SectionTitle, Chip, Badge, Delta } from "@/components
 import { bestSelf } from "@/lib/bestSelf";
 import { TrendLine, MultiLine, MiniSpark } from "@/components/charts";
 import { ActivityCard } from "@/components/ActivityCard";
+import { DayLedger } from "@/components/DayLedger";
 
 const RANGES: { key: string; days: number; label: string }[] = [
   { key: "7", days: 7, label: "7D" },
@@ -303,6 +304,8 @@ export default function StatisticsPage() {
       </div>
 
       {/* Last on the page on purpose: it's for browsing, not for the headline numbers. */}
+      <DayLedger />
+
       <ActivityCard />
     </div>
   );

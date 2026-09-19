@@ -15,6 +15,7 @@ import { describeSet } from "@/lib/trainingStats";
 import { Progression, suggestNext } from "@/lib/progression";
 import { Button, ScaleInput } from "@/components/ui";
 import { WorkoutImageAction } from "@/components/WorkoutShare";
+import { SavePlanAction } from "@/components/SavePlanButton";
 import { ExerciseSelect } from "@/components/ExercisePicker";
 
 /*
@@ -282,8 +283,15 @@ export function WorkoutRunner() {
         <div className="space-y-2 border-t border-[var(--border)] p-4">
           {/* The card is drawn from the session as it stands, so you can look at it — and
               adjust the ratings — before the workout is filed away. */}
-          <div className="mx-auto w-full max-w-md">
-            <WorkoutImageAction build={buildWorkout} />
+          <div className="mx-auto flex w-full max-w-md gap-2">
+            <div className="flex-1">
+              <WorkoutImageAction build={buildWorkout} />
+            </div>
+            {/* An improvised session is worth keeping — this turns it into a plan you can
+                start again without typing it out a second time. */}
+            <div className="flex-1">
+              <SavePlanAction build={buildWorkout} />
+            </div>
           </div>
           <Button className="mx-auto block w-full max-w-md !py-3" onClick={doSave}>
             <Check size={16} /> {t("Save workout")}
@@ -365,8 +373,12 @@ export function WorkoutRunner() {
                   <div className="truncate text-lg font-semibold">{active?.name}</div>
                   <div className="text-xs text-[var(--text-faint)]">
                     {t("Exercise")} {cur + 1}/{exercises.length}
+                    {/* A plan line for a held exercise stores its seconds in targetReps, so the
+                        target has to be read in the exercise's own unit, not always in kg. */}
                     {active?.targetWeight || active?.targetReps
-                      ? ` · ${t("target")} ${active?.targetWeight ?? "—"}kg×${active?.targetReps ?? "—"}`
+                      ? timed
+                        ? ` · ${t("target")} ${active?.targetReps ?? "—"} s`
+                        : ` · ${t("target")} ${active?.targetWeight ? `${active.targetWeight}kg×` : ""}${active?.targetReps ?? "—"}`
                       : ""}
                   </div>
                 </div>

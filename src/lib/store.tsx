@@ -48,6 +48,7 @@ import { emptyData, uid, DEFAULT_AREAS } from "./defaults";
 import { dueRecurring } from "./finance";
 import { migrateTimedSets } from "./trainingStats";
 import { habitMatchesSport } from "./sports";
+import { setCustomExercises } from "./exercises";
 import { todayISO, addDays, weekdayOf } from "./date";
 import type { Accent } from "./types";
 import { supabase, isSyncConfigured, SYNC_TABLE } from "./supabase";
@@ -302,6 +303,16 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
   /** True once a save was rejected (quota). Surfaced in the UI — never swallowed. */
   const [storageFull, setStorageFull] = useState(false);
   const lastBackupWrite = useRef(0);
+
+  // Keep the exercise registry in step with settings, so a custom "Side Plank" is a held
+  // exercise everywhere — runner, stats, progression — not just in the picker.
+  //
+  // Deliberately during render rather than in an effect: the registry is plain module state,
+  // so writing to it can't schedule a render of its own. An effect would leave the very render
+  // that follows adding an exercise still reading the old catalogue, and the new exercise would
+  // show up as reps until something unrelated re-rendered. It's idempotent and derived only
+  // from state, so running it on every render is safe.
+  setCustomExercises(data.settings.customExercises);
 
   useEffect(() => {
     // Hydrate from localStorage after mount (avoids SSR/client mismatch).

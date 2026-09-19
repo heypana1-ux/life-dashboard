@@ -173,9 +173,38 @@ export const EXERCISES: CatalogExercise[] = [...CATALOG].sort((a, b) => a.name.l
 
 const BY_NAME = new Map(CATALOG.map((e) => [e.name.toLowerCase(), e] as const));
 
-/** Catalog entry for a name, if we know it. Custom exercises simply aren't in here. */
+/*
+  Exercises the user typed themselves.
+
+  `isTimeBased` and friends are called from pure helpers (trainingStats, progression, the share
+  image) that have no access to settings, and threading the setting through every one of them
+  would touch a dozen call sites to answer one question. So the custom list lives in a small
+  module registry that the store refreshes whenever settings change: one write, and every
+  lookup below sees the same catalogue the picker shows.
+*/
+let CUSTOM = new Map<string, CatalogExercise>();
+
+/** Replace the registry. Called by the store on load and on every settings change. */
+export function setCustomExercises(list: { name: string; muscle: string; mode?: string; bodyweight?: boolean }[] | undefined) {
+  CUSTOM = new Map(
+    (list ?? [])
+      .filter((e) => e.name?.trim())
+      .map((e) => [
+        e.name.trim().toLowerCase(),
+        {
+          name: e.name.trim(),
+          muscle: e.muscle as Muscle,
+          mode: e.mode === "time" ? ("time" as const) : ("reps" as const),
+          bodyweight: e.bodyweight === true,
+        },
+      ]),
+  );
+}
+
+/** Catalog entry for a name — the built-in list first, then anything you added yourself. */
 export function catalogEntry(name: string): CatalogExercise | undefined {
-  return BY_NAME.get(name.trim().toLowerCase());
+  const key = name.trim().toLowerCase();
+  return BY_NAME.get(key) ?? CUSTOM.get(key);
 }
 
 /** Is a set of this exercise measured in seconds held rather than reps? */
@@ -190,7 +219,7 @@ export function isBodyweight(name: string): boolean {
 
 /** Look up an exercise's muscle group by (case-insensitive) name. */
 export function muscleFor(name: string): Muscle | undefined {
-  return BY_NAME.get(name.trim().toLowerCase())?.muscle;
+  return catalogEntry(name)?.muscle;
 }
 
 /** Built-in starter plans the user can add and then customise. */

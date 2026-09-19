@@ -39,6 +39,7 @@ import { Bars, TrendLine } from "@/components/charts";
 import { CoachInsightCard } from "@/components/Coach";
 import { useStartWorkout } from "@/components/WorkoutRunner";
 import { WorkoutImageButton } from "@/components/WorkoutShare";
+import { SavePlanButton } from "@/components/SavePlanButton";
 import { elapsedSec as liveElapsed, useLive } from "@/lib/liveActivity";
 import { useLaunchAction } from "@/lib/launch";
 import { nextTargets } from "@/lib/progression";
@@ -139,7 +140,7 @@ export default function TrainingPage() {
           onStartPlan={startWorkout}
         />
       )}
-      {tab === "plans" && <PlansTab onStart={startWorkout} />}
+      {tab === "plans" && <PlansTab onStart={startWorkout} onStartEmpty={() => startWorkout()} />}
       {tab === "progress" && <ProgressTab workouts={data.workouts} />}
 
       <WorkoutModal
@@ -295,6 +296,7 @@ function WorkoutsTab({
                     </div>
                   </div>
                   <div className="flex gap-1">
+                    <SavePlanButton workout={w} />
                     <WorkoutImageButton workout={w} />
                     <button onClick={() => onEdit(w)} className="rounded-lg px-2 py-1 text-xs text-[var(--text-faint)] hover:bg-[var(--surface-2)]">
                       {t("Edit")}
@@ -332,7 +334,7 @@ function WorkoutsTab({
 
 /* ---------------- Plans tab ---------------- */
 
-function PlansTab({ onStart }: { onStart: (p: WorkoutPlan) => void }) {
+function PlansTab({ onStart, onStartEmpty }: { onStart: (p: WorkoutPlan) => void; onStartEmpty: () => void }) {
   const { data, savePlan, removePlan } = useStore();
   const t = useT();
   const [modal, setModal] = useState(false);
@@ -342,6 +344,22 @@ function PlansTab({ onStart }: { onStart: (p: WorkoutPlan) => void }) {
 
   return (
     <>
+      {/* No plan, no time to make one: start empty and add exercises as you go. What you did
+          can be saved as a plan afterwards, from the last screen of the session. */}
+      <Card className="!p-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-[13.5px] font-semibold">{t("Start without a plan")}</div>
+            <p className="mt-0.5 text-[11.5px] leading-snug text-[var(--text-muted)]">
+              {t("Add exercises as you go — at the end you can keep the session as a plan.")}
+            </p>
+          </div>
+          <Button size="sm" className="shrink-0" onClick={onStartEmpty}>
+            <Play size={14} /> {t("Start")}
+          </Button>
+        </div>
+      </Card>
+
       <Card>
         <SectionTitle
           right={

@@ -31,6 +31,10 @@ export function ExercisePicker({
   const { data, updateSettings } = useStore();
   const [q, setQ] = useState("");
   const [customMuscle, setCustomMuscle] = useState<Muscle | "">("");
+  // How a set of this exercise is counted, and whether it moves your own body weight. Both
+  // are stored with the exercise, so the runner asks for seconds (or "+kg") from then on.
+  const [customMode, setCustomMode] = useState<"reps" | "time">("reps");
+  const [customBodyweight, setCustomBodyweight] = useState(false);
   const query = q.trim().toLowerCase();
 
   const custom = useMemo(() => data.settings.customExercises ?? [], [data.settings.customExercises]);
@@ -40,6 +44,8 @@ export function ExercisePicker({
     onSelect(name, muscle);
     setQ("");
     setCustomMuscle("");
+    setCustomMode("reps");
+    setCustomBodyweight(false);
     onClose();
   }
 
@@ -49,7 +55,9 @@ export function ExercisePicker({
     if (!name) return;
     const muscle = (customMuscle || muscleFor(name) || "fullbody") as Muscle;
     if (!customNames.has(name.toLowerCase())) {
-      updateSettings({ customExercises: [...custom, { name, muscle }] });
+      updateSettings({
+        customExercises: [...custom, { name, muscle, mode: customMode, bodyweight: customBodyweight || undefined }],
+      });
     }
     pick(name, muscle);
   }
@@ -60,15 +68,19 @@ export function ExercisePicker({
 
   const all = useMemo(
     () => [
-      ...EXERCISES.map((e) => ({ name: e.name, muscle: e.muscle, custom: false })),
-      ...custom.map((e) => ({ name: e.name, muscle: e.muscle as Muscle, custom: true })),
+      ...EXERCISES.map((e) => ({ name: e.name, muscle: e.muscle, custom: false, mode: e.mode })),
+      ...custom.map((e) => ({ name: e.name, muscle: e.muscle as Muscle, custom: true, mode: e.mode })),
     ],
     [custom],
   );
 
+  const matches = (e: { name: string }) => !query || e.name.toLowerCase().includes(query);
+  // Your own exercises are pinned at the top: that's where you go to fix a typo, and hunting
+  // for one among a hundred built-ins would make deleting it a treasure hunt.
+  const mine = all.filter((e) => e.custom && matches(e));
   const groups = MUSCLES.map((m) => ({
     muscle: m,
-    items: all.filter((e) => e.muscle === m && (!query || e.name.toLowerCase().includes(query))),
+    items: all.filter((e) => !e.custom && e.muscle === m && matches(e)),
   })).filter((g) => g.items.length > 0);
 
   const exactMatch = all.some((e) => e.name.toLowerCase() === query);
@@ -100,7 +112,7 @@ export function ExercisePicker({
               {t("Add")} “<span className="font-medium">{q.trim()}</span>”
             </button>
             <div className="mt-2 flex items-center gap-2">
-              <span className="text-xs text-[var(--text-faint)]">{t("Muscle group")}</span>
+              <span className="w-24 shrink-0 text-xs text-[var(--text-faint)]">{t("Muscle group")}</span>
               <select
                 className={`${inputCls} !py-1.5 w-auto flex-1`}
                 value={customMuscle || muscleFor(q.trim()) || "fullbody"}
@@ -111,6 +123,35 @@ export function ExercisePicker({
                 ))}
               </select>
             </div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="w-24 shrink-0 text-xs text-[var(--text-faint)]">{t("Counted in")}</span>
+              <div className="flex flex-1 gap-1.5">
+                {(["reps", "time"] as const).map((m) => (
+                  <button
+                    key={m}
+                    onClick={() => setCustomMode(m)}
+                    className={`flex-1 rounded-lg border px-2 py-1.5 text-[12.5px] font-medium ${
+                      customMode === m
+                        ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent)]"
+                        : "border-[var(--border)] bg-[var(--surface-2)] text-[var(--text-muted)]"
+                    }`}
+                  >
+                    {m === "reps" ? `${t("Reps")} · kg` : t("Seconds")}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {customMode === "reps" && (
+              <label className="mt-2 flex items-center gap-2 text-xs text-[var(--text-muted)]">
+                <input
+                  type="checkbox"
+                  checked={customBodyweight}
+                  onChange={(e) => setCustomBodyweight(e.target.checked)}
+                  className="h-3.5 w-3.5 accent-[var(--accent)]"
+                />
+                {t("Bodyweight exercise (your weight counts as the load)")}
+              </label>
+            )}
             <p className="mt-1.5 text-[11px] text-[var(--text-faint)]">{t("Saved for next time.")}</p>
           </div>
         )}
@@ -120,41 +161,39 @@ export function ExercisePicker({
         )}
 
         <div className="space-y-4">
+          {mine.length > 0 && (
+            <div>
+              <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
+                {t("Your exercises")}
+              </div>
+              <div className="grid gap-1 sm:grid-cols-2">
+                {mine.map((e) => (
+                  <ExerciseRow
+                    key={e.name}
+                    item={e}
+                    active={current?.toLowerCase() === e.name.toLowerCase()}
+                    onPick={() => pick(e.name, e.muscle)}
+                    onForget={() => forget(e.name)}
+                    forgetLabel={t("Remove from the list")}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
           {groups.map((g) => (
             <div key={g.muscle}>
               <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.05em] text-[var(--text-faint)]">
                 {t(MUSCLE_LABEL[g.muscle])}
               </div>
               <div className="grid gap-1 sm:grid-cols-2">
-                {g.items.map((e) => {
-                  const active = current?.toLowerCase() === e.name.toLowerCase();
-                  return (
-                    <div
-                      key={e.name}
-                      className={`flex items-center gap-1 rounded-lg pr-1 transition ${
-                        active ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "hover:bg-[var(--surface-2)]"
-                      }`}
-                    >
-                      <button
-                        onClick={() => pick(e.name, e.muscle)}
-                        className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left text-sm"
-                      >
-                        <span className="truncate">{e.name}</span>
-                        {active && <Check size={14} className="shrink-0" />}
-                      </button>
-                      {e.custom && (
-                        <button
-                          onClick={() => forget(e.name)}
-                          aria-label={t("Remove")}
-                          title={t("Remove")}
-                          className="shrink-0 rounded p-1 text-[var(--text-faint)] hover:text-[var(--bad)]"
-                        >
-                          <X size={13} />
-                        </button>
-                      )}
-                    </div>
-                  );
-                })}
+                {g.items.map((e) => (
+                  <ExerciseRow
+                    key={e.name}
+                    item={e}
+                    active={current?.toLowerCase() === e.name.toLowerCase()}
+                    onPick={() => pick(e.name, e.muscle)}
+                  />
+                ))}
               </div>
             </div>
           ))}
@@ -188,5 +227,46 @@ export function ExerciseSelect({
       </button>
       <ExercisePicker open={open} onClose={() => setOpen(false)} onSelect={onChange} current={value} />
     </>
+  );
+}
+
+/** One row in the picker: tap to choose, and — for your own entries — an × to forget it. */
+function ExerciseRow({
+  item,
+  active,
+  onPick,
+  onForget,
+  forgetLabel,
+}: {
+  item: { name: string; mode?: string };
+  active: boolean;
+  onPick: () => void;
+  onForget?: () => void;
+  forgetLabel?: string;
+}) {
+  return (
+    <div
+      className={`flex items-center gap-1 rounded-lg pr-1 transition ${
+        active ? "bg-[var(--accent-soft)] text-[var(--accent)]" : "hover:bg-[var(--surface-2)]"
+      }`}
+    >
+      <button onClick={onPick} className="flex min-w-0 flex-1 items-center justify-between gap-2 px-3 py-2 text-left text-sm">
+        <span className="truncate">
+          {item.name}
+          {item.mode === "time" && <span className="ml-1.5 text-[11px] text-[var(--text-faint)]">s</span>}
+        </span>
+        {active && <Check size={14} className="shrink-0" />}
+      </button>
+      {onForget && (
+        <button
+          onClick={onForget}
+          aria-label={forgetLabel}
+          title={forgetLabel}
+          className="shrink-0 rounded p-1 text-[var(--text-faint)] hover:text-[var(--bad)]"
+        >
+          <X size={13} />
+        </button>
+      )}
+    </div>
   );
 }

@@ -596,7 +596,14 @@ export interface Settings {
   /** Exercises you typed yourself because the catalogue didn't have them. Kept so the second
    *  time you do that exercise it's already in the picker. `muscle` is a `Muscle` key — typed
    *  loosely here to keep types.ts free of an import cycle with exercises.ts. */
-  customExercises?: { name: string; muscle: string }[];
+  customExercises?: {
+    name: string;
+    muscle: string;
+    /** "time" = a set is seconds held (a plank), anything else = reps. */
+    mode?: "reps" | "time";
+    /** Moves your own body weight, so the log pre-fills it and "+kg" is what you add. */
+    bodyweight?: boolean;
+  }[];
   /** GDPR consents, each an ISO timestamp of when it was given (absent = not given).
    *  Health data is a special category (Art. 9), so its consent is recorded separately from
    *  the optional AI ones and can be withdrawn independently. `version` is the wording the
